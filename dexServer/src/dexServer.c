@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
@@ -14,7 +15,7 @@ typedef struct{
 	int inicioTablaAsignaciones;
 	int tamanioDatos;
 	char relleno[40];
-}Header;
+}t_header;
 
 typedef struct{
 	char estado;
@@ -23,18 +24,20 @@ typedef struct{
 	int tamanioArchivo;
 	char fecha[4];
 	int bloqueInicial;
-}TablaArchivos;
+}osadaFile;
 
 typedef struct{
-	Header encabezado;
-	//bitarray
-	TablaArchivos TA[2048];
+	t_header header;
+	t_bitarray bitmap;
+	osadaFile tablaArchivos[2048];
 	//tabla asignaciones
-}estructuraAdministrativa;
+}t_estructuraAdministrativa;
 
 int main(void) {
 
-	Header encab;
+	//t_estructuraAdministrativa estructuraAdministrativa;
+	t_header header;
+	int i = 0;
 
 	/*time_t tiempo = time(0);
 	struct tm *tlocal = localtime(&tiempo);
@@ -43,11 +46,15 @@ int main(void) {
 
 	//con todo esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
 
+	FILE* arch;
+	arch = fopen("ArchivoPrueba.osada","rb+");
+	fread(&header,64,1,arch);  					//en orden: la estructura donde guardo, el tamaño, la cantidad, el stream
+	fseek(arch,0,SEEK_END);
+	i = ftell(arch);
+	fclose(arch);
 
-	printf("%d\n",sizeof(encab));
-	printf("%d\n",sizeof(TablaArchivos));
+
+	printf("%d bytes\n",i);
 	return 0;
 
 }
-
-
