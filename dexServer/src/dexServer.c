@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>			 //grabar el header
+#include <stdlib.h>			 //armar el bitmap
 #include <stdbool.h>         //
 #include <time.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
 
-#define BLOCK_SIZE 64
 
+#define BLOCK_SIZE 64
+#define FILENAME_LENGTH 17
+
+//Estructuras
 
 typedef struct{
 	char identificador[7];
@@ -35,12 +38,80 @@ typedef struct{
 	//tabla asignaciones
 }t_estructuraAdministrativa;
 
+
+//Prototipos
+
+t_header leerHeader(FILE* archivo);
+void setOsadaFile(FILE* archivo);
+void grabarHeader(FILE* arch);
+t_bitarray* crearBitmap(int cantBloquesBitmap);
+void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
+
+
+
+int main(void) {
+
+	//t_estructuraAdministrativa estructuraAdministrativa;
+	t_header header;
+
+	/*time_t tiempo = time(0);
+	struct tm *tlocal = localtime(&tiempo);
+	char fecha[5];
+	strftime(fecha,5,"%d%m",tlocal);*/
+
+	//con todo esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
+
+	FILE* arch;
+	arch = fopen("ArchivoPrueba.osada","rb+");
+	header = leerHeader(arch);  //leo el cabezal, y lo guardo en la estructura
+
+	fclose(arch);
+
+	printf("%.7s\n",header.identificador);
+	printf("%c\n",header.version);
+	printf("tamanioFS: %d\n",header.tamanioFS);
+	printf("tamanioBitmap: %d\n",header.tamanioBitmap);
+	printf("inicioTablaAsignaciones: %d\n",header.inicioTablaAsignaciones);
+	printf("tamanioDatos: %d\n",header.tamanioDatos);
+	printf("relleno: %.40s\n",header.relleno);
+
+	return 0;
+
+}
+
+
+void setOsadaFile(FILE* archivo)
+{
+	grabarHeader(archivo);
+	//actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
+}
+
+t_bitarray* crearBitmap(int cantBloquesBitmap)       //crea y devuelve un puntero a un bitarray
+{
+	int i = 0;
+
+	char* data = malloc(cantBloquesBitmap*64);   //me reservo el espacio para crear el bitarray
+	for(i;i < (cantBloquesBitmap*64);i++)        //setea el bitarray en '0'
+		data[i] = '0';
+	t_bitarray* pBitMap;
+	pBitMap = bitarray_create(data,cantBloquesBitmap*64);
+
+	return pBitMap;
+}
+
+void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap)
+{
+
+	char data[] = {0,0,0,0,0,0,0,0};
+	pBitMap = bitarray_create(data,32);
+}
+
 t_header leerHeader(FILE* archivo)
 {
 	t_header aux;
-	int i = 0;
+	int i;
 
-	for(i;i<7;i++)
+	for(i = 0;i < 7;i++)
 		aux.identificador[i] = fgetc(archivo);
 	aux.version = fgetc(archivo);
 	fread(&aux.tamanioFS,4,1,archivo);   //en orden: la estructura donde guardo, el tamaño, la cantidad, el stream
@@ -52,7 +123,7 @@ t_header leerHeader(FILE* archivo)
 	return aux;
 }
 
-/*void grabarHeader(arch)
+void grabarHeader(FILE* arch)     //crea el header del FS
 {
 	t_header header;
 	int tamanioTotalArchivoEnBytes;
@@ -81,45 +152,4 @@ t_header leerHeader(FILE* archivo)
 	header.tamanioDatos = header.tamanioFS - 1 - header.tamanioBitmap - 1024 - header.inicioTablaAsignaciones;
 
 	fwrite(&header,BLOCK_SIZE,1,arch);
-}*/  //-----------> se usó para inicializar el cabezal
-
-void setOsadaFile(FILE* archivo)
-{
-	grabarHeader(archivo);
-	//grabarBitmap(archivo);
-}
-
-int main(void) {
-
-	//t_estructuraAdministrativa estructuraAdministrativa;
-	t_header header;
-	int tamanioTotalArchivoEnBytes;
-	char cad[8];
-	int i = 0;
-	t_bitarray *bitmap;
-	bitarray_create(bitmap,32);
-
-	/*time_t tiempo = time(0);
-	struct tm *tlocal = localtime(&tiempo);
-	char fecha[5];
-	strftime(fecha,5,"%d%m",tlocal);*/
-
-	//con todo esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
-
-	FILE* arch;
-	arch = fopen("ArchivoPrueba.osada","rb+");
-	header = leerHeader(arch);  //leo el cabezal, y lo guardo en la estructura
-
-	fclose(arch);
-
-	printf("%.7s\n",header.identificador);
-	printf("%c\n",header.version);
-	printf("tamanioFS: %d\n",header.tamanioFS);
-	printf("tamanioBitmap: %d\n",header.tamanioBitmap);
-	printf("inicioTablaAsignaciones: %d\n",header.inicioTablaAsignaciones);
-	printf("tamanioDatos: %d\n",header.tamanioDatos);
-	printf("relleno: %.40s\n",header.relleno);
-
-	return 0;
-
 }
