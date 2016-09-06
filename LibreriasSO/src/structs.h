@@ -14,9 +14,18 @@ typedef struct {
 	uint32_t retardo;
 	char ip[16];
 	uint32_t puerto;
-}t_mapa;
+}t_metadataMapa;
 
+typedef struct{
+	char tipo[12];
+	int posicionX;
+	int posicionY;
+	char identificador;
+}t_metadataPokenest;
 
+typedef struct{
+	int nivel;
+}t_metadataPokemon;
 
 
 
