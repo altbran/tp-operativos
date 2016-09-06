@@ -20,4 +20,5 @@ typedef struct {
 
 
 
+
 #endif /* LIBRERIAS_STRUCTS_H_ */
