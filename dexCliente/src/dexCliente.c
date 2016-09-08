@@ -45,6 +45,7 @@ static int f_getattr(
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
 	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
+
 	if (privilegios.esDir) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
@@ -63,14 +64,31 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
 	/*Se llama a esta funcion cuando el usuario trata de mostrar los archivos y directorios en un directorio especifico*/
 	int resultado = 0;
-	int i;
-	int cantidadBytesARecibir;
 	char* cadenaARecibir;
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
-	int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
+	if(recibirHeader(S_POKEDEX_CLIENTE))
+	{
+		cadenaARecibir = malloc(18);
+
+		while(!recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, 18))
+		{
+			filler(buf, cadenaARecibir, NULL, 0);
+			free(cadenaARecibir);
+			resultado++;
+
+			cadenaARecibir = malloc(18);
+		}
+
+		free(cadenaARecibir);
+		return resultado;
+	}
+	else
+		return -ENOENT;
+
+	/*int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
 	switch (cantidadArchivos) {
 	case 0:
 		break;
@@ -82,12 +100,11 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
 			cadenaARecibir = malloc(18);
 			recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir,
-					cantidadBytesARecibir);/*Me lo manda X veces?*/
+					cantidadBytesARecibir);
 			filler(buf, cadenaARecibir, NULL, 0);
 			free(cadenaARecibir);
 		}
-	}
-	return resultado;
+	}*/
 }
 
 static int f_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
