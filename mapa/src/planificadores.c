@@ -22,6 +22,7 @@ void roundRobin() {
 				recibirTodo(turno, posY, sizeof(int));
 				if (movimientoValido(turno, posX, posY)) {
 					moverEntrenador(devolverEntrenador(turno));
+					enviarHeader(turno,movimientoAceptado);
 					dibujar();
 				} else {
 					log_info(logger,"movimiento invalido");

@@ -38,7 +38,7 @@ typedef struct{
 	int posicionX;
 	int posicionY;
 	int cantidad;
-	char * identificador;
+	char identificador;
 }t_metadataPokenest;
 
 typedef struct{
