@@ -15,6 +15,9 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	contenidoDirectorio = 5,
 	contenidoArchivo = 6,
 	recibirXCantidadDeArchivos = 8,
+	crearCarpeta = 9,
+	eliminarArchivo = 10,
+	abrirArchivo = 11,
 	//no se confundan, no repitan los numeros!!
 
 };

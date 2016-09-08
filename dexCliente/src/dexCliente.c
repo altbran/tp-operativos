@@ -15,7 +15,9 @@
 int S_POKEDEX_CLIENTE;
 
 void enviarPath(const char *path, int socketDestino) {
-	void *buffer = malloc(sizeof(path));
+	int longitud;
+	longitud = strlen(path);
+	void *buffer = malloc(sizeof(longitud));
 	strcpy(buffer, path);
 	send(socketDestino, buffer, sizeof(buffer), 0);
 	free(buffer);
@@ -35,10 +37,12 @@ static int f_getattr(
 	if (privilegios.esDir) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
-	} else {
+	} else if(privilegios.esDir == 0){
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_nlink = 1;
 		stbuf->st_size = privilegios.tamanio;
+	}else {
+		resultado = -ENOENT;
 	}
 	//Agregar caso fallo
 	return resultado;
@@ -58,6 +62,9 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
 	switch (cantidadArchivos) {
 	case 0:
+		break;
+	case -1:
+		resultado = -ENOENT;
 		break;
 	default:
 		for (i = 0; i < cantidadArchivos; i++) {
@@ -88,14 +95,35 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset,
 	return size;
 }
 
-static int f_write(const char *path, const char *path2, size_t size,
+static int f_write(const void *buffer, const char *path2, size_t size,
 		off_t offset, struct fuse_file_info *fi) {
+	int res;
 
+	return 0;
+}
+
+static int f_crearCarpeta(const char *nombreFichero, mode_t modo) {
+	int cursorMemoria;
+	int res;
+
+	enviarHeader(S_POKEDEX_CLIENTE, crearCarpeta);
+	void *buffer = malloc(sizeof(const char*) + sizeof(mode_t));
+	memcpy(buffer, &nombreFichero, sizeof(const char*));
+	cursorMemoria += sizeof(const char*);
+	memcpy(buffer + cursorMemoria, &modo, sizeof(mode_t));
+	send(S_POKEDEX_CLIENTE, buffer, sizeof(buffer), 0);
+	free(buffer);
 	return 0;
 }
 
 static int f_unlink(const char *path) {
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+	return 0;
+}
+
+static int f_open(const char *path, struct fuse_file_info *fi) {
+	enviarHeader(S_POKEDEX_CLIENTE, abrirArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	return 0;
 }
@@ -121,6 +149,8 @@ static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
 		.write = f_write,
 		.rename = f_rename,
 		.unlink = f_unlink,
+		.mkdir = f_crearCarpeta,
+		.open = f_open,
 };
 
 int main(int argc, char *argv[]) {
