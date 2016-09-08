@@ -27,6 +27,17 @@ typedef struct{
 	int nivel;
 }t_metadataPokemon;
 
+typedef struct{
+	char nombre[10];
+	char simbolo;
+	char hojaDeViaje[6]; //PuebloPaleta = A, CiudadVerde = B, CiudadPaleta = C
+	char* objA;
+	char* objB;
+	char* objC;
+	unsigned vidas;
+	unsigned reintentos;
+
+}t_metadataEntrenador;
 
 
 
