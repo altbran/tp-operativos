@@ -58,7 +58,4 @@ typedef struct {
 	uint32_t tamanio;
 }t_privilegiosArchivo;
 
-typedef struct {
-
-}t_contenidoDirectorio;
 #endif /* LIBRERIAS_STRUCTS_H_ */

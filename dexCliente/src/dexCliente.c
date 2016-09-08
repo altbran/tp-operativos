@@ -1,5 +1,5 @@
 #define FUSE_USE_VERSION 25
-#define FILE_OFFSET_BITS 64
+#define _FILE_OFFSET_BITS 64
 #include <stdio.h>
 #include <fuse.h>
 #include <sys/mman.h>
@@ -53,7 +53,7 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoDirectorio);
-	enviarPath(path, 0/*socketDestino*/);
+	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
 	switch (cantidadArchivos) {
@@ -63,20 +63,28 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		for (i = 0; i < cantidadArchivos; i++) {
 			cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
 			cadenaARecibir = malloc(18);
-			recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);
+			recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*Me lo manda X veces?*/
 			filler(buf,cadenaARecibir,NULL,0);
 			free(cadenaARecibir);
 		}
 	}
-	recibirTodo(S_POKEDEX_CLIENTE, &buf, sizeof(double));
 	return resultado;
 }
 
 static int f_read(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
 	/*Se llama a esta funcion cuando el sistema trata de leer un pedazo de data de un archivo*/
-	recibirTodo(S_POKEDEX_CLIENTE, &buf, size);
-	return 0;
+	char* cadenaARecibir;
+	int cantidadBytesARecibir;
+
+	enviarHeader(S_POKEDEX_CLIENTE, contenidoArchivo);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+	cadenaARecibir = malloc(18);
+	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
+	recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
+	memcpy(buf, (char*) cadenaARecibir + offset, size);
+
+	return size;
 }
 
 static int f_write(const char *path, const char *path2, size_t size,
