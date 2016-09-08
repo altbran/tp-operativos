@@ -36,5 +36,10 @@ typedef struct{
 	int reintentos;
 }t_metadataEntrenador;
 
+typedef struct {
+	int esDir;/*1 si es directorio, 0 si es archivo regular(final)*/
+	uint32_t tamaño;
+
+}t_privilegiosArchivo;
 
 #endif /* LIBRERIAS_STRUCTS_H_ */
