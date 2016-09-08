@@ -95,11 +95,21 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset,
 	return size;
 }
 
-static int f_write(const void *buffer, const char *path2, size_t size,
+static int f_write(const void *buffer, const char *path, size_t size,
 		off_t offset, struct fuse_file_info *fi) {
-	int res;
+	int cursorMemoria;
+	int longitud;
 
-	return 0;
+	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+	longitud = strlen(path);
+	void *buf = malloc(sizeof(longitud) + sizeof(buffer));
+	memcpy(buf, &path, sizeof(longitud));
+	cursorMemoria += sizeof(longitud);
+	memcpy(buf + cursorMemoria, &buffer, sizeof(buffer));
+	send(S_POKEDEX_CLIENTE, buf, sizeof(buf), 0);
+	free(buf);
+	return size;
 }
 
 static int f_crearCarpeta(const char *nombreFichero, mode_t modo) {
