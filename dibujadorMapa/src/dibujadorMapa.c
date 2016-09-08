@@ -1,27 +1,45 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <curses.h>
-#include <tad_items.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <nivel.h>
 #include <unistd.h>
 #include <src/sockets.h>
 #include <src/structs.h>
+#include <commons/config.h>
+#include <src/protocolo.h>
 
 int main(int argc, char **argv) {
-	int socket_mapa;
-	//me conecto al mapa
-	if (crearSocket(&socket_mapa)) {
-		printf("Error creando socket\n");
-		return 1;
+
+	//busco las configuraciones
+	t_config * config;
+	if (argc != 2) {
+	//printf("Número incorrecto de parámetros\n");
+	//return -1;
+	config = config_create("./Configuracion/config");
+	char * ruta = "./Configuracion/config";
+	argv[1] = ruta;
+	} else {
+
+	config = config_create(argv[1]);
 	}
-	/*if (conectarA(socket_mapa, IP_MAPA, PUERTO_MAPA)) {
-		printf("Error al conectar\n");
-		return 1;
-	}*/
-	if (responderHandshake(socket_mapa, IDDIBUJADORMAPA, IDMAPA)) {
-		return 1;
+
+	int PUERTO_MAPA = config_get_int_value(config, "PUERTO_MAPA");
+	char* IP_MAPA = config_get_string_value(config, "IP_MAPA");
+
+	//me conecto al proceso mapa
+	int clienteMapa;
+	if (crearSocket(&clienteMapa)) {
+	printf("Error creando socket\n");
+	return 1;
+	}
+	if (conectarA(clienteMapa, IP_MAPA, PUERTO_MAPA)) {
+	printf("Error al conectar\n");
+	return 1;
+	}
+
+	if (responderHandshake(clienteMapa, IDDIBUJADORMAPA, IDMAPA)) {
+	return 1;
 	}
 
 	t_metadataPokenest pokenest1;
@@ -75,5 +93,7 @@ int main(int argc, char **argv) {
 	 //nivel_gui_terminar();
 
 	 */
+
+
 	return EXIT_SUCCESS;
 }

@@ -21,6 +21,7 @@ t_log* logger;
 char *texto;
 
 int clientePokeDex;
+int servidorMapa;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 
