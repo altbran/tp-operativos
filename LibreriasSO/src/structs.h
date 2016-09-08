@@ -38,8 +38,10 @@ typedef struct{
 
 typedef struct {
 	int esDir;/*1 si es directorio, 0 si es archivo regular(final)*/
-	uint32_t tamaño;
-
+	uint32_t tamanio;
 }t_privilegiosArchivo;
 
+typedef struct {
+	/*serializar?*/
+}t_contenidoDirectorio;
 #endif /* LIBRERIAS_STRUCTS_H_ */
