@@ -142,15 +142,28 @@ static int f_crearCarpeta(const char *nombreFichero, mode_t modo) {
 }
 
 static int f_unlink(const char *path) {
+	int res;
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
+	recibirTodo(S_POKEDEX_CLIENTE,&res,sizeof(int));//resultado de la operacion
+		if (res){
+			return 0;
+		}else{
+			return -1;
+		}
 	return 0;
 }
 
 static int f_open(const char *path, struct fuse_file_info *fi) {
+	int res;
 	enviarHeader(S_POKEDEX_CLIENTE, abrirArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	return 0;
+	recibirTodo(S_POKEDEX_CLIENTE,&res,sizeof(int));//resultado de la operacion
+		if (res){
+			return 0;
+		}else{
+			return -1;
+		}
 }
 
 static int f_close(const char *path, struct fuse_file_info *fi) {
@@ -191,7 +204,7 @@ static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
 		.mkdir = f_crearCarpeta,
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
-		.fsync = f_close,
+		.release = f_close,
 };
 
 int main(int argc, char *argv[])
