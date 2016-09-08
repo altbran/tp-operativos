@@ -58,4 +58,9 @@ typedef struct {
 	uint32_t tamanio;
 }t_privilegiosArchivo;
 
+typedef struct {
+	const char *pathAntiguo;
+	const char *pathNuevo;
+}t_cambioDeDirectorios;
+
 #endif /* LIBRERIAS_STRUCTS_H_ */
