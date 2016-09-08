@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>			 //armar el bitmap
 #include <stdbool.h>         //
 #include <time.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
+#include <src/sockets.h>
 
 
 #define BLOCK_SIZE 64
@@ -41,10 +41,8 @@ typedef struct{
 
 //Prototipos
 
-t_header leerHeader(FILE* archivo);
 void setOsadaFile(FILE* archivo);
 void grabarHeader(FILE* arch);
-t_bitarray* crearBitmap(int cantBloquesBitmap);
 void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
 
 
@@ -53,6 +51,11 @@ int main(void) {
 
 	//t_estructuraAdministrativa estructuraAdministrativa;
 	t_header header;
+	t_bitarray* punteroBitmap;
+	FILE* arch;
+	char* data;
+
+	int i;
 
 	/*time_t tiempo = time(0);
 	struct tm *tlocal = localtime(&tiempo);
@@ -61,9 +64,14 @@ int main(void) {
 
 	//con todo esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
 
-	FILE* arch;
+
 	arch = fopen("ArchivoPrueba.osada","rb+");
-	header = leerHeader(arch);  //leo el cabezal, y lo guardo en la estructura
+	//setOsadaFile(arch);
+
+	fread(&header,BLOCK_SIZE,1,arch);  //leo el cabezal, y lo guardo en la estructura
+	data = malloc(header.tamanioBitmap * 64);
+	fread(data,BLOCK_SIZE,header.tamanioBitmap,arch);
+	punteroBitmap = bitarray_create(data,header.tamanioBitmap*64);    //lee el espacio del bitmap y lo almacena en un bitarray
 
 	fclose(arch);
 
@@ -75,52 +83,46 @@ int main(void) {
 	printf("tamanioDatos: %d\n",header.tamanioDatos);
 	printf("relleno: %.40s\n",header.relleno);
 
+	for(i = 0;i<60;i++)
+		printf("Valor bitarray[%d]: %c\n",i,punteroBitmap->bitarray[i]);
+	printf("Valor bitarray[%d]: %c\n",2047,punteroBitmap->bitarray[2047]);
+
+
+
+
+	bitarray_destroy(punteroBitmap);
+
 	return 0;
 
 }
 
 
-void setOsadaFile(FILE* archivo)
+void setOsadaFile(FILE* archivo)   //dado cualquier archivo, lo setea a formato OSADA
 {
+	t_header header;
+	int i;
+	char* dataBitmap;  //me reservo el espacio donde va a ir el bitArray
+
 	grabarHeader(archivo);
-	//actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
-}
+	rewind(archivo);
+	fread(&header,BLOCK_SIZE,1,archivo);   //almaceno los datos del header, van a ser utiles para las demás estructuras
 
-t_bitarray* crearBitmap(int cantBloquesBitmap)       //crea y devuelve un puntero a un bitarray
-{
-	int i = 0;
+	dataBitmap = malloc(header.tamanioBitmap * 64);  //el tamanioBitmap tiene de unidad [bloque], por ende, lo paso a bytes
+	for(i = 0;i < (header.tamanioBitmap * 64);i++)
+		dataBitmap[i] = '0';                //seteo el bitmap en '0', resulta mas practico
 
-	char* data = malloc(cantBloquesBitmap*64);   //me reservo el espacio para crear el bitarray
-	for(i;i < (cantBloquesBitmap*64);i++)        //setea el bitarray en '0'
-		data[i] = '0';
-	t_bitarray* pBitMap;
-	pBitMap = bitarray_create(data,cantBloquesBitmap*64);
+	fwrite(dataBitmap,BLOCK_SIZE,header.tamanioBitmap,archivo);
+	rewind(archivo);
 
-	return pBitMap;
+	free(dataBitmap);
 }
 
 void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap)
 {
+	bool a;
+	a = bitarray_test_bit(pBitMap, 0);
+	printf("%d",a);
 
-	char data[] = {0,0,0,0,0,0,0,0};
-	pBitMap = bitarray_create(data,32);
-}
-
-t_header leerHeader(FILE* archivo)
-{
-	t_header aux;
-	int i;
-
-	for(i = 0;i < 7;i++)
-		aux.identificador[i] = fgetc(archivo);
-	aux.version = fgetc(archivo);
-	fread(&aux.tamanioFS,4,1,archivo);   //en orden: la estructura donde guardo, el tamaño, la cantidad, el stream
-	fread(&aux.tamanioBitmap,4,1,archivo);
-	fread(&aux.inicioTablaAsignaciones,4,1,archivo);
-	fread(&aux.tamanioDatos,4,1,archivo);
-	fread(&aux.relleno,40,1,archivo);
-
-	return aux;
 }
 
 void grabarHeader(FILE* arch)     //crea el header del FS
