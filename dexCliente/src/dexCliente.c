@@ -11,36 +11,44 @@
 #include <src/sockets.h>
 #include <src/protocolo.h>
 
-static int ejemplo_getattr(const char *path, struct stat *stbuf) {
-	int res = 0;
+int S_POKEDEX_CLIENTE;
 
-	return res;
+
+static int f_getattr(const char *path/*ruta del archivo cuyos atributos deben ser retornados*/, struct stat *stbuf/*puntero a la estructura que contiene los atributos luego de terminar la ejecucion*/) {
+	/*se llama a esta funcion cuando el sistema trata de obtener los atributos de un archivo*/
+	int resultado = 0;
+	enviarHeader(0/*socketDestino*/,privilegiosArchivo,sizeof(int));
+	recibirTodo(S_POKEDEX_CLIENTE,&stbuf,sizeof(double));
+
+
+	return resultado;
 }
 
-static int ejemplo_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
-	int res = 0;
+	/*Se llama a esta funcion cuando el usuario trata de mostrar los archivos y directorios en un directorio especifico*/
+	int resultado = 0;
+	recibirTodo(S_POKEDEX_CLIENTE,&buf,sizeof(double));
 
-
-	return res;
+	return resultado;
 }
 
-static int ejemplo_read(const char *path, char *buf, size_t size, off_t offset,
+static int f_read(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
-
+	/*Se llama a esta funcion cuando el sistema trata de leer un pedazo de data de un archivo*/
+	recibirTodo(S_POKEDEX_CLIENTE,&buf,size);
 	return 0;
 }
 
-static struct fuse_operations ejemplo_oper = { .readdir = ejemplo_readdir,
-		.getattr = ejemplo_getattr, .read = ejemplo_read, };
+static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
+		.getattr = f_getattr, .read = f_read, };
 
 int main(int argc, char *argv[]) {
-
-		int PUERTO_POKEDEX_SERVIDOR = getenv("PUERTO_POKEDEX_SERVIDOR");
-		int IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
+		char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
+		int PUERTO_POKEDEX_SERVIDOR = atoi(PUERTOSTR);
+		char *IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 
 		//me conecto al proceso servidor
-		int S_POKEDEX_CLIENTE;
 		if (crearSocket(&S_POKEDEX_CLIENTE)) {
 			printf("Error creando socket\n");
 			return 1;
@@ -54,11 +62,6 @@ int main(int argc, char *argv[]) {
 		if (responderHandshake(S_POKEDEX_CLIENTE, IDPOKEDEXCLIENTE, IDPOKEDEXSERVER)) {
 			return 1;
 		}
-
-
-		int header = recibirHeader(S_POKEDEX_CLIENTE);
-
-
 
 	return fuse_main(argc, argv, &ejemplo_oper);
 

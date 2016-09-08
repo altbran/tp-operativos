@@ -1,7 +1,9 @@
 #include "protocolo.h"
 #include "sockets.h"
 #include "structs.h"
-
+void enviarHeader(int socketDestino, int header, int largo) {
+	send(socketDestino, &header, sizeof(int), 0);
+}
 void enviarPokenestDibujador(int socketDestino, t_metadataPokenest pokenest, int largo) {
 	int header = datosInicialesMapa;
 	send(socketDestino, &header, sizeof(int), 0);
