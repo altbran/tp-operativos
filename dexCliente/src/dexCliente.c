@@ -18,10 +18,21 @@ int S_POKEDEX_CLIENTE;
 
 static int f_getattr(const char *path/*ruta del archivo cuyos atributos deben ser retornados*/, struct stat *stbuf/*puntero a la estructura que contiene los atributos luego de terminar la ejecucion*/) {
 	/*se llama a esta funcion cuando el sistema trata de obtener los atributos de un archivo*/
+
 	int resultado = 0;
+	t_privilegiosArchivo privilegios;
 	enviarHeader(0/*socketDestino*/,privilegiosArchivo);
-	enviarPath(path,0/*socketDestino*/);
-	recibirTodo(S_POKEDEX_CLIENTE,&stbuf,sizeof(double));
+	enviarPath(path,S_POKEDEX_CLIENTE);
+	recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
+	recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
+	if (privilegios.esDir) {
+			stbuf->st_mode = S_IFDIR | 0755;
+			stbuf->st_nlink = 2;
+		}else{
+			stbuf->st_mode = S_IFREG | 0444;
+			stbuf->st_nlink = 1;
+			stbuf->st_size = privilegios.tamanio;
+		}
 
 	return resultado;
 }
@@ -30,7 +41,7 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
 	/*Se llama a esta funcion cuando el usuario trata de mostrar los archivos y directorios en un directorio especifico*/
 	int resultado = 0;
-	enviarHeader(0/*socketDestino*/,contenidoDirectorio);
+	enviarHeader(S_POKEDEX_CLIENTE,contenidoDirectorio);
 	enviarPath(path, 0/*socketDestino*/);
 	recibirTodo(S_POKEDEX_CLIENTE,&buf,sizeof(double));
 
@@ -44,7 +55,9 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset,
 	return 0;
 }
 
-static int f_write(const char *path, const char *path2, struct fuse_file_info *fi){
+static int f_write(const char *path, const char *path2, size_t size, off_t offset,
+	      struct fuse_file_info *fi){
+
 	return 0;
 }
 
