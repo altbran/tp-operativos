@@ -15,11 +15,10 @@
 int S_POKEDEX_CLIENTE;
 
 void enviarPath(const char *path, int socketDestino) {
-	int longitud;
-	longitud = strlen(path);
-	void *buffer = malloc(longitud);
-	strcpy(buffer, path);
-	send(socketDestino, buffer, longitud, 0);
+
+	void *buffer = malloc(50);
+	memcpy(buffer, path,50);
+	send(socketDestino, buffer, 50, 0);
 	free(buffer);
 }
 
@@ -40,10 +39,12 @@ static int f_getattr(
 
 	int resultado = 0;
 	t_privilegiosArchivo privilegios;
+
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
+
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
-	recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
+	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
+	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
 	if (privilegios.esDir) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
