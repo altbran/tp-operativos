@@ -153,6 +153,12 @@ static int f_open(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
+static int f_close(const char *path, struct fuse_file_info *fi) {
+	enviarHeader(S_POKEDEX_CLIENTE, cerrarArchivo);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+	return 0;
+}
+
 static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 {
 	t_cambioDeDirectorios estructura;
@@ -185,6 +191,7 @@ static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
 		.mkdir = f_crearCarpeta,
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
+		.fsync = f_close,
 };
 
 int main(int argc, char *argv[])
