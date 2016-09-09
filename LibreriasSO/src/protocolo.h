@@ -3,7 +3,7 @@
 
 enum headers { //Constantes que identifican los headers de los mensajes
 
-	dimensionesMapa = 1,
+	datosInicialesMapa = 1,
 	datosPokenest = 2,
 	posicionEntrenador = 3,
 
