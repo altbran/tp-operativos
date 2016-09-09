@@ -46,28 +46,17 @@ int main(int argc, char **argv) {
 	}
 
 
-
-
 	int header = recibirHeader(clienteMapa);
 
 	t_metadataPokenest pk;
-
 	switch (header){
 
 		case datosInicialesMapa :
-			void  buffer = malloc(21);
-			recibirTodo(clienteMapa, buffer, 21);
-			int cursorMemoria = 0;
 
-
-			memcpy(pk.tipo, buffer, sizeof(char[12]));
-			cursorMemoria += sizeof(char[12]);
-			memcpy(pk.posicionX, buffer + cursorMemoria, sizeof(uint32_t));
-			cursorMemoria += sizeof(uint32_t);
-			memcpy(pk.posicionY, buffer + cursorMemoria, sizeof(uint32_t));
-			cursorMemoria += sizeof(uint32_t);
-			memcpy(pk.identificador, buffer + cursorMemoria, sizeof(char));
-			cursorMemoria += sizeof(char);
+			recibirTodo(clienteMapa,&pk.tipo,sizeof(char[12]));
+			recibirTodo(clienteMapa,&pk.posicionX,sizeof(uint32_t));
+			recibirTodo(clienteMapa,&pk.posicionY,sizeof(uint32_t));
+			recibirTodo(clienteMapa,&pk.identificador,sizeof(char));
 
 			break;
 	}

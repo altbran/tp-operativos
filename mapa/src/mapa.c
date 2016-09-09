@@ -125,11 +125,12 @@ int main(int argc, char **argv) {
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
 						t_metadataPokenest pk;
-						pk.identificador = $;
+						char prueba[12] = "pika";
+						pk.identificador = '$';
 						pk.posicionX = 10;
 						pk.posicionY = 10;
-						pk.tipo = "pika";
-						enviarPokenestDibujador(nuevaConexion,&pk,21);
+						strcpy(pk.tipo,prueba);
+						enviarPokenestDibujador(nuevaConexion,pk,21);
 
 
 						log_info(logger, "Dibujador conectado, socket %d", nuevaConexion);
@@ -143,13 +144,16 @@ int main(int argc, char **argv) {
 					}
 
 				} else {
+					/*
 					int header = recibirHeader(i);
 
 					switch (header) {
 
 					case dimensionesMapa:
 						break;
+
 					}
+					*/
 				}
 			}
 		}

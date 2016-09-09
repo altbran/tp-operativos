@@ -1,5 +1,6 @@
 #include "protocolo.h"
 #include "sockets.h"
+#include "structs.h"
 
 void enviarPokenestDibujador(int socketDestino, t_metadataPokenest pokenest, int largo) {
 	int header = datosInicialesMapa;
@@ -10,13 +11,13 @@ void enviarPokenestDibujador(int socketDestino, t_metadataPokenest pokenest, int
 	//strlen(pokenest.tipo)
 	int cursorMemoria = 0;
 
-	memcpy(buffer, pokenest.tipo, sizeof(char[12]));
+	strcpy(buffer, pokenest.tipo);
 	cursorMemoria += sizeof(char[12]);
-	memcpy(buffer + cursorMemoria, pokenest.posicionX, sizeof(uint32_t));
+	memcpy(buffer + cursorMemoria, &pokenest.posicionX, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
-	memcpy(buffer + cursorMemoria, pokenest.posicionY, sizeof(uint32_t));
+	memcpy(buffer + cursorMemoria, &pokenest.posicionY, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
-	memcpy(buffer + cursorMemoria, pokenest.identificador, sizeof(char));
+	memcpy(buffer + cursorMemoria, &pokenest.identificador,sizeof(char));
 	//cursorMemoria += strlen(pokenest.identificador);
 
 	send(socketDestino, buffer, 21, 0); //hay que serializar algo acá?
