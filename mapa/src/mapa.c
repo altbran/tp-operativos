@@ -1,23 +1,10 @@
 #include "funciones.h"
 
 int main(int argc, char **argv) {
+
+	items = list_create();
 	//busco las configuraciones
-	t_config * config;
-	if (argc != 2) {
-		//printf("Número incorrecto de parámetros\n");
-		config = config_create("./Configuracion/config");
-		char * ruta = "./Configuracion/config";
-		argv[1] = ruta;
-	} else {
-
-		config = config_create(argv[1]);
-	}
-
-	int PUERTO_SERVIDOR = config_get_int_value(config, "PUERTO_SERVIDOR");
-	//int PUERTO_POKEDEX = config_get_int_value(config, "PUERTO_POKEDEX");
-	//char* IP_POKEDEX = config_get_string_value(config, "IP_POKEDEX");
-
-	//vectorDispositivos = config_get_array_value(config, "IO_ID");
+	int PUERTO_MAPA_SERVIDOR = getenv("PUERTO_MAPA_SERVIDOR");
 
 	//Creo log para el mapa
 
@@ -47,7 +34,7 @@ int main(int argc, char **argv) {
 		printf("Error creando socket");
 		return 1;
 	}
-	if (escucharEn(servidorMapa, PUERTO_SERVIDOR)) {
+	if (escucharEn(servidorMapa, PUERTO_MAPA_SERVIDOR)) {
 		printf("Error al conectar");
 		log_error(logger, "Se produjo un error creando el socket servidor", texto);
 		return 1;
@@ -56,7 +43,6 @@ int main(int argc, char **argv) {
 	log_info(logger, "Se estableció correctamente el socket servidor", texto);
 	log_info(logger, "Escuchando nuevas conexiones");
 
-	config_destroy(config);
 
 	int nuevaConexion;
 	struct sockaddr_in direccionCliente;

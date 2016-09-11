@@ -5,3 +5,39 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/utnso/tp-2016-2c-A-cara-de-rope/Li
 //para indicar la direccion del archivo config al ejecutar el programa
 
 ./"nombre del programa" /home/utnso/tp-2016-2c-A-cara-de-rope/"nombre carpeta del programa"/Configuracion/config
+
+//para modificar las variables de entorno
+
+Seguí la recomendación de la documentación y pasé a revisar el contenido del archivo environment para saber cómo estaba estructurado. Entonces:
+
+1.Abrí el editor de texto gedit que está en Aplicaciones > Accesorios > Editor de textos.
+2.Luego abrí el archivo environment cuya ruta es /etc/environment.
+
+Esto decía en el archivo environment original:
+
+
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
+LANG="es_CO.UTF-8"
+
+Noten que en la parte superior del editor de texto se indica que el archivo es de Solo lectura. Esto es porque environment solo puede modificarlo un usuario con privilegios administrativos. Esto fue lo que hice para poder modificar el archivo:
+
+1.Cerré gedit.
+2.Presioné la combinación de teclas Alt+F2. En la ventana que se abrió escribí el comando gksudo gedit /etc/environment, que me permite abrir el archivo environment con gedit y con privilegios administrativos. Luego lo ejecuté.
+3.Apareció una ventana para ingresar una clave y escribí la clave del usuario que creé al instalar Ubuntu. Esto confirma que tengo permiso para modificar el archivo.
+4.Se abrió gedit con el archivo environment y ahora puedo agregar mi variable de entorno. En este caso mi necesidad era crear la variable JAVA_HOME que contiene la ruta al directorio raíz del JDK de Java. Así que modifiqué el archivo environment como me indicaba la documentación de Ubuntu (https://wiki.ubuntu.com/environment_variables). Así quedó:
+
+
+JAVA_HOME="/usr/local/jdk1.6.0_01"
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:$JAVA_HOME:"
+LANG="es_CO.UTF-8"
+
+5.Guardé los cambios hechos en el archivo y cerré gedit.
+6.Cerré mi sesión para que los cambios surtieran efecto.
+7.Volví a abrir la sesión.
+8.Abrí un terminal y escribí el comando
+
+
+echo $PATH
+
+para verificar los cambios. Efectivamente, ahora el contenido de la variable PATH muestra la ruta al directorio raíz del Java JDK.
+9.Por último, ejecuté el programa que antes no encontraba la ruta al JDK de Java y listo, ahora funciona perfectamente.
