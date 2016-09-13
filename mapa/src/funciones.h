@@ -28,6 +28,6 @@ pthread_t hiloSIG;
 pthread_mutex_t mutex;
 
 //funciones
-int receptorSIG();
+void receptorSIG();
 
 #endif /* FUNCIONES_H_ */
