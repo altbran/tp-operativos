@@ -1,5 +1,13 @@
 #include "funciones.h"
 
+void cargarPokenest(t_metadataPokenest * pokenest){
+
+}
+
+void cargarEntrenador(t_metadataEntrenador * entrenador){
+
+}
+
 void dibujar() {
 
 	int rows, cols;
@@ -23,7 +31,7 @@ void dibujar() {
 	 pokenest3.posicionY, 2);
 	 */
 
-	CrearCaja(items, pk.identificador, pk.posicionX, pk.posicionY, 10);
+	//CrearCaja(items, pk.identificador, pk.posicionX, pk.posicionY, 10);
 
 	nivel_gui_dibujar(items, "Test Chamber 04");
 

@@ -1,14 +1,14 @@
 #include "funciones.h"
 
 int main(int argc, char **argv) {
-
-	items = list_create();
+	//inicializo el mutex
+	pthread_mutex_init(&mutex,NULL);
 	//busco las configuraciones
 	int PUERTO_MAPA_SERVIDOR = getenv("PUERTO_MAPA_SERVIDOR");
 
 	//Creo log para el mapa
 
-	logger = log_create("Mapa.log", "MAPA", 1, log_level_from_string("INFO"));
+	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
 
 	//me intento conectar a la PokeDex Cliente SOY HOST
 	/*
@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
 	 return 1;
 	 }
 	 */
+	//creo el hilo para reconocer señales SIGUSR2
+	pthread_create(&hiloSIG,NULL,(void *) receptorSIG(),NULL);
 	//creo socket servidor
 	if (crearSocket(&servidorMapa)) {
 		printf("Error creando socket");
@@ -107,6 +109,7 @@ int main(int argc, char **argv) {
 						//Maneja consola
 
 						break;
+						/*
 					case IDDIBUJADORMAPA:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
@@ -120,9 +123,9 @@ int main(int argc, char **argv) {
 
 
 						log_info(logger, "Dibujador conectado, socket %d", nuevaConexion);
-						//Maneja consola
 
 						break;
+						*/
 					default:
 						close(nuevaConexion);
 						log_error(logger, "Error en el handshake. Conexion inesperada", texto);
