@@ -27,7 +27,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2130027373" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.327616231" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.2075800365" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.include.paths.1470860450" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.c.compiler.option.include.paths.1470860450" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LibreriasSO}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1693174435" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
@@ -37,7 +37,7 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LibreriasSO"/>
 									<listOptionValue builtIn="false" value="commons"/>
 								</option>
-								<option id="gnu.c.link.option.paths.231685822" superClass="gnu.c.link.option.paths" valueType="libPaths">
+								<option id="gnu.c.link.option.paths.231685822" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LibreriasSO/Debug}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.897407408" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
@@ -49,7 +49,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.1312466109" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
 								<option id="gnu.both.asm.option.include.paths.1828147984" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LibreriasSO}&quot;"/>
-									<listOptionValue builtIn="false" value="/LibreriasSO"/>
+									<listOptionValue builtIn="false" value="/home/utnso/osada-utils"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1150040372" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
