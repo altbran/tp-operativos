@@ -7,63 +7,48 @@
  Description : Hello World in C, Ansi-style
  ============================================================================
  */
-#include <stdio.h>
+/*#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+
 #include <netdb.h>
 #include <unistd.h>
+#include "commons/log.h"
+#include <src/sockets.h>
+#include <src/structs.h>*/
+#include "funcionesE.h"
 
+int main(int argc, char** argv){
 
-#define PACKAGESIZE 1024
+	nombre = argv[1];
+	ruta = argv[2];
 
-int main(){
-
-	struct addrinfo serverAux;
-	struct addrinfo *serverInfo;
-
-	memset(&serverAux, 0, sizeof(serverAux));
-	serverAux.ai_family = AF_INET;
-	serverAux.ai_socktype = SOCK_STREAM;
-
-	char ip[20];
-	char puerto[7];
-
-	printf("Ingrese el ip al que se desea conectar: ");
-	scanf("%s", ip);
-	printf("Ingrese el puerto del servidor: ");
-	scanf("%s", puerto);
-
-	getaddrinfo(ip, puerto, &serverAux, &serverInfo);	// Carga en serverInfo los datos de la conexion
-
-	int serverSocket;
-	serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-	if (serverSocket == -1){
-		printf("Hubo un error al crear el socket servidor");
+	if(argc != 3){
+		printf("Numero de parametros incorrectos");
+		log_error(logger,"Numero de parametros incorrectos",mensaje);
 		return 1;
 	}
 
-	if (-1 == connect(serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen)){
-		printf("No se pudo establecer conexion con el serivdor");
+	char* IP_MAPA_SERVIDOR = getenv("IP_MAPA_SERVIDOR");
+	logger = log_create("Entrenador.log", "ENTRENADOR", 0, log_level_from_string("INFO"));
+
+	if(crearSocket(&socketCliente)){
+		printf("No se pudo crear el socket.");
 		return 1;
 	}
-	freeaddrinfo(serverInfo);
-
-
-	int enviar = 1;
-	char message[PACKAGESIZE];
-
-	printf("Conectado al servidor. Bienvenido al sistema, ya puede enviar mensajes. Escriba 'exit' para salir\n");
-
-	while(enviar){
-		fgets(message, PACKAGESIZE, stdin);
-		if (!strcmp(message,"exit\n")) enviar = 0;
-		if (enviar) {
-			int envio = send(serverSocket, message, strlen(message) + 1, 0);
-					if (envio == -1){
-						printf("Error al enviar mensaje");
-					}
-		}
+	if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
+		printf("No se puede conectar al servidor.");
+		log_error(logger, "Fallo al conectarse al servidor.", mensaje);
+		return 1;
 	}
+
+	log_info(logger, "Se ha iniciado conexion con el servidor", mensaje);
+
+	if(responderHandshake(servidorMapa, IDENTRENADOR, IDMAPA)){
+		printf("Error al responder handshake");
+		log_error(logger, "No se pudo responder handshake", mensaje);
+		return 1;
+	}
+	log_info(logger, "Conexion establecida", mensaje);
+	return EXIT_SUCCESS;
 }
