@@ -1,0 +1,6 @@
+PUERTO_MAPA_SERVIDOR=8080
+PUERTO_POKEDEX_SERVIDOR=9000
+IP_POKEDEX_SERVIDOR="127.0.0.1"
+IP_MAPA_SERVIDOR="127.0.0.1"
+LD_LIBRARY_PATH="/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug"
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$LD_LIBRARY_PATH:"
