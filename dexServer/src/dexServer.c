@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>			 //
 #include <stdbool.h>         //
 #include <time.h>
@@ -7,6 +8,7 @@
 #include <src/sockets.h>
 #include <pthread.h>
 #include <commons/log.h>
+#include <sys/mman.h>
 
 
 #define BLOCK_SIZE 64
@@ -47,7 +49,6 @@ typedef struct{
 	int* tablaAsignaciones;
 }t_estructuraAdministrativa;
 
-
 //Prototipos
 
 void leerEstructurasAdministrativas(FILE* archivo,t_estructuraAdministrativa* estructuraAdministrativa);
@@ -59,7 +60,6 @@ int main(void) {
 	int PUERTO_DEX_SERVIDOR = 5000; //getenv("PUERTO_DEX_SERVIDOR");
 	//int IP_DEX_SERVIDOR = getenv("IP_DEX_SERVIDOR");
 	FILE* archivo;
-	t_log* logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));
 
 	t_estructuraAdministrativa estructuraAdministrativa;
 	int i;
@@ -69,6 +69,9 @@ int main(void) {
 	int fdmax;     //file descriptor maximo
 	fd_set bolsaDeSockets;
 	fd_set bolsaAuxiliar;
+	char* archivoMapeado;
+
+	t_log* logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));
 
 	/*time_t tiempo = time(0);
 	struct tm *tlocal = localtime(&tiempo);
@@ -77,11 +80,21 @@ int main(void) {
 
 	//con esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
 
-	archivo = fopen("fileSystem.dat","rb");
+	archivo = fopen("fileSystem.dat","rb+");
+	fdmax = fileno(archivo);      //uso temporariamente el fdmax para almacenar el fd de mi FS
 
 	leerEstructurasAdministrativas(archivo,&estructuraAdministrativa);
 
-	fclose(archivo);
+	fseek(archivo,0,SEEK_END);
+	i = ftell(archivo);        //uso i temporariamente para sacar la longitud en bytes del archivo
+	if (fdmax == -1)
+		log_error(logger, "Error al obtener el 'file descriptor' del archivo");
+	archivoMapeado = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NORESERVE, fdmax, 0);
+	if (archivoMapeado == MAP_FAILED)
+		log_error(logger, "Error al mapear el File System en memoria");
+
+	//me guardo las est.adm en una struct porque va a ser mas comodo leerlas desde ahi
+	//ademas, mapeo el FS
 
 
 	if (crearSocket(&listener)) {
@@ -123,9 +136,6 @@ int main(void) {
 			{
 				if (i == listener)
 				{
-					// handle new connections
-					//Espera hasta que el hilo haya guardado el valor que se le paso como parametro
-					//antes de sobreEscribir la variable nuevaConexion
 					socketNuevo = aceptarConexion(listener, &direccionCliente);
 
 					if (socketNuevo > fdmax)
@@ -144,7 +154,6 @@ int main(void) {
 							FD_SET(socketNuevo, &bolsaDeSockets);
 
 							log_info(logger, "Nuevo dexCliente conectado, socket %d", socketNuevo);
-							//Maneja consola
 							break;
 
 						default:
@@ -170,49 +179,13 @@ int main(void) {
 				}
 			}
 		} //for del select
-	}
+	}//cierra el while
 
 
 
 
-
-
-
-
-
-
-
-
-
-/*
-
-	archivo = fopen("fileSystem.dat","rb+");
-
-	leerEstructurasAdministrativas(archivo,&estructuraAdministrativa);
 
 	fclose(archivo);
-
-	printf("%.7s\n",estructuraAdministrativa.header.identificador);
-	printf("%d\n",estructuraAdministrativa.header.version);
-	printf("tamanioFS: %d\n",estructuraAdministrativa.header.tamanioFS);
-	printf("tamanioBitmap: %d\n",estructuraAdministrativa.header.tamanioBitmap);
-	printf("inicioTablaAsignaciones: %d\n",estructuraAdministrativa.header.inicioTablaAsignaciones);
-	printf("tamanioDatos: %d\n",estructuraAdministrativa.header.tamanioDatos);
-	printf("relleno: %.40s\n",estructuraAdministrativa.header.relleno);
-
-
-	for(i = 0;i<60;i++)
-		printf("Valor bitarray[%d]: %d\n",i,bitarray_test_bit(estructuraAdministrativa.punteroBitmap,i));
-	printf("Valor bitarray[%d]: %d\n",2047,bitarray_test_bit(estructuraAdministrativa.punteroBitmap,2047));
-
-
-	for(i = 0;i<60;i++)
-		printf("Estado osadaFile: %d\n",estructuraAdministrativa.tablaArchivos[i].estado);
-	for(i = 0;i<60;i++)
-		printf("Valor tablaAsignaciones: %d\n",estructuraAdministrativa.tablaAsignaciones[i]);*/
-
-
-
 	free(estructuraAdministrativa.punteroBitmap->bitarray);
 	bitarray_destroy(estructuraAdministrativa.punteroBitmap);
 	free(estructuraAdministrativa.tablaAsignaciones);
@@ -258,5 +231,64 @@ void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap)
 	bool a;
 	a = bitarray_test_bit(pBitMap, 0);
 	printf("%d",a);
+
+}
+
+void leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa, t_log* logger)
+{
+	char* directorio;
+	int tamanioTotalEnBytes;
+	int bloqueSiguienteEnTabla;
+	int posicionDelMapa;
+	int i = 0;
+	int j;
+	int contadorGlobal = 0;
+
+	if(pathSolicitado[0] == '/')
+		i++;
+	while(pathSolicitado[i] != '/')  //lee el nombre del primer directorio (está comprendido entre '/')
+	{
+		directorio[i-1] = pathSolicitado[i];
+		i++;
+	}
+	directorio[i] = '\0';
+//TODO desde aca
+	i = 0;
+	while(strcmp(est.tablaArchivos[i].nombre,directorio) && (i < 2048))  //busco en la tabla de archivos, donde está el directorio
+		i++;
+
+	if(i == 2048)
+		log_error(logger,"El archivo no existe");
+	else
+		log_info(logger,"Localizado el archivo dentro de la tabla");
+
+	tamanioTotalEnBytes = est.tablaArchivos[i].tamanioArchivo;
+	bloqueSiguienteEnTabla = est.tablaArchivos[i].bloqueInicial;
+	posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
+	free(directorio);      //reinicializo el string para poder guardarle el archivo adentro
+
+	while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
+	{
+		if((tamanioTotalEnBytes - contadorGlobal) >= 64 )  //si hay mas de un bloque, tengo que leer al menos un bloque entero
+		{
+			for(j = 0;j < 64;j++)
+			{
+				directorio[contadorGlobal] = mapa[posicionDelMapa];
+				contadorGlobal++;
+			}
+		}
+		else
+		{
+			for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
+			{
+				directorio[contadorGlobal] = mapa[posicionDelMapa];
+				contadorGlobal++;
+			}
+		}
+	 bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
+	 posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
+	}
+
+
 
 }
