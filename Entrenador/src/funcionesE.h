@@ -20,6 +20,8 @@
 #include <src/protocolo.h>
 #include <signal.h>
 #include <pthread.h>
+#include "commons/config.h"
+#include <string.h>
 
 int PUERTO_MAPA_SERVIDOR = 6650;
 
@@ -29,5 +31,7 @@ char* ruta;
 t_log* logger;
 int socketCliente;
 int servidorMapa;
+t_metadataEntrenador entrenador;
 
 #endif /* FUNCIONESE_H_ */
+
