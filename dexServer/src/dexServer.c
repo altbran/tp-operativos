@@ -53,7 +53,8 @@ typedef struct{
 
 void leerEstructurasAdministrativas(FILE* archivo,t_estructuraAdministrativa* estructuraAdministrativa);
 void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
-
+void obtenerNombreArchivoDePath(char* path, char* nombre);
+void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa, t_log* logger);
 
 int main(void) {
 
@@ -93,6 +94,8 @@ int main(void) {
 	if (archivoMapeado == MAP_FAILED)
 		log_error(logger, "Error al mapear el File System en memoria");
 
+	log_info(logger, "Se mapeo correctamente el archivo en memoria");
+
 	//me guardo las est.adm en una struct porque va a ser mas comodo leerlas desde ahi
 	//ademas, mapeo el FS
 
@@ -109,6 +112,8 @@ int main(void) {
 
 	log_info(logger, "Se creó correctamente el socket servidor");
 	log_info(logger, "Escuchando nuevas conexiones");
+
+
 
 	struct sockaddr_in direccionCliente;
 
@@ -234,38 +239,61 @@ void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap)
 
 }
 
-void leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa, t_log* logger)
+void obtenerNombreArchivoDePath(char* path, char* nombre)
 {
-	char* directorio;
+	int i = 0;
+	int marcador;
+
+	while(path[i] != '\0')
+	{
+		if(path[i] == '/')
+			marcador = i;  //me dejo guardada la ubicacion de la ultima '/'
+	}
+
+	i = marcador;
+	marcador = 0;
+	while(path[i] != '\0')
+	{
+		nombre[marcador] = path[i];
+		marcador++;
+		i++;
+	}
+	nombre[marcador] = '\0';
+}
+
+void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa, t_log* logger)
+{
+	char* directorio = malloc(18); //son 17 bytes maximos del nombre, mas el caracter '\0'
 	int tamanioTotalEnBytes;
 	int bloqueSiguienteEnTabla;
 	int posicionDelMapa;
 	int i = 0;
 	int j;
 	int contadorGlobal = 0;
+	void* archivoLeido;
 
-	if(pathSolicitado[0] == '/')
-		i++;
-	while(pathSolicitado[i] != '/')  //lee el nombre del primer directorio (está comprendido entre '/')
-	{
-		directorio[i-1] = pathSolicitado[i];
-		i++;
-	}
-	directorio[i] = '\0';
-//TODO desde aca
+	obtenerNombreArchivoDePath(pathSolicitado,directorio);  //obtiene el nombre del path. Esto es, despues del ultimo '/'
+
 	i = 0;
-	while(strcmp(est.tablaArchivos[i].nombre,directorio) && (i < 2048))  //busco en la tabla de archivos, donde está el directorio
+	while(strcmp(est.tablaArchivos[i].nombre,directorio) && (i < 2048))  //busco en la tabla de archivos su ubicacion
 		i++;
 
 	if(i == 2048)
 		log_error(logger,"El archivo no existe");
 	else
-		log_info(logger,"Localizado el archivo dentro de la tabla");
+	{
+		if(est.tablaArchivos[i].estado == '\2')              //si es un directorio, no debe ser leido
+			log_error(logger,"No se puede leer un directorio");
+		else
+			log_info(logger,"Localizado el archivo dentro de la tabla");
+	}
 
 	tamanioTotalEnBytes = est.tablaArchivos[i].tamanioArchivo;
 	bloqueSiguienteEnTabla = est.tablaArchivos[i].bloqueInicial;
 	posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
 	free(directorio);      //reinicializo el string para poder guardarle el archivo adentro
+
+	directorio = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
 
 	while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
 	{
@@ -285,10 +313,12 @@ void leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa,
 				contadorGlobal++;
 			}
 		}
-	 bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
-	 posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
+
+		bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
+		if(bloqueSiguienteEnTabla != 0xFFFF)
+			posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
 	}
 
-
-
+	archivoLeido = directorio;  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+	return archivoLeido;
 }

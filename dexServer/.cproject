@@ -67,6 +67,7 @@
 						<entry flags="RESOLVED" kind="libraryFile" name="LibreriasSO" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
+				<externalSettings containerId="mapa;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier"/>
 			</storageModule>
 		</cconfiguration>
 		<cconfiguration id="cdt.managedbuild.config.gnu.exe.release.790748168">

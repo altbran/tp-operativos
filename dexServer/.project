@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>LibreriasSO</project>
+		<project>mapa</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
