@@ -28,7 +28,7 @@ typedef struct{
 }t_metadataPokemon;
 
 typedef struct{
-	char nombre[10];
+	char* nombre;
 	char simbolo;
 	char hojaDeViaje[6]; //PuebloPaleta = A, CiudadVerde = B, CiudadPaleta = C
 	char* objA;
