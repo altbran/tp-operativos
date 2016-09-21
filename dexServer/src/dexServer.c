@@ -315,7 +315,7 @@ void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa
 		}
 
 		bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
-		if(bloqueSiguienteEnTabla != 0xFFFF)
+		if(bloqueSiguienteEnTabla != 0xFFFFFFFF)
 			posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
 	}
 
