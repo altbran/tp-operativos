@@ -288,37 +288,42 @@ void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa
 			log_info(logger,"Localizado el archivo dentro de la tabla");
 	}
 
-	tamanioTotalEnBytes = est.tablaArchivos[i].tamanioArchivo;
-	bloqueSiguienteEnTabla = est.tablaArchivos[i].bloqueInicial;
-	posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
-	free(directorio);      //reinicializo el string para poder guardarle el archivo adentro
-
-	directorio = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
-
-	while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
+	if(i < 2048 && est.tablaArchivos[i].estado == '\1')  //si definitivamente es un archivo
 	{
-		if((tamanioTotalEnBytes - contadorGlobal) >= 64 )  //si hay mas de un bloque, tengo que leer al menos un bloque entero
+		tamanioTotalEnBytes = est.tablaArchivos[i].tamanioArchivo;
+		bloqueSiguienteEnTabla = est.tablaArchivos[i].bloqueInicial;
+		posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
+		free(directorio);      //reinicializo el string para poder guardarle el archivo adentro
+
+		directorio = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
+
+		while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
 		{
-			for(j = 0;j < 64;j++)
+			if((tamanioTotalEnBytes - contadorGlobal) >= 64 )  //si hay mas de un bloque, tengo que leer al menos un bloque entero
 			{
-				directorio[contadorGlobal] = mapa[posicionDelMapa];
-				contadorGlobal++;
+				for(j = 0;j < 64;j++)
+				{
+					directorio[contadorGlobal] = mapa[posicionDelMapa];
+					contadorGlobal++;
+				}
 			}
-		}
-		else
-		{
-			for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
+			else
 			{
-				directorio[contadorGlobal] = mapa[posicionDelMapa];
-				contadorGlobal++;
+				for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
+				{
+					directorio[contadorGlobal] = mapa[posicionDelMapa];
+					contadorGlobal++;
+				}
 			}
+
+			bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
+			if(bloqueSiguienteEnTabla != 0xFFFFFFFF)
+				posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
 		}
 
-		bloqueSiguienteEnTabla = est.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
-		if(bloqueSiguienteEnTabla != 0xFFFFFFFF)
-			posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
+		archivoLeido = directorio;  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+		return archivoLeido;
 	}
-
-	archivoLeido = directorio;  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
-	return archivoLeido;
+	else
+		return NULL;
 }
