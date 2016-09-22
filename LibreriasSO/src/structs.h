@@ -30,15 +30,15 @@ typedef struct{
 typedef struct{
 	char* nombre;
 	char simbolo;
-	char hojaDeViaje[6]; //PuebloPaleta = A, CiudadVerde = B, CiudadPaleta = C
-	char* objA;
-	char* objB;
-	char* objC;
-	unsigned vidas;
-	unsigned reintentos;
-
+	t_list hojaDeViaje;
+	int vidas;
+	int reintentos;
 }t_metadataEntrenador;
 
+typedef struct{
+	char* mapa;
+	t_list objetivos;
+}t_objetivosPorMapa;
 
 
 #endif /* LIBRERIAS_STRUCTS_H_ */
