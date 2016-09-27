@@ -30,7 +30,9 @@ int main(int argc, char **argv) {
 	 }
 	 */
 	//creo el hilo para reconocer señales SIGUSR2
-	pthread_create(&hiloSIG,NULL,(void *) receptorSIG,NULL);
+
+	signal(SIGUSR2, receptorSIG);
+
 	//creo socket servidor
 	if (crearSocket(&servidorMapa)) {
 		printf("Error creando socket");

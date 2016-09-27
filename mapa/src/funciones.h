@@ -22,6 +22,7 @@ t_log* logger;
 char *texto;
 int clientePokeDex;
 int servidorMapa;
+int llegoSenial;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 pthread_t hiloSIG;

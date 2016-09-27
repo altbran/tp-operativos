@@ -1,11 +1,16 @@
 #include "funciones.h"
+#include "dibujador.h"
 
-void cargarPokenest(t_metadataPokenest * pokenest){
-
+void cargarPokenest(t_metadataPokenest pokenest){
+	CrearCaja(items, pokenest.identificador, pokenest.posicionX, pokenest.posicionY, pokenest.cantidad);
 }
 
-void cargarEntrenador(t_metadataEntrenador * entrenador){
+void cargarEntrenador(t_metadataEntrenador entrenador){
+	CrearPersonaje(items, entrenador.simbolo, 1, 1);
+}
 
+void restarPokemon(char identificador){
+	restarRecurso(items,identificador);
 }
 
 void dibujar() {
@@ -21,17 +26,8 @@ void dibujar() {
 	q = rows;
 
 	CrearPersonaje(items, '@', p, q);
-	CrearPersonaje(items, '#', 10, 10);
 
-	/*CrearCaja(items, pokenest1.identificador, pokenest1.posicionX,
-	 pokenest1.posicionY, 5);
-	 CrearCaja(items, pokenest2.identificador, pokenest2.posicionX,
-	 pokenest2.posicionY, 3);
-	 CrearCaja(items, pokenest3.identificador, pokenest3.posicionX,
-	 pokenest3.posicionY, 2);
-	 */
 
-	//CrearCaja(items, pk.identificador, pk.posicionX, pk.posicionY, 10);
 
 	nivel_gui_dibujar(items, "Test Chamber 04");
 

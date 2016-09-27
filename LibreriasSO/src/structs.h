@@ -21,6 +21,7 @@ typedef struct{
 	int posicionX;
 	int posicionY;
 	char identificador;
+	int cantidad;
 }t_metadataPokenest;
 
 typedef struct{
