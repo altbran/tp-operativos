@@ -51,6 +51,8 @@ int main(int argc, char** argv){
 	entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
 	entrenador.reintentos = config_get_int_value(metaDataEntrenador, "reintentos");
 
+	signal(SIGUSR1,senialRecibirVida);
+	signal(SIGTERM,senialQuitarVida);
 
 
 	char* IP_MAPA_SERVIDOR = getenv("IP_MAPA_SERVIDOR");
@@ -77,5 +79,13 @@ int main(int argc, char** argv){
 
 
 	return EXIT_SUCCESS;
+}
+
+void senialRecibirVida(){
+	entrenador.vidas = entrenador.vidas + 1;
+}
+
+void senialQuitarVida(){
+	entrenador.vidas = entrenador.vidas - 1;
 }
 
