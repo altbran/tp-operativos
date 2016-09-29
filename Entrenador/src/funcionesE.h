@@ -21,17 +21,23 @@
 #include <signal.h>
 #include <pthread.h>
 #include "commons/config.h"
+#include "commons/string.h"
 #include <string.h>
 
-int PUERTO_MAPA_SERVIDOR = 6650;
+int PUERTO_MAPA_SERVIDOR ;
 
 char* mensaje;
 char* nombre;
-char* ruta;
+
 t_log* logger;
 int socketCliente;
 int servidorMapa;
 t_metadataEntrenador entrenador;
+typedef struct{
+	char* mapa;
+	t_list* objetivos;
+}t_objetivosPorMapa;
+
 
 #endif /* FUNCIONESE_H_ */
 
