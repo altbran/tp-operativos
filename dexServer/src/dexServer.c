@@ -398,22 +398,24 @@ void sacarNombre(char* path,char* nombre)  //CUIDADO: devuelve el path sin el no
 	nombre[marcador] = '\0';
 }
 
-bool comprobarPathValido(char* path)  // ejemplo:  "/0xFFFF/pokedex/ash/algo.dat"
+bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.dat"
 {
 	char* copiaSeguraPath = malloc(50);
 	char* nombre = malloc(18);
+	 char nombrePadre[18];
 	unsigned int i;
+	uint16_t offsetBloquePadre;
 
 	strcpy(copiaSeguraPath,path);
 	//tengo que recorrer el arbol de directorios para saber si el path indicado es valido o no
 
-	sacarNombre(copiaSeguraPath,nombre);  //aca tengo algo asi -->  /0xFFFF/pokedex/ash ,  algo.dat
+	sacarNombre(copiaSeguraPath,nombre);  //aca tengo algo asi -->  /pokedex/ash/objetivos ,  algo.dat
+
+	free(nombre); //limpio el nombre
+	sacarNombre(copiaSeguraPath,nombre);  //aca tengo el nombre del directorio, ahora lo busco en la tabla
 
 	while(strlen(copiaSeguraPath))  //mientras queden rutas donde buscar...
 	{
-		free(nombre); //limpio el nombre
-		sacarNombre(copiaSeguraPath,nombre);  //aca tengo el nombre del directorio, ahora lo busco en la tabla
-
 		for(i=0; i < 2047 && strcmp(estructuraAdministrativa.tablaArchivos[i].nombre,nombre);i++)
 			;
 		if(i == 2048)
@@ -421,12 +423,33 @@ bool comprobarPathValido(char* path)  // ejemplo:  "/0xFFFF/pokedex/ash/algo.dat
 			log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
 			return false;  //si llega a recorrer el array completo, significa que no lo encontro
 		}
+		else
+		{
+			offsetBloquePadre = estructuraAdministrativa.tablaArchivos[i].bloquePadre;
+			strcpy(nombrePadre,estructuraAdministrativa.tablaArchivos[offsetBloquePadre].nombre);
+
+			free(nombre);
+			sacarNombre(copiaSeguraPath,nombre);
+
+			offsetBloquePadre = strcmp(nombre,nombrePadre);  //reutilizo esta variable, paja haccer una nueva
+			if(offsetBloquePadre != 0)
+			{
+				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
+				free(nombre);
+				free(copiaSeguraPath);
+				return false;  //si llega a recorrer el array completo, significa que no lo encontro
+			}
+		}
 	}
 	log_info(logger,"La ruta '%s' es válida",path);
 	free(nombre);
 	free(copiaSeguraPath);
 	return true;
 }
+
+//TODO
+//TODO
+//TODO
 /*
 void crearDirectorio(char* pathYNombre,char* mapa)
 {
