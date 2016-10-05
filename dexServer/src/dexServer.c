@@ -54,10 +54,11 @@ typedef struct{
 void leerEstructurasAdministrativas(FILE* archivo);
 void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
 bool esDirectorio(char* path);
-void obtenerNombreArchivoDePath(char* path, char* nombre);
+int pedirFecha(void);
 void sacarNombre(char* path,char* nombre);
 bool comprobarPathValido(char* path);
 void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa);
+void crearDirectorio(char* path,char* mapa);
 
 //Variables globales
 
@@ -85,14 +86,6 @@ int main(void) {
 	PUERTO_POKEDEX_SERVIDOR = atoi(archivoMapeado);
 
 	log_info(logger, "PUERTO_POKEDEX_SERVIDOR = %d",PUERTO_POKEDEX_SERVIDOR);
-
-
-	/*time_t tiempo = time(0);
-	struct tm *tlocal = localtime(&tiempo);
-	char fecha[5];
-	strftime(fecha,5,"%d%m",tlocal);*/
-
-	//con esto puedo sacar el dia y mes, necesario para el campo fecha de la tabla de archivos. Se va a usar mas tarde
 
 
 	archivo = fopen("fileSystem.dat","rb+");
@@ -125,6 +118,9 @@ int main(void) {
 
 	log_info(logger, "Se creó correctamente el socket servidor");
 	log_info(logger, "Escuchando nuevas conexiones");
+
+
+	crearDirectorio("/entrenador",archivoMapeado);
 
 
 	struct sockaddr_in direccionCliente;
@@ -257,35 +253,9 @@ bool esDirectorio(char* path)
 		return false;
 }
 
-void obtenerNombreArchivoDePath(char* path, char* nombre)
-{
-	int i = 0;
-	int marcador;
-
-	while(path[i] != '\0')
-	{
-		if(path[i] == '/' && path[i+1] != '\0')  //si es algo como '/pokedex/' se ignora
-			marcador = i;  //me dejo guardada la ubicacion de la ultima '/'
-		i++;
-	}
-
-	i = marcador + 1;
-	marcador = 0;
-	while(path[i] != '\0')
-	{
-		nombre[marcador] = path[i];
-		marcador++;
-		i++;
-	}
-
-	if(esDirectorio(path))
-		marcador--;
-	nombre[marcador] = '\0';
-}
-
 void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 {
-	char* directorio = malloc(18); //son 17 bytes maximos del nombre, mas el caracter '\0'
+	char* nombreArchivo = malloc(18); //son 17 bytes maximos del nombre, mas el caracter '\0'
 	char* pathSolicitado = malloc(60);
 	int tamanioTotalEnBytes;
 	int bloqueSiguienteEnTabla;
@@ -299,10 +269,10 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 
 	if(comprobarPathValido(pathSolicitado))
 	{
-		sacarNombre(pathSolicitado,directorio);  //obtiene el nombre del path. Esto es, despues del ultimo '/'
+		sacarNombre(pathSolicitado,nombreArchivo);  //obtiene el nombre del path. Esto es, despues del ultimo '/'
 
 		i = 0;
-		while(strcmp(est.tablaArchivos[i].nombre,directorio) && (i < 2048))  //busco en la tabla de archivos su ubicacion
+		while(strcmp((char*)est.tablaArchivos[i].nombre,nombreArchivo) && (i < 2048))  //busco en la tabla de archivos su ubicacion
 			i++;
 
 		if(i == 2048)
@@ -321,8 +291,8 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 			bloqueSiguienteEnTabla = est.tablaArchivos[i].bloqueInicial;
 			posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
 
-			free(directorio);      //reinicializo el string para poder guardarle el archivo adentro
-			directorio = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
+			free(nombreArchivo);      //reinicializo el string para poder guardarle el archivo adentro
+			nombreArchivo = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
 
 			while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
 			{
@@ -330,7 +300,7 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 				{
 					for(j = 0;j < 64;j++)
 					{
-						directorio[contadorGlobal] = mapa[posicionDelMapa];
+						nombreArchivo[contadorGlobal] = mapa[posicionDelMapa];
 						contadorGlobal++;
 					}
 				}
@@ -338,7 +308,7 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 				{
 					for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
 					{
-						directorio[contadorGlobal] = mapa[posicionDelMapa];
+						nombreArchivo[contadorGlobal] = mapa[posicionDelMapa];
 						contadorGlobal++;
 					}
 				}
@@ -348,24 +318,29 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 					posicionDelMapa = (est.header.tamanioFS - est.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
 			}
 
-			memcpy(archivoLeido,directorio,strlen(directorio));  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
-			free(directorio);
+			memcpy(archivoLeido,nombreArchivo,strlen(nombreArchivo));  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+			free(nombreArchivo);
 			free(pathSolicitado);
 			return archivoLeido;
 		}
 		else
 		{
-			free(directorio);
+			free(nombreArchivo);
 			free(pathSolicitado);
 			return NULL;
 		}
 	}
 	else
 	{
-		free(directorio);
+		free(nombreArchivo);
 		free(pathSolicitado);
 		return NULL;
 	}
+}
+
+int pedirFecha(void)
+{
+	return (int)time(NULL);
 }
 
 void sacarNombre(char* path,char* nombre)  //CUIDADO: devuelve el path sin el nombre
@@ -393,8 +368,6 @@ void sacarNombre(char* path,char* nombre)  //CUIDADO: devuelve el path sin el no
 
 	path[j] = '\0'; //y asi, el path perdio su ultimo nombre mi querido padawan
 
-	if(esDirectorio(path))
-		marcador--;
 	nombre[marcador] = '\0';
 }
 
@@ -402,78 +375,177 @@ bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.
 {
 	char* copiaSeguraPath = malloc(50);
 	char* nombre = malloc(18);
-	 char nombrePadre[18];
+	char nombrePadre[17];
 	unsigned int i;
 	uint16_t offsetBloquePadre;
 
 	strcpy(copiaSeguraPath,path);
+
 	//tengo que recorrer el arbol de directorios para saber si el path indicado es valido o no
 
 	sacarNombre(copiaSeguraPath,nombre);  //aca tengo algo asi -->  /pokedex/ash/objetivos ,  algo.dat
 
 	free(nombre); //limpio el nombre
-	sacarNombre(copiaSeguraPath,nombre);  //aca tengo el nombre del directorio, ahora lo busco en la tabla
+	nombre = malloc(18);
 
-	while(strlen(copiaSeguraPath))  //mientras queden rutas donde buscar...
-	{
-		for(i=0; i < 2047 && strcmp(estructuraAdministrativa.tablaArchivos[i].nombre,nombre);i++)
-			;
-		if(i == 2048)
-		{
-			log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
-			return false;  //si llega a recorrer el array completo, significa que no lo encontro
-		}
-		else
-		{
-			offsetBloquePadre = estructuraAdministrativa.tablaArchivos[i].bloquePadre;
-			strcpy(nombrePadre,estructuraAdministrativa.tablaArchivos[offsetBloquePadre].nombre);
-
-			free(nombre);
-			sacarNombre(copiaSeguraPath,nombre);
-
-			offsetBloquePadre = strcmp(nombre,nombrePadre);  //reutilizo esta variable, paja haccer una nueva
-			if(offsetBloquePadre != 0)
-			{
-				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
-				free(nombre);
-				free(copiaSeguraPath);
-				return false;  //si llega a recorrer el array completo, significa que no lo encontro
-			}
-		}
+	if(!strlen(copiaSeguraPath))
+	{                                                       //si no queda nada, es porque está en el raiz
+		log_info(logger,"La ruta '%s' es valida (directorio raiz)",path);
+		free(nombre);
+		free(copiaSeguraPath);
+		return true;
 	}
-	log_info(logger,"La ruta '%s' es válida",path);
-	free(nombre);
-	free(copiaSeguraPath);
-	return true;
-}
-
-//TODO
-//TODO
-//TODO
-/*
-void crearDirectorio(char* pathYNombre,char* mapa)
-{
-	int pesoTotal;
-	int i = 0;
-	char* nombreEfectivo;
-
-	obtenerNombreArchivoDePath(pathYNombre,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al directorio
-
-	while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
-		i++;
-
-	if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
-		log_error(logger,"Tabla de archivos completamente ocupada");
 	else
 	{
-		pesoTotal = (estructuraAdministrativa.header.tamanioFS * 64) - (estructuraAdministrativa.header.tamanioDatos * 64);
-		char* mander = malloc(sizeof(pesoTotal));
-		memcpy(mander,&estructuraAdministrativa,pesoTotal); //con esto puedo guardar en el mapa, toda la estructuraAdministrativa de golpe
-		//todo
+		sacarNombre(copiaSeguraPath,nombre);  //aca tengo el nombre del directorio, ahora lo busco en la tabla
+		while(strlen(copiaSeguraPath))  //mientras queden rutas donde buscar...
+		{
+			for(i=0; i < 2047 && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombre);i++)
+				;
+			if(i == 2048)
+			{
+				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
+				return false;  //si llega a recorrer el array completo, significa que no lo encontro
+			}
+			else
+			{
+				offsetBloquePadre = estructuraAdministrativa.tablaArchivos[i].bloquePadre;
+				strcpy(nombrePadre,(char*)estructuraAdministrativa.tablaArchivos[offsetBloquePadre].nombre);
+
+				free(nombre);
+				nombre = malloc(18);
+				sacarNombre(copiaSeguraPath,nombre);
+
+				if(strcmp(nombre,nombrePadre))
+				{
+					log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
+					free(nombre);
+					free(copiaSeguraPath);
+					return false;  //si llega a recorrer el array completo, significa que no lo encontro
+				}
+			}
+		}
+		log_info(logger,"La ruta '%s' es válida",path);
+		free(nombre);
+		free(copiaSeguraPath);
+		return true;
+	}
+}
+
+void guardarEstructuraEn(char* mapa)
+{
+	int peso,
+		marcador = 0,   //fija el offset al inicio, sirve para saber DESDE donde escribir
+		offset = 0;		//sirve para saber HASTA donde escribir
+	char* mander;
+						//primero guardo el header
+	peso = sizeof(t_header);
+	mander = malloc(peso);
+	memcpy(mander,&estructuraAdministrativa.header,peso);
+	while(offset < (peso + marcador))
+	{
+		mapa[offset] = mander[offset];
+		offset++;
+	}
+	marcador = offset;
+	free(mander);
+
+					//ahora guardo el bitarray
+	peso = estructuraAdministrativa.header.tamanioBitmap * 64;
+	mander = malloc(peso);
+	memcpy(mander,estructuraAdministrativa.punteroBitmap->bitarray,peso);
+	while(offset < (peso + marcador))
+	{
+		//mapa[offset] = mander[offset];
+		offset++;
+	}
+	marcador = offset;
+	free(mander);
+
+					//ahora guardo la tabla de archivos
+	peso = sizeof(osadaFile) * 2048;
+	mander = malloc(peso);
+	memcpy(mander,estructuraAdministrativa.tablaArchivos,peso);
+	while(offset < (peso + marcador))
+	{
+		mapa[offset] = mander[offset];
+		offset++;
+	}
+	marcador = offset;//todo
+	free(mander);
+
+					//ahora guardo la tabla de asignaciones
+	peso = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+	peso = peso - 1 - estructuraAdministrativa.header.tamanioBitmap - (sizeof(osadaFile) * 2048 / 64);  //total estructura - header - bitmap - tabla de archivos
+	peso = peso * 64;  //lo paso a bytes
+	mander = malloc(peso);
+	memcpy(mander,estructuraAdministrativa.tablaAsignaciones,peso);
+	while(offset < (peso + marcador))
+	{
+		mapa[offset] = mander[offset];
+		offset++;
+	}//todo
+	marcador = offset;
+	free(mander);
+}
+
+void crearDirectorio(char* path,char* mapa)
+{
+	int i = 0;
+	int offset = 0;  //con esta recorro el bitmap
+	char* nombreEfectivo = malloc(18);
+	char* pathAuxiliar = malloc(50);
 
 
+	strcpy(pathAuxiliar,path);
+	if(comprobarPathValido(path))  //si el path es correcto
+	{
+		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al directorio
 
-		free(mander);
+		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+			i++;
+
+		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+			log_error(logger,"Tabla de archivos completamente ocupada");
+		else
+		{
+			log_info(logger,"i = %d",i);
+			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+
+			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
+				offset++;
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset * BLOCK_SIZE; //facil, bloque libre, se lo meto
+			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,offset); //y actualizo el bitmap
+
+			//todo, ver de poner el nuevo bitarray.h, asi puedo tocar esto
+
+			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el directorio vacio no pesa nada
+			if(strlen(pathAuxiliar))
+			{
+				sacarNombre(pathAuxiliar,nombreEfectivo); //reutilizo la variable 'nombreEfectivo', total no se vuelve a usar
+				offset = 0;
+				while(strcmp((char*)estructuraAdministrativa.tablaArchivos[offset].nombre,nombreEfectivo)) //ahora debo saber el offset del bloque padre
+					offset++;
+				estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset; //una vez que encontre el offset del bloque padre, guardo
+			}
+			else
+				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF; //si el path está vacio, entonces esta en el raiz
+
+			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
+
+			log_info(logger,"estado: %u",estructuraAdministrativa.tablaArchivos[i].estado);
+			log_info(logger,"nombre: %.17s",estructuraAdministrativa.tablaArchivos[i].nombre);
+			log_info(logger,"bloquePadre: %d",estructuraAdministrativa.tablaArchivos[i].bloquePadre);
+			log_info(logger,"tamaño: %d",estructuraAdministrativa.tablaArchivos[i].tamanioArchivo);
+			log_info(logger,"fecha: %d",estructuraAdministrativa.tablaArchivos[i].fecha);
+			log_info(logger,"bloqueInicial: %d",estructuraAdministrativa.tablaArchivos[i].bloqueInicial);
+
+			free(nombreEfectivo);
+			free(pathAuxiliar);
+
+			guardarEstructuraEn(mapa);
+		}
 	}
 }
 
@@ -481,4 +553,3 @@ void crearArchivo(char* pathYNombre,char* mapa)
 {
 	;
 }
-*/
