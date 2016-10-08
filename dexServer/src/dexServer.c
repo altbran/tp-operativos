@@ -52,7 +52,6 @@ typedef struct{
 //Prototipos
 
 void leerEstructurasAdministrativas(FILE* archivo);
-void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap);
 bool esDirectorio(char* path);
 int pedirFecha(void);
 void sacarNombre(char* path,char* nombre);
@@ -80,7 +79,7 @@ int main(void) {
 	int fdmax;     //file descriptor maximo
 	fd_set bolsaDeSockets;
 	fd_set bolsaAuxiliar;
-	char* archivoMapeado;
+	void* archivoMapeado;
 
 	archivoMapeado = getenv("PUERTO_POKEDEX_SERVIDOR");        //la uso temporalmente, para evitar aumentar el heap
 	PUERTO_POKEDEX_SERVIDOR = atoi(archivoMapeado);
@@ -95,13 +94,16 @@ int main(void) {
 
 	fseek(archivo,0,SEEK_END);
 	i = ftell(archivo);        //uso i temporariamente para sacar la longitud en bytes del archivo
+	log_warning(logger,"El tamaño del archivo a mapear: %d",i);
+	archivoMapeado = malloc(i); //le reservo i-bytes al archivo mapeado, es decir, 1M
 	if (fdmax == -1)
 		log_error(logger, "Error al obtener el 'file descriptor' del archivo");
-	archivoMapeado = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NORESERVE, fdmax, 0);
+	archivoMapeado = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);
 	if (archivoMapeado == MAP_FAILED)
 		log_error(logger, "Error al mapear el File System en memoria");
 
 	log_info(logger, "Se mapeo correctamente el archivo en memoria");
+	log_warning(logger,"El tamaño del archivo mapeado es: %d",strlen(archivoMapeado));
 
 	//ademas, mapeo el FS
 
@@ -213,19 +215,19 @@ void leerEstructurasAdministrativas(FILE* archivo)
 	char* data;
 	osadaFile *tablaArchivos = malloc(sizeof(osadaFile) * 2048);
 	int* tablaAsignaciones;
-	int tamanioTablaAsignaciones;
+	int tamanioTablaAsignaciones = 0;
 
 
 	fread(&header,BLOCK_SIZE,1,archivo);  //leo el cabezal, y lo guardo en la estructura
 
 	data = malloc(header.tamanioBitmap * 64);
 	fread(data,BLOCK_SIZE,header.tamanioBitmap,archivo);
-	punteroBitmap = bitarray_create(data,header.tamanioBitmap*64);    //lee el espacio del bitmap y lo almacena en un bitarray
+	punteroBitmap = bitarray_create_with_mode(data,header.tamanioBitmap*64,MSB_FIRST);   //lee el espacio del bitmap y lo almacena en un bitarray
 
 	fread(tablaArchivos,sizeof(osadaFile) * 2048,1,archivo);
 
-	tamanioTablaAsignaciones = (header.tamanioFS - 1 - header.tamanioBitmap - 1024) * 4 / BLOCK_SIZE;  //en bloques
-	tablaAsignaciones = malloc(sizeof(tamanioTablaAsignaciones) * 64 * 4 );  //bloques * BLOCK_SIZE * 4(int)
+	tamanioTablaAsignaciones = (header.tamanioFS - header.tamanioDatos -1 - header.tamanioBitmap - 1024) * BLOCK_SIZE;  //da 958 * 64 = 61312
+	tablaAsignaciones = malloc(tamanioTablaAsignaciones);
 
 	fread(tablaAsignaciones,tamanioTablaAsignaciones,1,archivo);
 
@@ -234,15 +236,9 @@ void leerEstructurasAdministrativas(FILE* archivo)
 	estructuraAdministrativa.punteroBitmap = punteroBitmap;
 	estructuraAdministrativa.tablaArchivos = tablaArchivos;
 	estructuraAdministrativa.tablaAsignaciones = tablaAsignaciones;
+	rewind(archivo);
 }
 
-void actualizarBitmap(FILE* archivo,t_bitarray* pBitMap)
-{
-	bool a;
-	a = bitarray_test_bit(pBitMap, 0);
-	printf("%d",a);
-
-}
 
 bool esDirectorio(char* path)
 {
@@ -434,7 +430,7 @@ bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.
 
 void guardarEstructuraEn(char* mapa)
 {
-	int peso,
+	int peso,  //este es el tamaño de los campos, medidos en BYTES
 		marcador = 0,   //fija el offset al inicio, sirve para saber DESDE donde escribir
 		offset = 0;		//sirve para saber HASTA donde escribir
 	char* mander;
@@ -458,7 +454,7 @@ void guardarEstructuraEn(char* mapa)
 	{
 		//mapa[offset] = mander[offset];
 		offset++;
-	}
+	} //todo fijarse que se guarda cualquier cosa
 	marcador = offset;
 	free(mander);
 
@@ -471,7 +467,7 @@ void guardarEstructuraEn(char* mapa)
 		mapa[offset] = mander[offset];
 		offset++;
 	}
-	marcador = offset;//todo
+	marcador = offset;
 	free(mander);
 
 					//ahora guardo la tabla de asignaciones
@@ -484,7 +480,7 @@ void guardarEstructuraEn(char* mapa)
 	{
 		mapa[offset] = mander[offset];
 		offset++;
-	}//todo
+	}
 	marcador = offset;
 	free(mander);
 }
@@ -492,6 +488,7 @@ void guardarEstructuraEn(char* mapa)
 void crearDirectorio(char* path,char* mapa)
 {
 	int i = 0;
+	int offsetTablaAsignaciones = 0;
 	int offset = 0;  //con esta recorro el bitmap
 	char* nombreEfectivo = malloc(18);
 	char* pathAuxiliar = malloc(50);
@@ -513,12 +510,21 @@ void crearDirectorio(char* path,char* mapa)
 			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
 			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
 
+					//ahora le asigno un bloque libre
 			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
 				offset++;
-			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset * BLOCK_SIZE; //facil, bloque libre, se lo meto
 			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,offset); //y actualizo el bitmap
+				//este es el offset global del bitmap, pero en realidad yo quiero el offset en la tablaAsignaciones
 
-			//todo, ver de poner el nuevo bitarray.h, asi puedo tocar esto
+			offset = offset - (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos);
+				//aca tengo el offset de la tabla, me dice que bloque de datos es el que tengo en esta posicion
+			while(estructuraAdministrativa.tablaAsignaciones[offsetTablaAsignaciones] != 0) //va a parar cuando encuentre un lugar libre
+				offsetTablaAsignaciones++;
+				//aca se va a guardar, en la tabla de asignaciones el offset del bloque
+			estructuraAdministrativa.tablaAsignaciones[offsetTablaAsignaciones] = offset;
+
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offsetTablaAsignaciones;
+					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
 			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el directorio vacio no pesa nada
 			if(strlen(pathAuxiliar))
