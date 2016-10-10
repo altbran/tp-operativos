@@ -58,6 +58,7 @@ void sacarNombre(char* path,char* nombre);
 bool comprobarPathValido(char* path);
 void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa);
 void crearDirectorio(char* path,char* mapa);
+void crearArchivo(char* path,char* mapa);
 
 //Variables globales
 
@@ -116,11 +117,12 @@ int main(void) {
 		return 1;
 	}
 
-	log_info(logger, "Se creó correctamente el socket servidor");
-	log_info(logger, "Escuchando nuevas conexiones");
+	log_info(logger, "Se creó correctamente el socket servidor. Escuchando nuevas conexiones");
 
 
 	crearDirectorio("/entrenador",archivoMapeado);
+	crearArchivo("/entrenador/pokemon.dat",archivoMapeado);
+	crearArchivo("/caca/pokemon.dat",archivoMapeado);  //todo, ejemplos de creacion de archivos/directorios
 
 
 	struct sockaddr_in direccionCliente;
@@ -392,14 +394,13 @@ bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.
 	}
 	else
 	{
-		sacarNombre(copiaSeguraPath,nombre);  //aca tengo el nombre del directorio, ahora lo busco en la tabla
 		while(strlen(copiaSeguraPath))  //mientras queden rutas donde buscar...
 		{
 			for(i=0; i < 2047 && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombre);i++)
 				;
 			if(i == 2048)
 			{
-				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
+				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido. Ruta: %s",nombre,path);
 				return false;  //si llega a recorrer el array completo, significa que no lo encontro
 			}
 			else
@@ -413,7 +414,7 @@ bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.
 
 				if(strcmp(nombre,nombrePadre))
 				{
-					log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido",nombre);
+					log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido. Ruta: %s",nombre,path);
 					free(nombre);
 					free(copiaSeguraPath);
 					return false;  //si llega a recorrer el array completo, significa que no lo encontro
@@ -488,12 +489,12 @@ void guardarEstructuraEn(char* mapa)
 	}
 	marcador = offset;
 	free(mander);
+	log_info(logger,"Estructuras administrativas guardadas correctamente");
 }
 
 void crearDirectorio(char* path,char* mapa)
 {
 	int i = 0;
-	int offsetTablaAsignaciones = 0;
 	int offset = 0;  //con esta recorro el bitmap
 	char* nombreEfectivo = malloc(18);
 	char* pathAuxiliar = malloc(50);
@@ -546,11 +547,67 @@ void crearDirectorio(char* path,char* mapa)
 			free(pathAuxiliar);
 
 			guardarEstructuraEn(mapa);
+			log_info(logger,"Directorio creado. Nombre: '%s'",path);
 		}
 	}
 }
 
-void crearArchivo(char* pathYNombre,char* mapa)
+void crearArchivo(char* path,char* mapa)
 {
-	;
+	int i = 0;
+	int offset = 0;  //con esta recorro el bitmap
+	char* nombreEfectivo = malloc(18);
+	char* pathAuxiliar = malloc(50);
+
+
+	strcpy(pathAuxiliar,path);
+	if(comprobarPathValido(path))  //si el path es correcto
+	{
+		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
+
+		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+			i++;
+
+		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+			log_error(logger,"Tabla de archivos completamente ocupada");
+		else
+		{
+			estructuraAdministrativa.tablaArchivos[i].estado = '\1'; //es un archivo
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+
+					//ahora le asigno un bloque libre
+			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
+				offset++;
+			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,offset); //y actualizo el bitmap
+				//este es el offset global del bitmap, pero en realidad yo quiero el offset en la tablaAsignaciones
+
+			offset = offset - (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos);
+				//aca tengo el offset de la tabla, me dice que bloque de datos es el que tengo en esta posicion
+			estructuraAdministrativa.tablaAsignaciones[offset] = 0xFFFFFFFF;
+				//voy a la tabla en ese offset, y como es un unico bloque, le pongo 0xFFFFFF
+
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset;
+					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
+
+			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el archivo vacio no pesa nada
+			if(strlen(pathAuxiliar))
+			{
+				sacarNombre(pathAuxiliar,nombreEfectivo); //reutilizo la variable 'nombreEfectivo', total no se vuelve a usar
+				offset = 0;
+				while(strcmp((char*)estructuraAdministrativa.tablaArchivos[offset].nombre,nombreEfectivo)) //ahora debo saber el offset del bloque padre
+					offset++;
+				estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset; //una vez que encontre el offset del bloque padre, guardo
+			}
+			else
+				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF; //si el path está vacio, entonces esta en el raiz
+
+			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
+
+			free(nombreEfectivo);
+			free(pathAuxiliar);
+
+			guardarEstructuraEn(mapa);
+			log_info(logger,"Archivo creado. Nombre '%s'",path);
+		}
+	}
 }
