@@ -79,7 +79,7 @@ int main(void) {
 	int fdmax;     //file descriptor maximo
 	fd_set bolsaDeSockets;
 	fd_set bolsaAuxiliar;
-	void* archivoMapeado;
+	char* archivoMapeado;
 
 	archivoMapeado = getenv("PUERTO_POKEDEX_SERVIDOR");        //la uso temporalmente, para evitar aumentar el heap
 	PUERTO_POKEDEX_SERVIDOR = atoi(archivoMapeado);
@@ -94,7 +94,6 @@ int main(void) {
 
 	fseek(archivo,0,SEEK_END);
 	i = ftell(archivo);        //uso i temporariamente para sacar la longitud en bytes del archivo
-	log_warning(logger,"El tamaño del archivo a mapear: %d",i);
 	archivoMapeado = malloc(i); //le reservo i-bytes al archivo mapeado, es decir, 1M
 	if (fdmax == -1)
 		log_error(logger, "Error al obtener el 'file descriptor' del archivo");
@@ -103,7 +102,6 @@ int main(void) {
 		log_error(logger, "Error al mapear el File System en memoria");
 
 	log_info(logger, "Se mapeo correctamente el archivo en memoria");
-	log_warning(logger,"El tamaño del archivo mapeado es: %d",strlen(archivoMapeado));
 
 	//ademas, mapeo el FS
 
@@ -202,6 +200,7 @@ int main(void) {
 	bitarray_destroy(estructuraAdministrativa.punteroBitmap);
 	free(estructuraAdministrativa.tablaAsignaciones);
 	free(estructuraAdministrativa.tablaArchivos);
+	free(archivoMapeado);
 
 	log_destroy(logger);
 	return 0;
@@ -432,7 +431,8 @@ void guardarEstructuraEn(char* mapa)
 {
 	int peso,  //este es el tamaño de los campos, medidos en BYTES
 		marcador = 0,   //fija el offset al inicio, sirve para saber DESDE donde escribir
-		offset = 0;		//sirve para saber HASTA donde escribir
+		offset = 0,		//sirve para saber HASTA donde escribir
+		contadorEnCero = 0;
 	char* mander;
 						//primero guardo el header
 	peso = sizeof(t_header);
@@ -452,11 +452,13 @@ void guardarEstructuraEn(char* mapa)
 	memcpy(mander,estructuraAdministrativa.punteroBitmap->bitarray,peso);
 	while(offset < (peso + marcador))
 	{
-		//mapa[offset] = mander[offset];
+		mapa[offset] = mander[contadorEnCero];
 		offset++;
-	} //todo fijarse que se guarda cualquier cosa
+		contadorEnCero++;
+	}
 	marcador = offset;
 	free(mander);
+	contadorEnCero = 0;
 
 					//ahora guardo la tabla de archivos
 	peso = sizeof(osadaFile) * 2048;
@@ -464,11 +466,13 @@ void guardarEstructuraEn(char* mapa)
 	memcpy(mander,estructuraAdministrativa.tablaArchivos,peso);
 	while(offset < (peso + marcador))
 	{
-		mapa[offset] = mander[offset];
+		mapa[offset] = mander[contadorEnCero];
 		offset++;
+		contadorEnCero++;
 	}
 	marcador = offset;
 	free(mander);
+	contadorEnCero = 0;
 
 					//ahora guardo la tabla de asignaciones
 	peso = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
@@ -478,8 +482,9 @@ void guardarEstructuraEn(char* mapa)
 	memcpy(mander,estructuraAdministrativa.tablaAsignaciones,peso);
 	while(offset < (peso + marcador))
 	{
-		mapa[offset] = mander[offset];
+		mapa[offset] = mander[contadorEnCero];
 		offset++;
+		contadorEnCero++;
 	}
 	marcador = offset;
 	free(mander);
@@ -506,7 +511,6 @@ void crearDirectorio(char* path,char* mapa)
 			log_error(logger,"Tabla de archivos completamente ocupada");
 		else
 		{
-			log_info(logger,"i = %d",i);
 			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
 			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
 
@@ -518,12 +522,10 @@ void crearDirectorio(char* path,char* mapa)
 
 			offset = offset - (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos);
 				//aca tengo el offset de la tabla, me dice que bloque de datos es el que tengo en esta posicion
-			while(estructuraAdministrativa.tablaAsignaciones[offsetTablaAsignaciones] != 0) //va a parar cuando encuentre un lugar libre
-				offsetTablaAsignaciones++;
-				//aca se va a guardar, en la tabla de asignaciones el offset del bloque
-			estructuraAdministrativa.tablaAsignaciones[offsetTablaAsignaciones] = offset;
+			estructuraAdministrativa.tablaAsignaciones[offset] = 0xFFFFFFFF;
+				//voy a la tabla en ese offset, y como es unico, le pongo 0xFFFFFF
 
-			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offsetTablaAsignaciones;
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset;
 					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
 			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el directorio vacio no pesa nada
@@ -539,13 +541,6 @@ void crearDirectorio(char* path,char* mapa)
 				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF; //si el path está vacio, entonces esta en el raiz
 
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
-
-			log_info(logger,"estado: %u",estructuraAdministrativa.tablaArchivos[i].estado);
-			log_info(logger,"nombre: %.17s",estructuraAdministrativa.tablaArchivos[i].nombre);
-			log_info(logger,"bloquePadre: %d",estructuraAdministrativa.tablaArchivos[i].bloquePadre);
-			log_info(logger,"tamaño: %d",estructuraAdministrativa.tablaArchivos[i].tamanioArchivo);
-			log_info(logger,"fecha: %d",estructuraAdministrativa.tablaArchivos[i].fecha);
-			log_info(logger,"bloqueInicial: %d",estructuraAdministrativa.tablaArchivos[i].bloqueInicial);
 
 			free(nombreEfectivo);
 			free(pathAuxiliar);
