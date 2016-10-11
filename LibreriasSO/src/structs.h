@@ -9,19 +9,19 @@ typedef struct {
 	char nombre[18];
 	uint32_t tiempoChequeoDeadlock;
 	uint32_t batalla;
-	char algoritmo[10];
+	char * algoritmo;
 	uint32_t quantum;
 	uint32_t retardo;
-	char ip[16];
+	char * ip;
 	uint32_t puerto;
 }t_metadataMapa;
 
 typedef struct{
-	char tipo[12];
+	char * tipo;
 	int posicionX;
 	int posicionY;
-	char identificador;
 	int cantidad;
+	char * identificador;
 }t_metadataPokenest;
 
 typedef struct{

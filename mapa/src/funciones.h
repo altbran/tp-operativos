@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+#include <dirent.h>
 #include "commons/log.h"
 #include <commons/config.h>
 #include <commons/collections/list.h>
@@ -29,10 +32,14 @@ pthread_t hiloSIG;
 pthread_mutex_t mutex;
 t_metadataMapa configuracion;
 char * ruta;
+t_list * Pokenests;
 
 
 //funciones
 void receptorSIG();
 void cargarMetadata();
+char* concat(int count, ...);
+void cargarRecursos();
+int contadorDePokemon(char * directorio);
 
 #endif /* FUNCIONES_H_ */

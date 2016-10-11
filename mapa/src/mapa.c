@@ -1,36 +1,21 @@
 #include "funciones.h"
 
 int main(int argc, char **argv) {
+
 	//inicializo el mutex
 	pthread_mutex_init(&mutex,NULL);
+
 	//busco las configuraciones
-	ruta = argv[1];
+	ruta = concat(4,argv[2],"/Mapas/",argv[1],"/");
 	cargarMetadata();
-	int PUERTO_MAPA_SERVIDOR = getenv("PUERTO_MAPA_SERVIDOR");
+
+	//cargo recursos de mapa
+	cargarRecursos();
 
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
 
-	//me intento conectar a la PokeDex Cliente SOY HOST
-	/*
-	 if (crearSocket(&clientePokeDex)) {
-	 printf("Error creando socket\n");
-	 log_error(logger, "Se produjo un error creando el socket de PokeDex", texto);
-	 return 1;
-	 }
-	 if (conectarA(clientePokeDex, IP_POKEDEX, PUERTO_POKEDEX)) {
-	 printf("Error al conectar\n");
-	 log_error(logger, "Se produjo un error conectandose a la PokeDex", texto);
-	 return 1;
-	 }
-	 log_info(logger, "Se establecio la conexion con la PokeDex");
-
-	 if (responderHandshake(clientePokeDex, IDMAPA, IDPOKEDEXCLIENTE)) {
-	 log_error(logger, "Error en el handshake", texto);
-	 return 1;
-	 }
-	 */
 	//creo el hilo para reconocer señales SIGUSR2
 
 	signal(SIGUSR2, receptorSIG);
@@ -40,7 +25,7 @@ int main(int argc, char **argv) {
 		printf("Error creando socket");
 		return 1;
 	}
-	if (escucharEn(servidorMapa, PUERTO_MAPA_SERVIDOR)) {
+	if (escucharEn(servidorMapa, configuracion.puerto)) {
 		printf("Error al conectar");
 		log_error(logger, "Se produjo un error creando el socket servidor", texto);
 		return 1;
@@ -75,7 +60,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-
+	dibujar();
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
