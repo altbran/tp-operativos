@@ -4,6 +4,8 @@ int main(int argc, char **argv) {
 	//inicializo el mutex
 	pthread_mutex_init(&mutex,NULL);
 	//busco las configuraciones
+	ruta = argv[1];
+	cargarMetadata();
 	int PUERTO_MAPA_SERVIDOR = getenv("PUERTO_MAPA_SERVIDOR");
 
 	//Creo log para el mapa

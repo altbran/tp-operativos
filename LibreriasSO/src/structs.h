@@ -8,9 +8,9 @@
 typedef struct {
 	char nombre[18];
 	uint32_t tiempoChequeoDeadlock;
-	char batalla;
+	uint32_t batalla;
 	char algoritmo[10];
-	uint8_t quantum;
+	uint32_t quantum;
 	uint32_t retardo;
 	char ip[16];
 	uint32_t puerto;

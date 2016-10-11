@@ -27,8 +27,12 @@ fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 pthread_t hiloSIG;
 pthread_mutex_t mutex;
+t_metadataMapa configuracion;
+char * ruta;
+
 
 //funciones
 void receptorSIG();
+void cargarMetadata();
 
 #endif /* FUNCIONES_H_ */
