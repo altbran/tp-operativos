@@ -24,7 +24,10 @@
 #include "commons/string.h"
 #include <string.h>
 
-int PUERTO_MAPA_SERVIDOR ;
+//int PUERTO_MAPA_SERVIDOR ;
+
+uint32_t PUERTO_MAPA_SERVIDOR;
+char* IP_MAPA_SERVIDOR;
 
 char* mensaje;
 char* nombre;
@@ -32,12 +35,22 @@ char* nombre;
 t_log* logger;
 int socketCliente;
 int servidorMapa;
+
+
 t_metadataEntrenador entrenador;
+
+
 typedef struct{
 	char* mapa;
 	t_list* objetivos;
 }t_objetivosPorMapa;
 
+typedef struct{
+	int coordenadasX;
+	int coordenadasY;
+	char ultimoMov;
+}t_ubicacion;
 
+t_ubicacion ubicacionEntrenador;
 #endif /* FUNCIONESE_H_ */
 
