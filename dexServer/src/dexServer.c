@@ -59,6 +59,7 @@ bool comprobarPathValido(char* path);
 void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa);
 void crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
+void borrarArchivo(char* path,char* mapa);
 
 //Variables globales
 
@@ -119,10 +120,7 @@ int main(void) {
 
 	log_info(logger, "Se creó correctamente el socket servidor. Escuchando nuevas conexiones");
 
-
-	crearDirectorio("/entrenador",archivoMapeado);
-	crearArchivo("/entrenador/pokemon.dat",archivoMapeado);
-	crearArchivo("/caca/pokemon.dat",archivoMapeado);  //todo, ejemplos de creacion de archivos/directorios
+	borrarArchivo("/entrenador/lukaku.dat",archivoMapeado);
 
 
 	struct sockaddr_in direccionCliente;
@@ -260,7 +258,7 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 	int i = 0;
 	int j;
 	int contadorGlobal = 0;
-	void* archivoLeido;
+	void* archivoLeido = "";
 
 	strcpy(pathSolicitado,path);
 
@@ -608,6 +606,52 @@ void crearArchivo(char* path,char* mapa)
 
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo creado. Nombre '%s'",path);
+		}
+	}
+}
+
+void borrarArchivo(char* path,char* mapa)
+{
+	int i = 0;
+	int offset = 0;
+	int bloqueInicioDatos;
+	char* nombreEfectivo = malloc(18);
+	char* pathAuxiliar = malloc(50);
+
+	strcpy(pathAuxiliar,path);
+	if(comprobarPathValido(path))  //si el path es correcto
+	{
+		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre del archivo a borrar
+
+		while((i < 2048) && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo))
+			i++;
+
+		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+			log_error(logger,"El archivo '%s' a eliminar no existe",path);
+		else
+		{
+			estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
+			estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0;
+			estructuraAdministrativa.tablaArchivos[i].fecha = 0;
+
+					//ahora le tengo que borrar los bloques ocupados
+			bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+			offset = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
+			while(offset != 0xFFFFFFFF)
+			{
+				bitarray_clean_bit(estructuraAdministrativa.punteroBitmap,(offset + bloqueInicioDatos)); //limpio el bit
+				offset = estructuraAdministrativa.tablaAsignaciones[offset]; //paso al siguiente bloque
+			}
+				//una vez que limpie el bitmap, termino de acondicionar la estructura de ese archivo eliminado
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = 0;
+			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0;
+
+			free(nombreEfectivo);
+			free(pathAuxiliar);
+
+			guardarEstructuraEn(mapa);
+			log_info(logger,"Archivo eliminado. Nombre '%s'",path);
 		}
 	}
 }
