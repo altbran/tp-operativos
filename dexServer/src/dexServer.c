@@ -55,11 +55,12 @@ void leerEstructurasAdministrativas(FILE* archivo);
 bool esDirectorio(char* path);
 int pedirFecha(void);
 void sacarNombre(char* path,char* nombre);
-bool comprobarPathValido(char* path);
+bool comprobarPathValidoLectura(char* path);
 void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa);
 void crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
 void borrarArchivo(char* path,char* mapa);
+void borrarDirectorioVacio(char* path,char* mapa);
 
 //Variables globales
 
@@ -120,7 +121,19 @@ int main(void) {
 
 	log_info(logger, "Se creó correctamente el socket servidor. Escuchando nuevas conexiones");
 
-	borrarArchivo("/entrenador/lukaku.dat",archivoMapeado);
+	//crearDirectorio("/entrenador",archivoMapeado);
+	//crearDirectorio("/pokedex",archivoMapeado);
+	//crearDirectorio("/entrenador/juan",archivoMapeado);
+
+	//crearArchivo("/entrenador/juan/algo.dat",archivoMapeado);
+	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
+
+
+	//borrarArchivo("/entrenador/ruperto.dat",archivoMapeado);
+
+	/*comprobarPathValidoLectura("/pokedex");
+	comprobarPathValidoLectura("/entrenador/pikachu.dat");
+	comprobarPathValidoLectura("/pokedex/pikachu.dat");*/
 
 
 	struct sockaddr_in direccionCliente;
@@ -262,7 +275,7 @@ void* leerArchivo(char* path,t_estructuraAdministrativa est,char* mapa)
 
 	strcpy(pathSolicitado,path);
 
-	if(comprobarPathValido(pathSolicitado))
+	if(comprobarPathValidoLectura(pathSolicitado))
 	{
 		sacarNombre(pathSolicitado,nombreArchivo);  //obtiene el nombre del path. Esto es, despues del ultimo '/'
 
@@ -366,62 +379,68 @@ void sacarNombre(char* path,char* nombre)  //CUIDADO: devuelve el path sin el no
 	nombre[marcador] = '\0';
 }
 
-bool comprobarPathValido(char* path)  // ejemplo:  "/pokedex/ash/objetivos/algo.dat"
+bool comprobarPathValidoLectura(char* path)   // ejemplo:  "/pokedex/ash/objetivos/algo.dat"
 {
-	char* copiaSeguraPath = malloc(50);
-	char* nombre = malloc(18);
-	char nombrePadre[17];
+	char* copiaSeguraPath;
+	char* pathCopiado = malloc(50);
+	char* nombre = malloc(50);
+	char nombreCopia[18];
+	char nombrePadre[18];
 	unsigned int i;
-	uint16_t offsetBloquePadre;
+	uint16_t offsetBloquePadre = 0;
 
-	strcpy(copiaSeguraPath,path);
-
-	//tengo que recorrer el arbol de directorios para saber si el path indicado es valido o no
-
-	sacarNombre(copiaSeguraPath,nombre);  //aca tengo algo asi -->  /pokedex/ash/objetivos ,  algo.dat
-
-	free(nombre); //limpio el nombre
-	nombre = malloc(18);
-
-	if(!strlen(copiaSeguraPath))
-	{                                                       //si no queda nada, es porque está en el raiz
-		log_info(logger,"La ruta '%s' es valida (directorio raiz)",path);
-		free(nombre);
-		free(copiaSeguraPath);
+	if(!strlen(path))
+	{
+		log_info(logger,"La ruta es válida, directorio raiz",path);
 		return true;
 	}
 	else
 	{
-		while(strlen(copiaSeguraPath))  //mientras queden rutas donde buscar...
+		strcpy(pathCopiado,path);
+		do
 		{
-			for(i=0; i < 2047 && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombre);i++)
-				;
-			if(i == 2048)
-			{
-				log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido. Ruta: %s",nombre,path);
-				return false;  //si llega a recorrer el array completo, significa que no lo encontro
-			}
-			else
-			{
-				offsetBloquePadre = estructuraAdministrativa.tablaArchivos[i].bloquePadre;
-				strcpy(nombrePadre,(char*)estructuraAdministrativa.tablaArchivos[offsetBloquePadre].nombre);
+			free(nombre);
+			nombre = malloc(50);
+			sacarNombre(pathCopiado,nombre);  //aca tengo algo asi -->  /pokedex/ash/objetivos ,  algo.dat
 
-				free(nombre);
-				nombre = malloc(18);
-				sacarNombre(copiaSeguraPath,nombre);
-
-				if(strcmp(nombre,nombrePadre))
+			i = 0;
+			while((i < 2048) && (offsetBloquePadre != 0xFFFF))
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombre)) //si encuentra un arc/dir que se llama asi
 				{
-					log_error(logger,"La ruta especificada no es válida. Nombre: '%s' inválido. Ruta: %s",nombre,path);
-					free(nombre);
-					free(copiaSeguraPath);
-					return false;  //si llega a recorrer el array completo, significa que no lo encontro
+					offsetBloquePadre = estructuraAdministrativa.tablaArchivos[i].bloquePadre;
+
+					if(offsetBloquePadre != 0xFFFF)
+					{
+						if(strlen(pathCopiado))   //verifico solo para que no me de seg.fault
+						{
+							copiaSeguraPath = malloc(50);
+							strcpy(copiaSeguraPath,pathCopiado);
+							strcpy(nombrePadre,(char*)estructuraAdministrativa.tablaArchivos[offsetBloquePadre].nombre);
+							sacarNombre(copiaSeguraPath,nombreCopia);  //aca saco una copia del nombre padre provisto por path
+
+							if(!strcmp(nombrePadre,nombreCopia)) //si efectivamente es el dir padre, rompo el bucle
+							{
+								free(copiaSeguraPath);
+								break;
+							}
+							free(copiaSeguraPath);
+						}
+					}
 				}
+				i++;
 			}
-		}
+
+			if(i == 2048)  //si llega a recorrer el array completo, significa que no encontró algun dir. padre
+			{
+				log_error(logger,"La ruta especificada no existe. Ruta: %s",path);
+				return false;
+			}
+		}while(offsetBloquePadre != 0xFFFF);
+
 		log_info(logger,"La ruta '%s' es válida",path);
+		free(pathCopiado);
 		free(nombre);
-		free(copiaSeguraPath);
 		return true;
 	}
 }
@@ -499,10 +518,10 @@ void crearDirectorio(char* path,char* mapa)
 
 
 	strcpy(pathAuxiliar,path);
-	if(comprobarPathValido(path))  //si el path es correcto
-	{
-		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al directorio
+	sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al directorio
 
+	if(comprobarPathValidoLectura(pathAuxiliar))  //si el path es correcto
+	{
 		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			i++;
 
@@ -559,10 +578,10 @@ void crearArchivo(char* path,char* mapa)
 
 
 	strcpy(pathAuxiliar,path);
-	if(comprobarPathValido(path))  //si el path es correcto
-	{
-		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
+	sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
 
+	if(comprobarPathValidoLectura(pathAuxiliar))  //si el path es correcto
+	{
 		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			i++;
 
@@ -619,20 +638,20 @@ void borrarArchivo(char* path,char* mapa)
 	char* pathAuxiliar = malloc(50);
 
 	strcpy(pathAuxiliar,path);
-	if(comprobarPathValido(path))  //si el path es correcto
+	if(comprobarPathValidoLectura(path))  //si el path es correcto
 	{
 		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre del archivo a borrar
 
 		while((i < 2048) && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo))
 			i++;
 
-		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+		if(i == 2048)   //si llego a 2048, es porque no lo encuentra
 			log_error(logger,"El archivo '%s' a eliminar no existe",path);
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
 			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
-			estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0;
+			estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF;
 			estructuraAdministrativa.tablaArchivos[i].fecha = 0;
 
 					//ahora le tengo que borrar los bloques ocupados
@@ -652,6 +671,59 @@ void borrarArchivo(char* path,char* mapa)
 
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo eliminado. Nombre '%s'",path);
+		}
+	}
+}
+
+void borrarDirectorioVacio(char* path,char* mapa)
+{
+	int i = 0;
+	int offset = 0;
+	int bloqueInicioDatos;
+	char* nombreEfectivo = malloc(18);
+	char* pathAuxiliar = malloc(50);
+
+	strcpy(pathAuxiliar,path);
+	if(comprobarPathValidoLectura(path))  //si el path es correcto
+	{
+		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre del directorio a borrar
+
+		while((i < 2048) && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo))
+			i++;
+
+		if(i == 2048)   //si llego a 2048, es porque no lo encontro
+			log_error(logger,"El directorio '%s' a eliminar no existe",path);
+		else
+		{
+					//ahora tengo que saber si está vacio, es decir, que no esté de bloque padre de nadie
+			while((offset < 2048) && estructuraAdministrativa.tablaArchivos[offset].bloquePadre != i)
+				offset++;
+
+			if(offset != 2048)   //si no llego a 2048, es porque tiene archivos adentro, osea, no lo puedo borrar
+				log_error(logger,"El directorio '%s' tiene archivos adentro. No puede ser eliminado.",path);
+			else
+			{
+						//una vez comprobado que estén las cosas bien, paso a eliminarlo
+				estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
+				strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
+				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF;
+				estructuraAdministrativa.tablaArchivos[i].fecha = 0;
+
+						//ahora le tengo que borrar el bloque ocupado (es un directorio, por ende tiene uno solo
+				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+				offset = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
+				bitarray_clean_bit(estructuraAdministrativa.punteroBitmap,(offset + bloqueInicioDatos)); //limpio el bit
+
+					//una vez que limpie el bitmap, termino de acondicionar la estructura de ese archivo eliminado
+				estructuraAdministrativa.tablaArchivos[i].bloqueInicial = 0;
+				estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0;
+
+				free(nombreEfectivo);
+				free(pathAuxiliar);
+
+				guardarEstructuraEn(mapa);
+				log_info(logger,"Directorio eliminado. Nombre '%s'",path);
+			}
 		}
 	}
 }
