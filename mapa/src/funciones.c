@@ -1,11 +1,20 @@
 #include "funciones.h"
 
 void receptorSIG() {
-	llegoSenial = 1;
+	//todo
 	pthread_mutex_lock(&mutex);
 	cargarMetadata();
 	pthread_mutex_unlock(&mutex);
 }
+
+t_posicionEntrenador cargarEntrenador(int socketOrigen){
+	t_posicionEntrenador entrenador;
+	recibirTodo(socketOrigen,&entrenador.identificador,sizeof(char));
+	recibirTodo(socketOrigen,&entrenador.posicionX,sizeof(uint32_t));
+	recibirTodo(socketOrigen,&entrenador.posicionY,sizeof(uint32_t));
+	return entrenador;
+}
+
 
 void cargarMetadata() {
 	t_config * config = config_create(concat(2, ruta, "metadata"));
@@ -25,7 +34,7 @@ void cargarRecursos() {
 	if ((dir = opendir(concat(2, ruta, "Pokenests/"))) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
-			t_metadataPokenest pokenest;
+			t_metadataPokenest  pokenest;
 			t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name,"/metadata"));
 			pokenest.identificador = config_get_string_value(config, "Identificador");
 			pokenest.tipo = config_get_string_value(config, "Tipo");
@@ -37,7 +46,7 @@ void cargarRecursos() {
 				pokenest.posicionY = strdup(posicion);
 			}
 			pokenest.cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name,"/"));
-			//todo list_add(Pokenests,pokenest);
+			list_add(Pokenests,&pokenest);
 			cargarPokenest(pokenest);
 		}
 		closedir(dir);
@@ -47,6 +56,7 @@ void cargarRecursos() {
 		//return EXIT_FAILURE;
 	}
 }
+
 int contadorDePokemon(char * directorio){
 	int file_count = 0;
 	DIR * dirp;
@@ -60,6 +70,31 @@ int contadorDePokemon(char * directorio){
 	}
 	closedir(dirp);
 	return file_count-1; //descarto el archivo metadata
+}
+
+t_metadataPokenest devolverPokenest(char identificador){
+	int i;
+	for(i = 0; i < list_size(Pokenests); i++){
+		t_metadataPokenest pokenest = list_get(Pokenests,i);
+		if(pokenest.identificador == identificador){
+			return pokenest;
+		}
+	}
+
+}
+
+void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest) {
+
+	void *buffer = malloc(sizeof(int) + sizeof(int)); //posx + posy
+
+	int cursorMemoria = 0;
+
+	memcpy(buffer, &pokenest.posicionX, sizeof(uint32_t));
+	cursorMemoria += sizeof(uint32_t);
+	memcpy(buffer + cursorMemoria, &pokenest.posicionY, sizeof(uint32_t));
+
+	send(socketDestino, buffer, 21, 0); //hay que serializar algo acá?
+	free(buffer);
 }
 
 char* concat(int count, ...) {

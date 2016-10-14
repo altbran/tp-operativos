@@ -93,9 +93,8 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-
+						list_add(Entrenadores,cargarEntrenador(nuevaConexion));
 						log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
-						//Maneja consola
 
 						break;
 						/*
@@ -122,16 +121,18 @@ int main(int argc, char **argv) {
 					}
 
 				} else {
-					/*
-					int header = recibirHeader(i);
 
-					switch (header) {
+					switch (recibirHeader(i)) {
 
-					case dimensionesMapa:
+					case datosPokenest:
+						char identificador;
+						recibirTodo(i,identificador,sizeof(char));
+						enviarCoordPokenest(i,devolverPokenest(identificador));
+						queue_push(listos,nuevaConexion);
 						break;
 
 					}
-					*/
+
 				}
 			}
 		}

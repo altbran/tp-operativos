@@ -5,8 +5,8 @@ void cargarPokenest(t_metadataPokenest pokenest){
 	CrearCaja(items, pokenest.identificador, pokenest.posicionX, pokenest.posicionY, pokenest.cantidad);
 }
 
-void cargarEntrenador(t_metadataEntrenador entrenador){
-	CrearPersonaje(items, entrenador.simbolo, 1, 1);
+void cargarEntrenador(t_posicionEntrenador entrenador){
+	CrearPersonaje(items, entrenador.identificador, 1, 1);
 }
 
 void restarPokemon(char identificador){

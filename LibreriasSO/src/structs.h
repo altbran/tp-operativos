@@ -16,6 +16,12 @@ typedef struct {
 	uint32_t puerto;
 }t_metadataMapa;
 
+typedef struct {
+	char * identificador;
+	int posicionX;
+	int posicionY;
+}t_posicionEntrenador;
+
 typedef struct{
 	char * tipo;
 	int posicionX;

@@ -11,6 +11,7 @@
 #include "commons/log.h"
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
 #include <curses.h>
 #include <nivel.h>
 #include <src/sockets.h>
@@ -25,14 +26,15 @@ t_log* logger;
 char *texto;
 int clientePokeDex;
 int servidorMapa;
-int llegoSenial;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
-pthread_t hiloSIG;
 pthread_mutex_t mutex;
 t_metadataMapa configuracion;
 char * ruta;
 t_list * Pokenests;
+t_list * Entrenadores;
+t_queue * listos;
+t_queue * bloqueados;
 
 
 //funciones
@@ -41,5 +43,7 @@ void cargarMetadata();
 char* concat(int count, ...);
 void cargarRecursos();
 int contadorDePokemon(char * directorio);
+t_metadataPokenest devolverPokenest(char identificador);
+void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest);
 
 #endif /* FUNCIONES_H_ */

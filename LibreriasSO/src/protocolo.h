@@ -6,10 +6,12 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	datosInicialesMapa = 1,
 	datosPokenest = 2,
 	posicionEntrenador = 3,
+	capturarPokemon = 7,
 	//Headers para comunicacion entre cliente y servidor
 	privilegiosArchivo = 4,
 	contenidoDirectorio = 5,
 	contenidoArchivo = 6,
+	//no se confundan, no repitan los numeros!!
 
 };
 int recibirHeader(int socketOrigen);
