@@ -45,5 +45,6 @@ void cargarRecursos();
 int contadorDePokemon(char * directorio);
 t_metadataPokenest devolverPokenest(char identificador);
 void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest);
+t_posicionEntrenador recibirEntrenador(int socketOrigen);
 
 #endif /* FUNCIONES_H_ */

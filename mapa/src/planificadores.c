@@ -14,7 +14,7 @@ void roundRobin() {
 				i = -1;
 				break;
 			case posicionEntrenador:
-
+				//todo
 				recibirTodo(turno, identificador, sizeof(char));
 				break;
 

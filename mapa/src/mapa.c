@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						list_add(Entrenadores,cargarEntrenador(nuevaConexion));
+						list_add(Entrenadores,recibirEntrenador(nuevaConexion));
 						log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
 
 						break;

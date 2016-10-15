@@ -7,11 +7,12 @@ void receptorSIG() {
 	pthread_mutex_unlock(&mutex);
 }
 
-t_posicionEntrenador cargarEntrenador(int socketOrigen){
+t_posicionEntrenador recibirEntrenador(int socketOrigen){
 	t_posicionEntrenador entrenador;
 	recibirTodo(socketOrigen,&entrenador.identificador,sizeof(char));
 	recibirTodo(socketOrigen,&entrenador.posicionX,sizeof(uint32_t));
 	recibirTodo(socketOrigen,&entrenador.posicionY,sizeof(uint32_t));
+	cargarEntrenador(entrenador);
 	return entrenador;
 }
 
@@ -73,12 +74,13 @@ int contadorDePokemon(char * directorio){
 }
 
 t_metadataPokenest devolverPokenest(char identificador){
+	//todo
 	int i;
 	for(i = 0; i < list_size(Pokenests); i++){
 		t_metadataPokenest pokenest = list_get(Pokenests,i);
 		if(pokenest.identificador == identificador){
 			return pokenest;
-		}
+		}else {return false;}
 	}
 
 }
