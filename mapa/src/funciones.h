@@ -35,10 +35,6 @@ t_list * Pokenests;
 t_list * Entrenadores;
 t_queue * listos;
 t_queue * bloqueados;
-int** pedidosMatriz;
-int** asignadosMatriz;
-int **recursosVector;
-int **disponiblesVector;
 
 //funciones
 void receptorSIG();
