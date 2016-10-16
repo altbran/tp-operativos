@@ -48,6 +48,6 @@ typedef struct {
 }t_privilegiosArchivo;
 
 typedef struct {
-	/*serializar?*/
+
 }t_contenidoDirectorio;
 #endif /* LIBRERIAS_STRUCTS_H_ */
