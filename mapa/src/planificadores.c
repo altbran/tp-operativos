@@ -4,6 +4,7 @@ void roundRobin() {
 	int i;
 	while (1) {
 		int turno = queue_pop(listos);
+		int quedoBloqueado = 1;
 		for (i = 0; i < configuracion.quantum; i++) {
 			switch (recibirHeader(turno)) {
 
@@ -19,9 +20,9 @@ void roundRobin() {
 				int posY;
 				recibirTodo(turno, posX, sizeof(int));
 				recibirTodo(turno, posY, sizeof(int));
-				if(movimientoValido(turno,posX,posY)){
+				if (movimientoValido(turno, posX, posY)) {
 					//todo actualizar mapa
-				}else{
+				} else {
 					//todo responder invalido
 				}
 				break;
@@ -29,28 +30,31 @@ void roundRobin() {
 			case capturarPokemon:
 				t_entrenadorBloqueado entrenadorBloqueado;
 				entrenadorBloqueado.socket = turno;
-				recibirTodo(turno, entrenadorBloqueado.identificadorPokemon ,sizeof(char));
-				queue_push(bloqueados,entrenadorBloqueado);
+				recibirTodo(turno, entrenadorBloqueado.identificadorPokemon, sizeof(char));
+				queue_push(bloqueados, entrenadorBloqueado);
 				i = configuracion.quantum;
+				quedoBloqueado = 0;
 				//todo poner mutex para atrapar pokemon
 				break;
 			}
 		}
-		queue_push(listos,turno);
+		if (!quedoBloqueado) {
+			queue_push(listos, turno);
+		}
 
 	}
 }
 
-void atraparPokemon(){
-	while(1){
+void atraparPokemon() {
+	while (1) {
 		//todo poner mutex si hay entrenadores bloqueados
-		if(!queue_is_empty(bloqueados)){
+		if (!queue_is_empty(bloqueados)) {
 			t_entrenadorBloqueado entrenador = queue_pop(bloqueados);
-			if(pokemonDisponible(entrenador.identificadorPokemon)){
-				enviarHeader(entrenador.socket,pokemonesDisponibles);
-				if(recibirHeader(entrenador.socket)== entrenadorListo){
-					queue_push(listos,entrenador.socket);
-				}else{
+			if (pokemonDisponible(entrenador.identificadorPokemon)) {
+				enviarHeader(entrenador.socket, pokemonesDisponibles);
+				if (recibirHeader(entrenador.socket) == entrenadorListo) {
+					queue_push(listos, entrenador.socket);
+				} else {
 					//todo completo el mapa?
 				}
 			}
