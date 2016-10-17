@@ -3,10 +3,10 @@
 int main(int argc, char **argv) {
 
 	//inicializo el mutex
-	pthread_mutex_init(&mutex,NULL);
+	pthread_mutex_init(&mutex, NULL);
 
 	//busco las configuraciones
-	ruta = concat(4,argv[2],"/Mapas/",argv[1],"/");
+	ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
 	cargarMetadata();
 
 	//cargo recursos de mapa
@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
 
 	log_info(logger, "Se estableció correctamente el socket servidor", texto);
 	log_info(logger, "Escuchando nuevas conexiones");
-
 
 	int nuevaConexion;
 	struct sockaddr_in direccionCliente;
@@ -93,44 +92,38 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						list_add(Entrenadores,recibirEntrenador(nuevaConexion));
+						list_add(Entrenadores, recibirEntrenador(nuevaConexion)); //ingreso el entrenador a la lista de entrenadores
+						//envio la posicion de la pokenest
+						char * identificador;
+						recibirTodo(nuevaConexion, identificador, sizeof(char));
+						enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
+						if (recibirHeader(nuevaConexion) == entrenadorListo) {  //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
+							queue_push(listos, nuevaConexion);
+						}
 						log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
 
 						break;
 						/*
-					case IDDIBUJADORMAPA:
+						 case IDDIBUJADORMAPA:
 
-						FD_SET(nuevaConexion, &bolsaDeSockets);
-						t_metadataPokenest pk;
-						char prueba[12] = "pika";
-						pk.identificador = '$';
-						pk.posicionX = 10;
-						pk.posicionY = 10;
-						strcpy(pk.tipo,prueba);
-						enviarPokenestDibujador(nuevaConexion,pk,21);
+						 FD_SET(nuevaConexion, &bolsaDeSockets);
+						 t_metadataPokenest pk;
+						 char prueba[12] = "pika";
+						 pk.identificador = '$';
+						 pk.posicionX = 10;
+						 pk.posicionY = 10;
+						 strcpy(pk.tipo,prueba);
+						 enviarPokenestDibujador(nuevaConexion,pk,21);
 
 
-						log_info(logger, "Dibujador conectado, socket %d", nuevaConexion);
+						 log_info(logger, "Dibujador conectado, socket %d", nuevaConexion);
 
-						break;
-						*/
+						 break;
+						 */
 					default:
 						close(nuevaConexion);
 						log_error(logger, "Error en el handshake. Conexion inesperada", texto);
 						break;
-					}
-
-				} else {
-
-					switch (recibirHeader(i)) {
-
-					case datosPokenest:
-						char identificador;
-						recibirTodo(i,identificador,sizeof(char));
-						enviarCoordPokenest(i,devolverPokenest(identificador));
-						queue_push(listos,nuevaConexion);
-						break;
-
 					}
 
 				}

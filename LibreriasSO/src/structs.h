@@ -20,7 +20,18 @@ typedef struct {
 	char * identificador;
 	int posicionX;
 	int posicionY;
-}t_posicionEntrenador;
+	int socket;
+}t_datosEntrenador;
+
+typedef struct {
+	int socket;
+	char * identificadorPokemon;
+}t_entrenadorBloqueado;
+
+typedef struct {
+	char * identificador;
+	int cantidad;
+}t_recursosPokenest;
 
 typedef struct{
 	char * tipo;

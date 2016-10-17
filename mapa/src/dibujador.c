@@ -1,11 +1,11 @@
 #include "funciones.h"
 #include "dibujador.h"
-
+//todo actualiza posicion entrenador
 void cargarPokenest(t_metadataPokenest pokenest){
 	CrearCaja(items, pokenest.identificador, pokenest.posicionX, pokenest.posicionY, pokenest.cantidad);
 }
 
-void cargarEntrenador(t_posicionEntrenador entrenador){
+void cargarEntrenador(t_datosEntrenador entrenador){
 	CrearPersonaje(items, entrenador.identificador, 1, 1);
 }
 
