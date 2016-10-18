@@ -8,7 +8,8 @@ t_list* items;
 //funciones
 void dibujar();
 void cargarPokenest(t_metadataPokenest pokenest);
-void cargarEntrenador(t_metadataEntrenador entrenador);
+void cargarEntrenador(t_datosEntrenador entrenador);
+void moverEntrenador(t_datosEntrenador entrenador);
 void restarPokemon(char identificador);
 
 /*int posicionInicialX = 1;

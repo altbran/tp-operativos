@@ -13,6 +13,10 @@ void restarPokemon(char identificador){
 	restarRecurso(items,identificador);
 }
 
+void moverEntrenador(t_datosEntrenador entrenador){
+	MoverPersonaje(items, entrenador.identificador, entrenador.posicionX, entrenador.posicionY);
+}
+
 void dibujar() {
 
 	int rows, cols;
