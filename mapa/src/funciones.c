@@ -8,39 +8,40 @@ void receptorSIG() {
 }
 //funciones entrenador
 
-t_datosEntrenador recibirEntrenador(int socketOrigen){
+t_datosEntrenador recibirEntrenador(int socketOrigen) {
 	t_datosEntrenador entrenador;
-	recibirTodo(socketOrigen,&entrenador.identificador,sizeof(char));
-	recibirTodo(socketOrigen,&entrenador.posicionX,sizeof(uint32_t));
-	recibirTodo(socketOrigen,&entrenador.posicionY,sizeof(uint32_t));
+	recibirTodo(socketOrigen, &entrenador.identificador, sizeof(char));
+	recibirTodo(socketOrigen, &entrenador.posicionX, sizeof(uint32_t));
+	recibirTodo(socketOrigen, &entrenador.posicionY, sizeof(uint32_t));
 	entrenador.socket = socketOrigen;
 	cargarEntrenador(entrenador);
 	return entrenador;
 }
 
-t_datosEntrenador devolverEntrenador(int socket, int *posicion){
+t_datosEntrenador devolverEntrenador(int socket, int posicion) {
 	int i;
-	for(i=0;i< list_size(Entrenadores);i++){
-		t_datosEntrenador entrenador = list_get(Entrenadores,i);
-		if(entrenador.socket == socket){
-			&posicion = i;
+	for (i = 0; i < list_size(Entrenadores); i++) {
+		t_datosEntrenador entrenador = *(t_datosEntrenador*)(list_get(Entrenadores, i));
+		if (entrenador.socket == socket) {
+			posicion = i;
 			return entrenador;
 		}
 	}
-	return EXIT_FAILURE;
+	//return EXIT_FAILURE;
 }
 
-
-int movimientoValido(int socket,int posX, int posY){
+int movimientoValido(int socket, int posX, int posY) {
 	int posicionEnLista;
-	t_datosEntrenador entrenador = devolverEntrenador(socket,posicionEnLista);
+	t_datosEntrenador entrenador = devolverEntrenador(socket, posicionEnLista);
 	int i = entrenador.posicionX - posX + entrenador.posicionY - posY;
-	if(i == 1 || i == -1){
+	if (i == 1 || i == -1) {
 		entrenador.posicionX = posX;
 		entrenador.posicionY = posY;
-		list_replace(Entrenadores,posicionEnLista,entrenador);
+		list_replace(Entrenadores, posicionEnLista, &entrenador);
 		return EXIT_SUCCESS;
-	}else{return EXIT_FAILURE;}
+	} else {
+		return EXIT_FAILURE;
+	}
 }
 
 //funciones mapa
@@ -64,8 +65,8 @@ void cargarRecursos() {
 	if ((dir = opendir(concat(2, ruta, "Pokenests/"))) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
-			t_metadataPokenest  pokenest;
-			t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name,"/metadata"));
+			t_metadataPokenest pokenest;
+			t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
 			pokenest.identificador = config_get_string_value(config, "Identificador");
 			pokenest.tipo = config_get_string_value(config, "Tipo");
 			char * posicion = strtok(config_get_string_value(config, "Posicion"), ";");
@@ -76,12 +77,12 @@ void cargarRecursos() {
 				pokenest.posicionY = strdup(posicion);
 			}
 			t_recursosPokenest recursos;
-			int cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name,"/"));
+			int cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 			pokenest.cantidad = cantidad;
 			recursos.cantidad = cantidad;
 			recursos.identificador = pokenest.identificador;
-			list_add(recursosDisponibles,recursos);
-			list_add(Pokenests,&pokenest);
+			list_add(recursosDisponibles, &recursos);
+			list_add(Pokenests, &pokenest);
 			cargarPokenest(pokenest);
 		}
 		closedir(dir);
@@ -92,35 +93,35 @@ void cargarRecursos() {
 	}
 }
 
-int contadorDePokemon(char * directorio){
+int contadorDePokemon(char * directorio) {
 	int file_count = 0;
 	DIR * dirp;
 	struct dirent * entry;
 
 	dirp = opendir(directorio); /* There should be error handling after this */
 	while ((entry = readdir(dirp)) != NULL) {
-	    if (entry->d_type == DT_REG) { /* If the entry is a regular file */
-	         file_count++;
-	    }
+		if (entry->d_type == DT_REG) { /* If the entry is a regular file */
+			file_count++;
+		}
 	}
 	closedir(dirp);
-	return file_count-1; //descarto el archivo metadata
+	return file_count - 1; //descarto el archivo metadata
 }
 
-int pokemonDisponible(char * identificador){
+int pokemonDisponible(char * identificador) {
 	//todo
 }
 
-t_metadataPokenest devolverPokenest(char identificador){
+t_metadataPokenest devolverPokenest(char identificador) {
 	//todo
 	int i;
-	for(i = 0; i < list_size(Pokenests); i++){
-		t_metadataPokenest pokenest = list_get(Pokenests,i);
-		if(pokenest.identificador == identificador){
+	for (i = 0; i < list_size(Pokenests); i++) {
+		t_metadataPokenest pokenest = *(t_metadataPokenest*)(list_get(Pokenests, i));
+		if (pokenest.identificador == identificador) {
 			return pokenest;
-		}else {return false;}
+		}
 	}
-	return EXIT_FAILURE;
+	//return EXIT_FAILURE;
 
 }
 
