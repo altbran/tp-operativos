@@ -7,8 +7,7 @@
 #include "funciones.h"
 #include "deadlock.h"
 
-
-void detectarDeadlock(){
+void detectarDeadlock() {
 	cantidadDeEntrenadores = list_size(Entrenadores);
 	cantidadDePokemones = list_size(Pokenests);
 
@@ -21,38 +20,45 @@ void detectarDeadlock(){
 
 }
 
-void inicializarMatrices(){
+void inicializarMatrices() {
 	int i;
 	pedidosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
 	for (i = 0; i < cantidadDeEntrenadores; i++)
 		pedidosMatriz[i] = (int *) malloc(cantidadDePokemones * sizeof(int));
 
 	int j;
-		asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
-		for (j = 0; j < cantidadDeEntrenadores; j++)
-			asignadosMatriz[j] = (int *) malloc(cantidadDePokemones * sizeof(int));
+	asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
+	for (j = 0; j < cantidadDeEntrenadores; j++)
+		asignadosMatriz[j] = (int *) malloc(cantidadDePokemones * sizeof(int));
 }
 
-void inicializarVectores(){
+void inicializarVectores() {
 	disponiblesVector = calloc(cantidadDePokemones, sizeof(int*));
-	recursosVector= calloc(cantidadDePokemones, sizeof(int*));
+	recursosVector = calloc(cantidadDePokemones, sizeof(int*));
 	entrenadoresEnDeadlock = calloc(cantidadDeEntrenadores, sizeof(int*));
 }
 
 void noTieneAsignadosOPedidos(){
 	int marcar = 0;
+	int tienePedido;
+	int tieneAsignado;
 	int j;
 	int i;
 	for(i = 0; i < cantidadDeEntrenadores; i++){
 		j = 0;
-		while(j < cantidadDePokemones && marcar == 0){
-			if (pedidosMatriz[i][j] != 0 || asignadosMatriz[i][j] != 0){
-				marcar = 1;
+		tienePedido = 0;
+		tieneAsignado = 0;
+		while(j < cantidadDePokemones && (tienePedido == 0 || tieneAsignado == 0)){
+			if (pedidosMatriz[i][j] != 0){
+				tienePedido= 1;
+			}
+			if(asignadosMatriz[i][j] != 0){
+				tieneAsignado = 1;
 			}
 			j++;
 		}
 
-		if(marcar == 0){
+		if((tienePedido == 0 || tieneAsignado == 0)){
 			entrenadoresEnDeadlock[i] = 1;
 		}
 		marcar = 0;
@@ -60,34 +66,31 @@ void noTieneAsignadosOPedidos(){
 }
 
 void algoritmo(){
-	int marqueAlguno = 0;
+
 	int marcar;
 	int j;
 	int i;
 	int k;
-	//while(marqueAlguno == 0){
-		marqueAlguno = 1;
-		marcar = 0;
-		for(i = 0; i < cantidadDeEntrenadores; i++){
-			if(entrenadoresEnDeadlock[i] == 0){
-				j = 0;
-				while(j < cantidadDePokemones && marcar == 0){
-					if (pedidosMatriz[i][j] > disponiblesVector[j]){
-						marcar = 1;
-					}
-					j++;
+	marcar = 0;
+	for(i = 0; i < cantidadDeEntrenadores; i++){
+		if(entrenadoresEnDeadlock[i] == 0){
+			j = 0;
+			while(j < cantidadDePokemones && marcar == 0){
+				if (pedidosMatriz[i][j] > disponiblesVector[j]){
+					marcar = 1;
+				}
+				j++;
+			}
+
+			if(marcar == 0){
+				entrenadoresEnDeadlock[i] = 1;
+				for(k = 0;k < cantidadDePokemones; k++){
+					disponiblesVector[k] = disponiblesVector[k] + asignadosMatriz[i][k];
 				}
 
-				if(marcar == 0){
-					entrenadoresEnDeadlock[i] = 1;
-					for(k = 0;k < cantidadDePokemones; k++){
-						disponiblesVector[k] = disponiblesVector[k] + asignadosMatriz[i][k];
-					}
-					marqueAlguno = 0;
-				}
-				marcar = 0;
 			}
-			else {}
+			marcar = 0;
 		}
+		else {}
 	}
-//}
+}
