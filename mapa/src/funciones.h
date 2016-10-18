@@ -47,7 +47,7 @@ int contadorDePokemon(char * directorio);
 t_metadataPokenest devolverPokenest(char identificador);
 void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest);
 t_datosEntrenador recibirEntrenador(int socketOrigen);
-t_datosEntrenador devolverEntrenador(int socketOrigen,int * posicionEnLista);
+t_datosEntrenador devolverEntrenador(int socketOrigen,int posicionEnLista);
 int movimientoValido(int socket,int posX, int posY);
 int pokemonDisponible(char * identificador);
 

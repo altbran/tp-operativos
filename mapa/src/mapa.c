@@ -92,7 +92,8 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						list_add(Entrenadores, recibirEntrenador(nuevaConexion)); //ingreso el entrenador a la lista de entrenadores
+						t_datosEntrenador entrenador = recibirEntrenador(nuevaConexion);
+						list_add(Entrenadores, &entrenador); //ingreso el entrenador a la lista de entrenadores
 						//envio la posicion de la pokenest
 						char * identificador;
 						recibirTodo(nuevaConexion, identificador, sizeof(char));
