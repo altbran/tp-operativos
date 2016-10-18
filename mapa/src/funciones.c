@@ -6,17 +6,44 @@ void receptorSIG() {
 	cargarMetadata();
 	pthread_mutex_unlock(&mutex);
 }
+//funciones entrenador
 
-t_posicionEntrenador recibirEntrenador(int socketOrigen){
-	t_posicionEntrenador entrenador;
+t_datosEntrenador recibirEntrenador(int socketOrigen){
+	t_datosEntrenador entrenador;
 	recibirTodo(socketOrigen,&entrenador.identificador,sizeof(char));
 	recibirTodo(socketOrigen,&entrenador.posicionX,sizeof(uint32_t));
 	recibirTodo(socketOrigen,&entrenador.posicionY,sizeof(uint32_t));
+	entrenador.socket = socketOrigen;
 	cargarEntrenador(entrenador);
 	return entrenador;
 }
 
+t_datosEntrenador devolverEntrenador(int socket, int *posicion){
+	int i;
+	for(i=0;i< list_size(Entrenadores);i++){
+		t_datosEntrenador entrenador = list_get(Entrenadores,i);
+		if(entrenador.socket == socket){
+			&posicion = i;
+			return entrenador;
+		}
+	}
+	return EXIT_FAILURE;
+}
 
+
+int movimientoValido(int socket,int posX, int posY){
+	int posicionEnLista;
+	t_datosEntrenador entrenador = devolverEntrenador(socket,posicionEnLista);
+	int i = entrenador.posicionX - posX + entrenador.posicionY - posY;
+	if(i == 1 || i == -1){
+		entrenador.posicionX = posX;
+		entrenador.posicionY = posY;
+		list_replace(Entrenadores,posicionEnLista,entrenador);
+		return EXIT_SUCCESS;
+	}else{return EXIT_FAILURE;}
+}
+
+//funciones mapa
 void cargarMetadata() {
 	t_config * config = config_create(concat(2, ruta, "metadata"));
 	configuracion.tiempoChequeoDeadlock = config_get_int_value(config, "TiempoChequeoDeadlock");
@@ -27,6 +54,8 @@ void cargarMetadata() {
 	configuracion.ip = config_get_string_value(config, "IP");
 	configuracion.puerto = config_get_int_value(config, "Puerto");
 }
+
+//funciones de pokenest
 
 void cargarRecursos() {
 	Pokenests = list_create();
@@ -46,7 +75,12 @@ void cargarRecursos() {
 				posicion = strtok(NULL, ";");
 				pokenest.posicionY = strdup(posicion);
 			}
-			pokenest.cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name,"/"));
+			t_recursosPokenest recursos;
+			int cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name,"/"));
+			pokenest.cantidad = cantidad;
+			recursos.cantidad = cantidad;
+			recursos.identificador = pokenest.identificador;
+			list_add(recursosDisponibles,recursos);
 			list_add(Pokenests,&pokenest);
 			cargarPokenest(pokenest);
 		}
@@ -73,6 +107,10 @@ int contadorDePokemon(char * directorio){
 	return file_count-1; //descarto el archivo metadata
 }
 
+int pokemonDisponible(char * identificador){
+	//todo
+}
+
 t_metadataPokenest devolverPokenest(char identificador){
 	//todo
 	int i;
@@ -82,6 +120,7 @@ t_metadataPokenest devolverPokenest(char identificador){
 			return pokenest;
 		}else {return false;}
 	}
+	return EXIT_FAILURE;
 
 }
 

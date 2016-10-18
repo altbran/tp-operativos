@@ -7,15 +7,17 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	datosPokenest = 2,
 	posicionEntrenador = 3,
 	capturarPokemon = 7,
-	//Headers para comunicacion entre cliente y servidor
+	pokemonesDisponibles = 9,
+	entrenadorListo = 10,
+	//Headers para comunicacion entre cliente y servidor pokedex
 	privilegiosArchivo = 4,
 	contenidoDirectorio = 5,
 	contenidoArchivo = 6,
+	recibirXCantidadDeArchivos = 8,
 	//no se confundan, no repitan los numeros!!
 
 };
 int recibirHeader(int socketOrigen);
 void enviarHeader(int socketDestino, int header);
-void enviarPath(const char *path, int socketDestino);
 
 #endif /* PROTOCOLO_H_ */

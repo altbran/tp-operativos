@@ -7,7 +7,8 @@
 
 #ifndef DEADLOCK_H_
 #define DEADLOCK_H_
-
+#include "funciones.h"
+/*
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +28,7 @@
 #include "dibujador.h"
 #include <signal.h>
 #include <pthread.h>
-
+*/
 int** pedidosMatriz;
 int** asignadosMatriz;
 int* recursosVector;

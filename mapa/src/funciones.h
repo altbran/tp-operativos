@@ -35,6 +35,8 @@ t_list * Pokenests;
 t_list * Entrenadores;
 t_queue * listos;
 t_queue * bloqueados;
+t_list * recursosDisponibles; //todo
+
 
 //funciones
 void receptorSIG();
@@ -44,6 +46,9 @@ void cargarRecursos();
 int contadorDePokemon(char * directorio);
 t_metadataPokenest devolverPokenest(char identificador);
 void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest);
-t_posicionEntrenador recibirEntrenador(int socketOrigen);
+t_datosEntrenador recibirEntrenador(int socketOrigen);
+t_datosEntrenador devolverEntrenador(int socketOrigen,int * posicionEnLista);
+int movimientoValido(int socket,int posX, int posY);
+int pokemonDisponible(char * identificador);
 
 #endif /* FUNCIONES_H_ */

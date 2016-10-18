@@ -4,7 +4,7 @@
  *  Created on: 15/10/2016
  *      Author: utnso
  */
-#include "funciones.h"
+
 #include "deadlock.h"
 
 void detectarDeadlock() {
