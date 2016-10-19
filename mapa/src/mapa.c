@@ -1,20 +1,22 @@
 #include "funciones.h"
 
 int main(int argc, char **argv) {
+	//Creo log para el mapa
+
+	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
 
 	//inicializo el mutex
 	pthread_mutex_init(&mutex, NULL);
 
 	//busco las configuraciones
-	ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
+
+	ruta = concat(4, "/home/utnso", "/Mapas/", "Paleta", "/");
 	cargarMetadata();
 
 	//cargo recursos de mapa
 	cargarRecursos();
 
-	//Creo log para el mapa
 
-	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
 
 	//creo el hilo para reconocer señales SIGUSR2
 
