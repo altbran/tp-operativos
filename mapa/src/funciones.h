@@ -20,6 +20,7 @@
 #include "dibujador.h"
 #include <signal.h>
 #include <pthread.h>
+#include <assert.h>
 
 //variables
 t_log* logger;
@@ -35,7 +36,7 @@ t_list * Pokenests;
 t_list * Entrenadores;
 t_queue * listos;
 t_queue * bloqueados;
-t_list * recursosDisponibles; //todo
+t_list * recursosTotales;
 
 
 //funciones
@@ -50,5 +51,6 @@ t_datosEntrenador recibirEntrenador(int socketOrigen);
 t_datosEntrenador devolverEntrenador(int socketOrigen,int posicionEnLista);
 int movimientoValido(int socket,int posX, int posY);
 int pokemonDisponible(char * identificador);
+char** str_split(char* a_str, const char a_delim);
 
 #endif /* FUNCIONES_H_ */

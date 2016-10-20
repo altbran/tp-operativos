@@ -1,22 +1,25 @@
 #include "funciones.h"
 
 int main(int argc, char **argv) {
+
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
 
+	//busco las configuraciones
+	if (argc != 2) {
+		ruta = concat(4, "/home/utnso", "/Mapas/", "Paleta", "/");
+	} else {
+		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
+	}
+
 	//inicializo el mutex
 	pthread_mutex_init(&mutex, NULL);
 
-	//busco las configuraciones
-
-	ruta = concat(4, "/home/utnso", "/Mapas/", "Paleta", "/");
-	cargarMetadata();
-
 	//cargo recursos de mapa
+	cargarMetadata();
+	crearItems();
 	cargarRecursos();
-
-
 
 	//creo el hilo para reconocer señales SIGUSR2
 
@@ -100,7 +103,7 @@ int main(int argc, char **argv) {
 						char * identificador;
 						recibirTodo(nuevaConexion, identificador, sizeof(char));
 						enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
-						if (recibirHeader(nuevaConexion) == entrenadorListo) {  //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
+						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
 							queue_push(listos, nuevaConexion);
 						}
 						log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);

@@ -21,7 +21,7 @@ t_datosEntrenador recibirEntrenador(int socketOrigen) {
 t_datosEntrenador devolverEntrenador(int socket, int posicion) {
 	int i;
 	for (i = 0; i < list_size(Entrenadores); i++) {
-		t_datosEntrenador entrenador = *(t_datosEntrenador*)(list_get(Entrenadores, i));
+		t_datosEntrenador entrenador = *(t_datosEntrenador*) (list_get(Entrenadores, i));
 		if (entrenador.socket == socket) {
 			posicion = i;
 			return entrenador;
@@ -60,28 +60,24 @@ void cargarMetadata() {
 
 void cargarRecursos() {
 	Pokenests = list_create();
+	recursosTotales = list_create();
 	DIR *dir;
 	struct dirent *ent;
 	if ((dir = opendir(concat(2, ruta, "Pokenests/"))) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
 			t_metadataPokenest pokenest;
+			char ** tokens;
 			t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
 			pokenest.identificador = config_get_string_value(config, "Identificador");
 			pokenest.tipo = config_get_string_value(config, "Tipo");
-			char * posicion = strtok(config_get_string_value(config, "Posicion"), ";");
-			//todo revisar el while
-			while (posicion != NULL) {
-				pokenest.posicionX = strdup(posicion);
-				posicion = strtok(NULL, ";");
-				pokenest.posicionY = strdup(posicion);
-			}
-			t_recursosPokenest recursos;
+
+			tokens = str_split(config_get_string_value(config, "Posicion"), ';');
+			pokenest.posicionX = atoi(*tokens);
+			pokenest.posicionY = atoi(*(tokens + 1));
 			int cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 			pokenest.cantidad = cantidad;
-			recursos.cantidad = cantidad;
-			recursos.identificador = pokenest.identificador;
-			list_add(recursosDisponibles, &recursos);
+			list_add(recursosTotales, &cantidad);
 			list_add(Pokenests, &pokenest);
 			cargarPokenest(pokenest);
 		}
@@ -116,7 +112,7 @@ t_metadataPokenest devolverPokenest(char identificador) {
 	//todo
 	int i;
 	for (i = 0; i < list_size(Pokenests); i++) {
-		t_metadataPokenest pokenest = *(t_metadataPokenest*)(list_get(Pokenests, i));
+		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
 		if (pokenest.identificador == identificador) {
 			return pokenest;
 		}
@@ -164,4 +160,52 @@ char* concat(int count, ...) {
 	va_end(ap);
 
 	return merged;
+}
+
+char** str_split(char* a_str, const char a_delim)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
 }
