@@ -17,6 +17,10 @@ void moverEntrenador(t_datosEntrenador entrenador){
 	MoverPersonaje(items, entrenador.identificador, entrenador.posicionX, entrenador.posicionY);
 }
 
+void crearItems(){
+	 t_list* items = list_create();
+}
+
 void dibujar() {
 
 	int rows, cols;
