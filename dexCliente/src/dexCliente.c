@@ -94,13 +94,19 @@ static int f_write(const char *path, const char *path2, size_t size,
 	return 0;
 }
 
+static int f_unlink(const char *path) {
+	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+	return 0;
+}
+
 static int f_rename(const char *pathAntiguo, const char *pathNuevo) {
 	t_cambioDeDirectorios estructura;
 	estructura.pathAntiguo = pathAntiguo;
 	estructura.pathNuevo = pathNuevo;
 	int cursorMemoria = 0;
 
-	void *buffer = malloc(sizeof(const char*) + sizeof(const char*)); //posx + posy
+	void *buffer = malloc(sizeof(const char*) + sizeof(const char*)); //path viejo + path nuevo
 	memcpy(buffer, &estructura.pathAntiguo, sizeof(const char*));
 	cursorMemoria += sizeof(const char*);
 	memcpy(buffer + cursorMemoria, &estructura.pathNuevo, sizeof(const char*));
@@ -109,8 +115,13 @@ static int f_rename(const char *pathAntiguo, const char *pathNuevo) {
 
 	return 0;
 }
-static struct fuse_operations ejemplo_oper = { .readdir = f_readdir, .getattr =
-		f_getattr, .read = f_read, .write = f_write, .rename = f_rename, };
+static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
+		.getattr = f_getattr,
+		.read = f_read,
+		.write = f_write,
+		.rename = f_rename,
+		.unlink = f_unlink,
+};
 
 int main(int argc, char *argv[]) {
 	char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");

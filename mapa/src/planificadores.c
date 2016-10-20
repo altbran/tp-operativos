@@ -3,7 +3,7 @@
 void roundRobin() {
 	int i;
 	while (1) {
-		int turno = queue_pop(listos);
+		int turno = *(int*)(queue_pop(listos));
 		int quedoBloqueado = 1;
 		for (i = 0; i < configuracion.quantum; i++) {
 			switch (recibirHeader(turno)) {
@@ -37,9 +37,10 @@ void roundRobin() {
 				//todo poner mutex para atrapar pokemon
 				break;
 			}
+			dibujar();
 		}
 		if (!quedoBloqueado) {
-			queue_push(listos, turno);
+			queue_push(listos, &turno);
 		}
 
 	}
@@ -53,7 +54,7 @@ void atraparPokemon() {
 			if (pokemonDisponible(entrenador.identificadorPokemon)) {
 				enviarHeader(entrenador.socket, pokemonesDisponibles);
 				if (recibirHeader(entrenador.socket) == entrenadorListo) {
-					queue_push(listos, entrenador.socket);
+					queue_push(listos, &entrenador.socket);
 				} else {
 					//todo completo el mapa?
 				}
