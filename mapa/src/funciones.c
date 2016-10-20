@@ -104,8 +104,13 @@ int contadorDePokemon(char * directorio) {
 	return file_count - 1; //descarto el archivo metadata
 }
 
-int pokemonDisponible(char * identificador) {
-	//todo
+int pokemonDisponible(int indicePokenest){
+	if(list_get(recursosTotales, indicePokenest) >= 1){
+		return EXIT_SUCCESS;
+	}
+	else{
+		return EXIT_FAILURE;
+	}
 }
 
 t_metadataPokenest devolverPokenest(char identificador) {
@@ -120,6 +125,20 @@ t_metadataPokenest devolverPokenest(char identificador) {
 	//return EXIT_FAILURE;
 
 }
+
+int devolverIndicePokenest(char identificador) {
+	//todo
+	int i;
+	for (i = 0; i < list_size(Pokenests); i++) {
+		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
+		if (pokenest.identificador == identificador) {
+			return i;
+		}
+	}
+	//return EXIT_FAILURE;
+
+}
+
 
 void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest) {
 

@@ -33,11 +33,16 @@ int** pedidosMatriz;
 int** asignadosMatriz;
 int* recursosVector;
 int* disponiblesVector;
+int* algoritmoVector;
 int* entrenadoresEnDeadlock;
 int cantidadDeEntrenadores;
 int cantidadDePokemones;
 int hayDeadlock;
 
+void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest);
+void restarPedidosMatriz(int indiceEntrenador, int indicePokenest);
+void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest);
+void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest);
 void inicializarMatrices();
 void inicializarVectores();
 void noTieneAsignadosOPedidos();

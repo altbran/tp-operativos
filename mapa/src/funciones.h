@@ -46,11 +46,12 @@ char* concat(int count, ...);
 void cargarRecursos();
 int contadorDePokemon(char * directorio);
 t_metadataPokenest devolverPokenest(char identificador);
+int devolverIndicePokenest(char identificador);
 void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest);
 t_datosEntrenador recibirEntrenador(int socketOrigen);
 t_datosEntrenador devolverEntrenador(int socketOrigen,int posicionEnLista);
 int movimientoValido(int socket,int posX, int posY);
-int pokemonDisponible(char * identificador);
+int pokemonDisponible(int indicePokenest);
 char** str_split(char* a_str, const char a_delim);
 
 #endif /* FUNCIONES_H_ */

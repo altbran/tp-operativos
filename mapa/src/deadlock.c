@@ -8,6 +8,9 @@
 #include "deadlock.h"
 
 void detectarDeadlock() {
+
+	sleep(configuracion.tiempoChequeoDeadlock / 1000);
+
 	cantidadDeEntrenadores = list_size(Entrenadores);
 	cantidadDePokemones = list_size(Pokenests);
 
@@ -89,8 +92,26 @@ void algoritmo(){
 				}
 
 			}
+			else {
+				hayDeadlock = 1;
+			}
 			marcar = 0;
 		}
 		else {}
 	}
+}
+
+void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
+	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
+}
+
+void restarPedidosMatriz(int indiceEntrenador, int indicePokenest){
+	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
+}
+void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
+}
+
+void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] - 1;
 }
