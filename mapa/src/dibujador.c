@@ -19,6 +19,7 @@ void moverEntrenador(t_datosEntrenador entrenador){
 
 void crearItems(){
 	 t_list* items = list_create();
+	 nivel_gui_inicializar();
 }
 
 void dibujar() {
