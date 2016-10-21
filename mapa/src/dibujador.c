@@ -18,12 +18,21 @@ void moverEntrenador(t_datosEntrenador entrenador){
 }
 
 void crearItems(){
-	 t_list* items = list_create();
-	 nivel_gui_inicializar();
+	items = list_create();
+	int rows, cols;
+	int q, p;
+
+	nivel_gui_inicializar();
+
+	nivel_gui_get_area_nivel(&rows, &cols);
+
+	p = cols;
+	q = rows;
+
 }
 
 void dibujar() {
-
+/*
 	int rows, cols;
 	int q, p;
 
@@ -35,7 +44,7 @@ void dibujar() {
 	q = rows;
 
 	CrearPersonaje(items, '@', p, q);
-
+*/
 
 
 	nivel_gui_dibujar(items, "Test Chamber 04");
