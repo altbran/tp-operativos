@@ -18,26 +18,33 @@ t_datosEntrenador recibirEntrenador(int socketOrigen) {
 	return entrenador;
 }
 
-t_datosEntrenador devolverEntrenador(int socket, int posicion) {
+t_datosEntrenador devolverEntrenador(int socket) {
 	int i;
 	for (i = 0; i < list_size(Entrenadores); i++) {
 		t_datosEntrenador entrenador = *(t_datosEntrenador*) (list_get(Entrenadores, i));
 		if (entrenador.socket == socket) {
-			posicion = i;
 			return entrenador;
 		}
 	}
-	//return EXIT_FAILURE;
+}
+
+int devolverIndiceEntrenador(int socket) {
+	int i;
+	for (i = 0; i < list_size(Entrenadores); i++) {
+		t_datosEntrenador entrenador = *(t_datosEntrenador*) (list_get(Entrenadores, i));
+		if (entrenador.socket == socket) {
+			return i;
+		}
+	}
 }
 
 int movimientoValido(int socket, int posX, int posY) {
-	int posicionEnLista;
-	t_datosEntrenador entrenador = devolverEntrenador(socket, posicionEnLista);
+	t_datosEntrenador entrenador = devolverEntrenador(socket);
 	int i = entrenador.posicionX - posX + entrenador.posicionY - posY;
 	if (i == 1 || i == -1) {
 		entrenador.posicionX = posX;
 		entrenador.posicionY = posY;
-		list_replace(Entrenadores, posicionEnLista, &entrenador);
+		list_replace(Entrenadores, devolverIndiceEntrenador(socket), &entrenador);
 		return EXIT_SUCCESS;
 	} else {
 		return EXIT_FAILURE;
@@ -71,7 +78,6 @@ void cargarRecursos() {
 			t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
 			pokenest.identificador = config_get_string_value(config, "Identificador");
 			pokenest.tipo = config_get_string_value(config, "Tipo");
-
 			tokens = str_split(config_get_string_value(config, "Posicion"), ';');
 			pokenest.posicionX = atoi(*tokens);
 			pokenest.posicionY = atoi(*(tokens + 1));
@@ -85,6 +91,7 @@ void cargarRecursos() {
 	} else {
 		/* could not open directory */
 		perror("");
+		log_info(logger,"no se pudo abrir el directorio");
 		//return EXIT_FAILURE;
 	}
 }

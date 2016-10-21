@@ -21,8 +21,10 @@ void roundRobin() {
 				recibirTodo(turno, posX, sizeof(int));
 				recibirTodo(turno, posY, sizeof(int));
 				if (movimientoValido(turno, posX, posY)) {
-					//todo actualizar mapa
+					moverEntrenador(devolverEntrenador(turno));
+					dibujar();
 				} else {
+					log_info(logger,"movimiento invalido");
 					//todo responder invalido
 				}
 				break;
@@ -32,6 +34,7 @@ void roundRobin() {
 				entrenadorBloqueado.socket = turno;
 				recibirTodo(turno, entrenadorBloqueado.identificadorPokemon, sizeof(char));
 				queue_push(bloqueados, &entrenadorBloqueado);
+				sumarPedidosMatriz(devolverIndiceEntrenador(turno),devolverIndicePokenest(entrenadorBloqueado.identificadorPokemon));
 				i = configuracion.quantum;
 				quedoBloqueado = 0;
 				//todo poner mutex para atrapar pokemon
@@ -51,12 +54,15 @@ void atraparPokemon() {
 		//todo poner mutex si hay entrenadores bloqueados
 		if (!queue_is_empty(bloqueados)) {
 			t_entrenadorBloqueado entrenador = *(t_entrenadorBloqueado*)queue_pop(bloqueados);
-			if (pokemonDisponible(entrenador.identificadorPokemon)) {
+			if (pokemonDisponible(devolverIndicePokenest(entrenador.identificadorPokemon))) {
 				enviarHeader(entrenador.socket, pokemonesDisponibles);
-				if (recibirHeader(entrenador.socket) == entrenadorListo) {
+				int header = recibirHeader(entrenador.socket);
+				if (header == entrenadorListo) {
+					sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador.socket),devolverIndicePokenest(entrenador.identificadorPokemon));
 					queue_push(listos, &entrenador.socket);
-				} else {
-					//todo completo el mapa?
+				} else if (header == finalizoMapa) {
+					list_remove(Entrenadores,devolverIndiceEntrenador(entrenador.socket));
+					//todo devolver todos los recursos
 				}
 			}
 		}

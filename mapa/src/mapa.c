@@ -5,9 +5,10 @@ int main(int argc, char **argv) {
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
+	printf("%d",argc);
 
 	//busco las configuraciones
-	if (argc != 2) {
+	if (argc != 3) {
 		ruta = concat(4, "/home/utnso", "/Mapas/", "Paleta", "/");
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	dibujar();
+	//todo dibujar();
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
@@ -102,6 +103,7 @@ int main(int argc, char **argv) {
 						//envio la posicion de la pokenest
 						char * identificador;
 						recibirTodo(nuevaConexion, identificador, sizeof(char));
+						//todo agregar header para enciar coord
 						enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
 							queue_push(listos, nuevaConexion);
