@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 
 	//busco las configuraciones
 	if (argc != 3) {
-		ruta = concat(4, "/home/utnso", "/Mapas/", "Paleta", "/");
+		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
 	}
