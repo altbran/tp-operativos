@@ -120,6 +120,12 @@ int pokemonDisponible(int indicePokenest){
 	}
 }
 
+void restarRecursoDisponible(int indicePokenest){
+	int cantidad;
+	cantidad = list_get(recursosTotales, indicePokenest) - 1;
+	list_replace(recursosTotales, indicePokenest, cantidad);
+}
+
 t_metadataPokenest devolverPokenest(char identificador) {
 	//todo
 	int i;

@@ -58,6 +58,8 @@ void atraparPokemon() {
 				enviarHeader(entrenador.socket, pokemonesDisponibles);
 				int header = recibirHeader(entrenador.socket);
 				if (header == entrenadorListo) {
+					restarRecursoDisponible(devolverIndicePokenest(entrenador.identificadorPokemon));
+					restarPokemon(entrenador.identificadorPokemon);
 					sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador.socket),devolverIndicePokenest(entrenador.identificadorPokemon));
 					queue_push(listos, &entrenador.socket);
 				} else if (header == finalizoMapa) {

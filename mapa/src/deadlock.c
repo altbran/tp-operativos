@@ -26,13 +26,22 @@ void detectarDeadlock() {
 void inicializarMatrices() {
 	int i;
 	pedidosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
-	for (i = 0; i < cantidadDeEntrenadores; i++)
-		pedidosMatriz[i] = (int *) malloc(cantidadDePokemones * sizeof(int));
-
-	int j;
 	asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
-	for (j = 0; j < cantidadDeEntrenadores; j++)
-		asignadosMatriz[j] = (int *) malloc(cantidadDePokemones * sizeof(int));
+	for (i = 0; i < cantidadDeEntrenadores; i++){
+		inicializarEntrenadorEnMatrices(i);
+	}
+}
+
+void inicializarEntrenadorEnMatrices(int indice){
+	pedidosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
+	asignadosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
+}
+
+void agregarEntrenadorEnMatrices(){
+	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
+	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
+	inicializarEntrenadorEnMatrices(cantidadDeEntrenadores - 1);
+
 }
 
 void inicializarVectores() {
@@ -105,13 +114,22 @@ void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
 }
 
-void restarPedidosMatriz(int indiceEntrenador, int indicePokenest){
-	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
-}
 void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
+	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
 }
 
 void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] - 1;
 }
+
+void liberarRecursosEntrenador(int indiceEntrenador){
+	int i;
+	int j;
+	for(i = indiceEntrenador; i < cantidadDeEntrenadores-1;i++){
+		for(j = 0; j < cantidadDePokemones;j++){
+			asignadosMatriz[i][j] = asignadosMatriz[i+1][j];
+		}
+	}
+}
+

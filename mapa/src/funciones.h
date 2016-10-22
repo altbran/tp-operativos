@@ -54,5 +54,6 @@ int devolverIndiceEntrenador(int socket);
 int movimientoValido(int socket,int posX, int posY);
 int pokemonDisponible(int indicePokenest);
 char** str_split(char* a_str, const char a_delim);
+void restarRecursoDisponible(int indicePokenest);
 
 #endif /* FUNCIONES_H_ */
