@@ -6,7 +6,6 @@
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <src/sockets.h>
-#include <pthread.h>
 #include <commons/log.h>
 #include <sys/mman.h>
 
@@ -56,11 +55,14 @@ bool esDirectorio(char* path);
 int pedirFecha(void);
 void sacarNombre(char* path,char* nombre);
 bool comprobarPathValidoLectura(char* path);
+void recorrerDesdeIzquierda(char* path, char* nombre);
+void guardarEstructuraEn(char* mapa);
 void* leerArchivo(char* pathSolicitado,t_estructuraAdministrativa est,char* mapa);
 void crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
 void borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
+void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
 
 //Variables globales
 
@@ -128,12 +130,14 @@ int main(void) {
 	//crearArchivo("/entrenador/juan/algo.dat",archivoMapeado);
 	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
 
+	//renombrar("/entrenador/juan/algo.dat","/entrenador/juan/esquivelForro.dat",archivoMapeado);
 
-	//borrarArchivo("/entrenador/ruperto.dat",archivoMapeado);
+	//borrarArchivo("/entrenador/juan/algo.dat",archivoMapeado);
+	//borrarDirectorioVacio("/entrenador/juan",archivoMapeado);
 
-	/*comprobarPathValidoLectura("/pokedex");
-	comprobarPathValidoLectura("/entrenador/pikachu.dat");
-	comprobarPathValidoLectura("/pokedex/pikachu.dat");*/
+	//comprobarPathValidoLectura("/pokedex");
+	//comprobarPathValidoLectura("/entrenador/pikachu.dat");
+	//comprobarPathValidoLectura("/pokedex/pikachu.dat");
 
 
 	struct sockaddr_in direccionCliente;
@@ -445,6 +449,30 @@ bool comprobarPathValidoLectura(char* path)   // ejemplo:  "/pokedex/ash/objetiv
 	}
 }
 
+void recorrerDesdeIzquierda(char* path, char* nombre)
+{
+	int i = 0;
+	int j = 0;
+	int largo;
+
+	if(path[i] == '/')   //si llega algo asi:  '/entrenador/pikachu'    queda algo asi:   'entrenador/pikachu'
+		i++;
+
+	while(path[i] != '/' && path[i] != '\0')
+	{
+		nombre[j] = path[i];
+		i++;
+		j++;
+	}
+
+	nombre[j] = '\0';
+	largo = i;
+
+	for(i = 0;path[i + largo] != '\0';i++)
+		path[i] = path[i + largo];
+	path[i] = '\0';
+}
+
 void guardarEstructuraEn(char* mapa)
 {
 	int peso,  //este es el tamaño de los campos, medidos en BYTES
@@ -724,6 +752,70 @@ void borrarDirectorioVacio(char* path,char* mapa)
 				guardarEstructuraEn(mapa);
 				log_info(logger,"Directorio eliminado. Nombre '%s'",path);
 			}
+		}
+	}
+}
+
+void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
+{
+	int offset;
+	int i;
+	char* copiaPathOriginal = malloc(50);
+	char* copiaPathNuevo = malloc(50);
+	char* viejoNombre = malloc(17);
+	char* nuevoNombre = malloc(17);
+
+	strcpy(copiaPathOriginal,pathOriginal);
+	strcpy(copiaPathNuevo,pathNuevo);
+
+	sacarNombre(copiaPathNuevo,nuevoNombre);   //aca tengo el nombre nuevo que le quieren dar al archivo
+	sacarNombre(copiaPathOriginal,viejoNombre);
+
+	if(strcmp(copiaPathOriginal,copiaPathNuevo))
+	{
+		log_error(logger,"Se está intentando cambiar dos nombres a la vez. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
+	}
+	else
+	{
+			//tras verificar que estan bien los paths, debo volver a inicializarlos
+		free(copiaPathOriginal);
+		copiaPathOriginal = malloc(50);
+		strcpy(copiaPathOriginal,pathOriginal);
+
+			//ahora tengo el path original entero de nuevo, debo recorrerlo
+		offset = 0xFFFF;
+		while(strlen(copiaPathOriginal))  //mientras siga teniendo cosas para recorrer...
+		{
+			viejoNombre = malloc(18);
+			recorrerDesdeIzquierda(copiaPathOriginal,viejoNombre);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",pathOriginal);
+				break;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(viejoNombre);
+		}
+				//en este punto tengo el punto del archivo en la tabla, listo para modificar
+		if(i != 2048)
+		{
+			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nuevoNombre);
+
+				//una vez cambiadas las cosas necesarias, no queda mas que guardar
+			guardarEstructuraEn(mapa);
+			log_info(logger,"Archivo renombrado. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
 		}
 	}
 }
