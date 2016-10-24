@@ -23,8 +23,9 @@
 #include "commons/config.h"
 #include "commons/string.h"
 #include <string.h>
+#include "commons/collections/list.h"
+/**/
 
-//int PUERTO_MAPA_SERVIDOR ;
 
 uint32_t PUERTO_MAPA_SERVIDOR;
 char* IP_MAPA_SERVIDOR;
@@ -33,6 +34,7 @@ char* mensaje;
 char* nombre;
 
 t_log* logger;
+t_log* loger;
 int socketCliente;
 int servidorMapa;
 
@@ -52,5 +54,7 @@ typedef struct{
 }t_ubicacion;
 
 t_ubicacion ubicacionEntrenador;
-#endif /* FUNCIONESE_H_ */
+t_config* metaDataEntrenador;
 
+
+#endif /* FUNCIONESE_H_ */
