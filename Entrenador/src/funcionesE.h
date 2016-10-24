@@ -22,9 +22,11 @@
 #include <pthread.h>
 #include "commons/config.h"
 #include "commons/string.h"
+#include "commons/temporal.h"
 #include <string.h>
 #include "commons/collections/list.h"
-/**/
+#include "commons/temporal.h"
+
 
 
 uint32_t PUERTO_MAPA_SERVIDOR;
@@ -54,7 +56,6 @@ typedef struct{
 }t_ubicacion;
 
 t_ubicacion ubicacionEntrenador;
-t_config* metaDataEntrenador;
 
 
 #endif /* FUNCIONESE_H_ */

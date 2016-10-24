@@ -15,7 +15,9 @@ char* crearComando(char* ,char* );
 void solicitarUbicacionPokenest(int,char);
 void recibirYAsignarCoordPokenest(int,t_metadataPokenest);
 void solicitarAtraparPkm(char, int);
-
+void solicitarMovimiento(int, t_metadataPokenest);
+void desconectarseDe(int socketServer);
+//void solicitarYCopiarMedallaMapa(char*, int);
 
 int main(int argc, char** argv){
 
@@ -25,7 +27,7 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
-	char* rutaMetadata = malloc(50);
+	char* rutaMetadata = string_new();
 	strcpy(rutaMetadata, argv[2]);
 	char* nombreEntrenador = string_new();
 	string_append(&rutaMetadata, "/Entrenadores/");
@@ -33,20 +35,18 @@ int main(int argc, char** argv){
 	string_append(&rutaMetadata, nombreEntrenador);
 	string_append(&rutaMetadata, "/MetadataEntrenador.txt");
 
-	printf("ruta: %s",rutaMetadata);
 
+	t_config* metaDataEntrenador;
 	metaDataEntrenador = config_create(rutaMetadata);
 
 
 	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
 
-	//entrenador.nombre = malloc(50);
-	entrenador.nombre  = config_get_string_value(metaDataEntrenador, "nombre");//problema
-	printf("nombre: %s", entrenador.nombre );
 	log_info(logger,"Entrenador leera sus atributos de la ruta %s\n", rutaMetadata);
 
-	//cargarDatos();
+	cargarDatos(metaDataEntrenador);//cargo metadata, posicion y ultimo movimiento
 
+	config_destroy(metaDataEntrenador);//YA LEI LO QUE QUE QUERIA, AHORA DESTRUYO EL CONFIG  DE ENTRENADOR
 
 	signal(SIGUSR1,senialRecibirVida);
 	signal(SIGTERM,senialQuitarVida);
@@ -61,22 +61,25 @@ int main(int argc, char** argv){
 	}
 	log_info(logger, "Socket cliente creado");
 
+	char* tiempoDeInicio = temporal_get_string_time();
 	int i;
 	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
-		t_objetivosPorMapa* elemento = malloc(sizeof(t_objetivosPorMapa));
-		elemento = list_get(entrenador.hojaDeViaje,i);
-
-
-		char* nombreMapa = elemento->mapa;
+		t_objetivosPorMapa *elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
+		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
+														// segun indice
+		char* nombreMapa = string_new();
+		nombreMapa = elemento->mapa;
 		char* rutaMetadataMapa = string_new();
 		string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
-		string_append(&rutaMetadataMapa,nombreMapa);
+		string_append(&rutaMetadataMapa,nombreMapa);			//CREO EL PATH DE METADATA MAPA
 
-		t_config* metaDataMapa = config_create(rutaMetadataMapa);
 
-		IP_MAPA_SERVIDOR = config_get_string_value(metaDataMapa, "ip");
-		PUERTO_MAPA_SERVIDOR = config_get_int_value(metaDataMapa, "puerto");
+		t_config* metadataMapa = config_create(rutaMetadataMapa);
 
+		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
+		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
+
+		config_destroy(metadataMapa);
 		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
@@ -96,7 +99,7 @@ int main(int argc, char** argv){
 			char pokemon;
 			pokemon = list_get(elemento->objetivos,j);
 			int estado = 0;
-			char numeroPokemon[3];
+			char numeroPokemon[2];
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pokemon;
 			void *buffer = malloc(3);
@@ -109,31 +112,34 @@ int main(int argc, char** argv){
 						break;
 
 						case 1:
-							if(llegoAPokenest(*pokenestProxima))
-							estado = 2;
-							else{
-							moverEntrenador(*pokenestProxima);
-							//avisarQueMeMuevo(servidorMapa);
+							solicitarMovimiento(servidorMapa,*pokenestProxima);//le pido al mapa permiso para moverme
+							for(;;){
+								if(recibirHeader(servidorMapa) == movimientoAceptado) //hasta que no me de el OK
+									break;												//no me muevo
 							}
-
+							if(llegoAPokenest(*pokenestProxima)){
+								estado = 2;
+								log_info(logger, "Entrenador alcanza pokenest del pokemon %c", pokemon);
+							}
 						break;
 
 						case 2:
-						solicitarAtraparPkm(pokemon,servidorMapa);
-						if(!recibirTodo(servidorMapa, buffer, 3)){
-							memcpy(&numeroPokemon,buffer,3);
-						//aca puede ser elegido como victima, si lo es, mostrara en pantalla
-						//los motivos, borrara los archivos en su directorio de bill, se
-						//desconectara del mapa y perdera todos los pkms
-						//si le quedan vidas disponibles, se le descuenta, si no,
-						//tiene la opcion de volver a empezar, aumentando el contador de
-						//reintentos
-						// atrape pokemon,
-							estado = 3;
-						}
-						free(buffer);
-						break;
-						}
+							solicitarAtraparPkm(pokemon,servidorMapa);
+							//aca puede ser elegido como victima, si lo es, mostrara en pantalla
+							//los motivos, borrara los archivos en su directorio de bill, se
+							//desconectara del mapa y perdera todos los pkms
+							//si le quedan vidas disponibles, se le descuenta, si no,
+							//tiene la opcion de volver a empezar, aumentando el contador de
+							//reintentos
+							// atrape pokemon,
+							if(!recibirTodo(servidorMapa, buffer, 3)){
+								memcpy(&numeroPokemon,buffer,3);
+
+								estado = 3;
+							}
+							free(buffer);
+							break;
+							}
 				/*char* rutaPokemon = string_new();
 				rutaPokemon = crearRutaPkm(nombreMapa, nombrePknest, numeroPokemon);
 
@@ -146,16 +152,17 @@ int main(int argc, char** argv){
 				}
 
 		free(pokenestProxima);
+
 		}
-		//void solicitarMedallaMapa(){}
-		//void cargarYCopiarMedalla(){}
-				//config_destroy(metaDataMapa);
-		//free(elemento); //elemento de hoja de viaje, osea un t_objetivosXMapa
+		//solicitarYCopiarMedallaMapa(nombreMapa, servidorMapa);
+		config_destroy(metadataMapa);
+		free(elemento);
+		desconectarseDe(servidorMapa);
 		}
 	//SE CONVIRTIO EN MAESTRO POKEMON, NOTIFICAR POR PANTALLA, INFORMAR TIEMPO TOTAL,
 	//CUANTO TIEMPO PASO BLOQUEADO EN LAS POKENESTS, EN CUANTOS DEADBLOCKS ESTUVO INVOLUCRADO
 	//Y CUANTAS VECES MURIO
-	//free(rutaMetadata);
+	//free(rutaMetadata); ??VA
 	return EXIT_SUCCESS;
 	}
 
@@ -240,10 +247,10 @@ bool llegoAPokenest(t_metadataPokenest pokenest){
 	return((ubicacionEntrenador.coordenadasX == pokenest.posicionX) && (ubicacionEntrenador.coordenadasY == pokenest.posicionY));
 }
 
-void cargarDatos(){
+void cargarDatos(t_config* metaDataEntrenador){
 	entrenador.nombre  = config_get_string_value(metaDataEntrenador, "nombre");
 	log_info(logger,"El nombre del entrenador es: %s\n", entrenador.nombre);
-	//entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
+	entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
 	char* simbolo = config_get_string_value(metaDataEntrenador, "simbolo");
 	entrenador.simbolo = simbolo[0];
 	log_info(logger,"El simbolo del entrenador es: %c", entrenador.simbolo);
@@ -311,13 +318,16 @@ void solicitarUbicacionPokenest(int socketDestino,char pokemon){
 	send(socketDestino,buffer,sizeof(char),0);
 	free(buffer);
 }
-/*void solicitarMedallaMapa(char* nombreMapa, int socketDestino){
-	void *buffer = malloc(strlen(nombreMapa));		//PROBAR SI ANDA ESTO
-	memcpy(buffer,nombreMapa,strlen(nombreMapa));
-	send(socketDestino, buffer, strlen(nombreMapa), 0);
-	free(buffer);
- } ES NECESARIO ESTO??*/
-
+/*void solicitarYCopiarMedallaMapa(char* nombreMapa, int socketDestino){
+	enviarHeader(servidorMapa, finalizoMapa);
+	for(;;){
+			if(recibirHeader(socketDestino) == autorizacionMedalla){
+				copiarMedalla(nombreMapa);
+				break;
+			}
+	}
+ }
+*/
 void copiarMedalla(char* nombreMapa){
 	char* rutaOrigen = string_new();
 	string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
@@ -348,5 +358,21 @@ void solicitarAtraparPkm(char pokemon, int servidorMapa){
 	void *buffer = malloc(sizeof(char));
 	memcpy(buffer, &pokemon,sizeof(char));
 	send(servidorMapa, buffer, sizeof(char), 0);
+	free(buffer);
+}
+void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
+	void* buffer = malloc(sizeof(int)+sizeof(int)+sizeof(int));
+	int cursorMemoria = 0;
+	int header = posicionEntrenador;
+
+	moverEntrenador(pokenest);
+	memcpy(buffer, &header, sizeof(int));
+	cursorMemoria += sizeof(int);
+	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasX, sizeof(int));
+	cursorMemoria += sizeof(int);
+	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasY, sizeof(int));
+	send(socketDestino,buffer,sizeof(int)+sizeof(int)+sizeof(int),0);
+	//hasta aca envio el header con las coordenadas del entrenador
+
 	free(buffer);
 }
