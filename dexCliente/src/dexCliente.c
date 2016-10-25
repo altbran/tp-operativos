@@ -17,11 +17,21 @@ int S_POKEDEX_CLIENTE;
 void enviarPath(const char *path, int socketDestino) {
 	int longitud;
 	longitud = strlen(path);
+	void *buffer = malloc(longitud);
+	strcpy(buffer, path);
+	send(socketDestino, buffer, longitud, 0);
+	free(buffer);
+}
+
+/*	void enviarPath(const char *path, int socketDestino) {
+	int longitud;
+	longitud = strlen(path);
 	void *buffer = malloc(sizeof(longitud));
 	strcpy(buffer, path);
 	send(socketDestino, buffer, sizeof(buffer), 0);
 	free(buffer);
 }
+*/
 
 static int f_getattr(
 		const char *path/*ruta del archivo cuyos atributos deben ser retornados*/,
@@ -79,18 +89,20 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return resultado;
 }
 
-static int f_read(const char *path, char *buf, size_t size, off_t offset,
-		struct fuse_file_info *fi) {
+static int f_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+{
 	/*Se llama a esta funcion cuando el sistema trata de leer un pedazo de data de un archivo*/
 	char* cadenaARecibir;
 	int cantidadBytesARecibir;
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	cadenaARecibir = malloc(18);
+
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
+	cadenaARecibir = malloc(cantidadBytesARecibir);
+
 	recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
-	memcpy(buf, (char*) cadenaARecibir + offset, size);
+	memcpy(buf, cadenaARecibir + offset, size);
 
 	return size;
 }
@@ -141,7 +153,8 @@ static int f_open(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
-static int f_rename(const char *pathAntiguo, const char *pathNuevo) {
+static int f_rename(const char *pathAntiguo, const char *pathNuevo)
+{
 	t_cambioDeDirectorios estructura;
 	estructura.pathAntiguo = pathAntiguo;
 	estructura.pathNuevo = pathNuevo;
@@ -174,29 +187,22 @@ static struct fuse_operations ejemplo_oper = { .readdir = f_readdir,
 		.rmdir = f_removerDirectorio,
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
 	int PUERTO_POKEDEX_SERVIDOR = atoi(PUERTOSTR);
 	char *IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 
 	//me conecto al proceso servidor
-	if (crearSocket(&S_POKEDEX_CLIENTE)) {
+	if (crearSocket(&S_POKEDEX_CLIENTE))
 		printf("Error creando socket\n");
-		return 1;
-	}
 
-	if (conectarA(S_POKEDEX_CLIENTE, IP_POKEDEX_SERVIDOR,
-			PUERTO_POKEDEX_SERVIDOR)) {
+	if (conectarA(S_POKEDEX_CLIENTE, IP_POKEDEX_SERVIDOR, PUERTO_POKEDEX_SERVIDOR))
 		printf("Error al conectar\n");
-		return 1;
-	}
 
-	if (responderHandshake(S_POKEDEX_CLIENTE, IDPOKEDEXCLIENTE,
-			IDPOKEDEXSERVER)) {
-		return 1;
-	}
+	if (responderHandshake(S_POKEDEX_CLIENTE, IDPOKEDEXCLIENTE, IDPOKEDEXSERVER))
+		printf("Error, id no esperado\n");
 
 	return fuse_main(argc, argv, &ejemplo_oper);
-
 }
 

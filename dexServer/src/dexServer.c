@@ -6,6 +6,7 @@
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <src/sockets.h>
+#include <src/protocolo.h>
 #include <commons/log.h>
 #include <sys/mman.h>
 
@@ -51,13 +52,12 @@ typedef struct{
 //Prototipos
 
 void leerEstructurasAdministrativas(FILE* archivo);
-bool esDirectorio(char* path);
 int pedirFecha(void);
 void sacarNombre(char* path,char* nombre);
 bool comprobarPathValido(char* path);
 void recorrerDesdeIzquierda(char* path, char* nombre);
 void guardarEstructuraEn(char* mapa);
-void* leerArchivo(char* pathSolicitado,char* mapa);
+void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 void crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
 void borrarArchivo(char* path,char* mapa);
@@ -76,7 +76,7 @@ int main(void) {
 	logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));  //creo el archivo de log
 
 	int PUERTO_POKEDEX_SERVIDOR; //getenv("PUERTO_POKEDEX_SERVIDOR");
-	//int IP_POKEDEX_SERVIDOR = *getenv("IP_POKEDEX_SERVIDOR");
+	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
 
 	int i;
@@ -92,6 +92,7 @@ int main(void) {
 	PUERTO_POKEDEX_SERVIDOR = atoi(archivoMapeado);
 
 	log_info(logger, "PUERTO_POKEDEX_SERVIDOR = %d",PUERTO_POKEDEX_SERVIDOR);
+	log_info(logger, "IP_POKEDEX_SERVIDOR = %s",IP_POKEDEX_SERVIDOR);
 
 
 	archivo = fopen("fileSystem.dat","rb+");
@@ -170,8 +171,8 @@ int main(void) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1)
 		{
-			perror("select");
-			return 1;
+			log_error(logger,"Estructura del select tuvo un problema");
+			return -1;
 		}
 
 		for (i = 0; i <= fdmax; i++)
@@ -185,7 +186,7 @@ int main(void) {
 					if (socketNuevo > fdmax)
 						fdmax = socketNuevo;
 
-					int idRecibido = iniciarHandshake(socketNuevo, 4/*IDPOKEDEXSERVER*/);
+					int idRecibido = iniciarHandshake(socketNuevo, IDPOKEDEXSERVER);
 
 					switch (idRecibido)
 					{
@@ -238,6 +239,25 @@ int main(void) {
 }
 
 
+void atenderConexion(int socket, char* mapa)
+{
+	int operacion;
+	int* tamanio = NULL;
+	char* path = malloc(50);
+	void* archivo = NULL;
+
+	operacion = recibirHeader(socket);
+
+	switch(operacion)
+	{
+		case contenidoArchivo:
+			recibirTodo(socket,path,50);
+			archivo = leerArchivo(path,mapa,tamanio);
+			enviarHeader(socket,(int)tamanio);
+			send(socket,archivo,(int)tamanio,0); //hacer un array de flags de archivos abietos todo
+	}
+}
+
 void leerEstructurasAdministrativas(FILE* archivo)
 {
 	t_header header;
@@ -269,17 +289,7 @@ void leerEstructurasAdministrativas(FILE* archivo)
 	rewind(archivo);
 }
 
-
-bool esDirectorio(char* path)
-{
-	int i = strlen(path);
-	if(path[i-1] == '/')
-		return true;
-	else
-		return false;
-}
-
-void* leerArchivo(char* path,char* mapa)
+void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(60);
@@ -357,6 +367,7 @@ void* leerArchivo(char* path,char* mapa)
 
 			archivoLeido = malloc(tamanioTotalEnBytes);
 			memcpy(archivoLeido,nombreArchivo,tamanioTotalEnBytes);  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+			tamArchivo = (int*)tamanioTotalEnBytes;
 
 			free(nombreArchivo);
 			free(copiaPath);
