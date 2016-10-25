@@ -129,28 +129,24 @@ int main(void) {
 	//crearDirectorio("/pokedex",archivoMapeado);
 	//crearDirectorio("/entrenador/juan",archivoMapeado);
 
-	crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
+	//crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
 	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
 
-	char* pruebaMapaArchivo;
+	/*char* pruebaMapaArchivo;
 	FILE* el = fopen("pikachu.dat","rb+");
 	fdmax = fileno(el);
-
 	fseek(el,0,SEEK_END);
-	i = ftell(el);        //uso i temporariamente para sacar la longitud en bytes del archivo
+	i = ftell(el);
 	pruebaMapaArchivo = malloc(i);
+	pruebaMapaArchivo = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);
+	escribirArchivo("/entrenador/juan/pikachu.dat",pruebaMapaArchivo,i,archivoMapeado);*/
 
-	pruebaMapaArchivo = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);  //todo, problemas aca
-
-
-
-	escribirArchivo("/entrenador/juan/pikachu.dat",pruebaMapaArchivo,i,archivoMapeado);
-
+	//char* el = leerArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
 
 
 	//renombrar("/entrenador/juan/algo.dat","/entrenador/juan/esOtroAlgo.dat",archivoMapeado);
 
-	//borrarArchivo("/entrenador/juan/algo.dat",archivoMapeado);
+	//borrarArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
 	//borrarDirectorioVacio("/entrenador/juan",archivoMapeado);
 
 	//comprobarPathValidoLectura("/pokedex");
@@ -285,35 +281,47 @@ bool esDirectorio(char* path)
 
 void* leerArchivo(char* path,char* mapa)
 {
-	char* nombreArchivo = malloc(18); //son 17 bytes maximos del nombre, mas el caracter '\0'
-	char* pathSolicitado = malloc(60);
+	char* nombreArchivo;
+	char* copiaPath = malloc(60);
 	int tamanioTotalEnBytes;
 	int bloqueSiguienteEnTabla;
 	int posicionDelMapa;
 	int i = 0;
+	int offset = 0xFFFF;
 	int j;
 	int contadorGlobal = 0;
-	void* archivoLeido = "";
+	void* archivoLeido;
 
-	strcpy(pathSolicitado,path);
+	strcpy(copiaPath,path);
 
-	if(comprobarPathValido(pathSolicitado))
+	if(comprobarPathValido(copiaPath))
 	{
-		sacarNombre(pathSolicitado,nombreArchivo);  //obtiene el nombre del path. Esto es, despues del ultimo '/'
-
-		i = 0;
-		while(strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo) && (i < 2048))  //busco en la tabla de archivos su ubicacion
-			i++;
-
-		if(i == 2048)
-			log_error(logger,"El archivo no existe");
-		else
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
 		{
-			if(estructuraAdministrativa.tablaArchivos[i].estado == '\2')              //si es un directorio, no debe ser leido
-				log_error(logger,"No se puede leer un directorio");
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				break;
+			}
 			else
-				log_info(logger,"Localizado el archivo dentro de la tabla");
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
 		}
+
+		i = offset;
 
 		if(i < 2048 && estructuraAdministrativa.tablaArchivos[i].estado == '\1')  //si definitivamente es un archivo
 		{
@@ -321,10 +329,9 @@ void* leerArchivo(char* path,char* mapa)
 			bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
 			posicionDelMapa = (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos + bloqueSiguienteEnTabla) * 64;  //inicializo el cabezal en bytes
 
-			free(nombreArchivo);      //reinicializo el string para poder guardarle el archivo adentro
 			nombreArchivo = malloc(tamanioTotalEnBytes);  //ya se el tamaño que tiene, por eso le guardo el espacio en memoria
 
-			while(contadorGlobal < tamanioTotalEnBytes)   //aca voy haciendo la lectura de a bloques
+			while(bloqueSiguienteEnTabla != 0xFFFFFFFF)   //aca voy haciendo la lectura de a bloques
 			{
 				if((tamanioTotalEnBytes - contadorGlobal) >= 64 )  //si hay mas de un bloque, tengo que leer al menos un bloque entero
 				{
@@ -344,26 +351,26 @@ void* leerArchivo(char* path,char* mapa)
 				}
 
 				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla]; //recorro el array de asignaciones
-				if(bloqueSiguienteEnTabla != 0xFFFFFFFF)
-					posicionDelMapa = (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
+				posicionDelMapa = (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos + bloqueSiguienteEnTabla) * 64; //vuelvo a posicionar
+					//aca no hay drama si el bloque es 0xFFFFFFF, porque sale del bucle
 			}
 
-			memcpy(archivoLeido,nombreArchivo,strlen(nombreArchivo));  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+			archivoLeido = malloc(tamanioTotalEnBytes);
+			memcpy(archivoLeido,nombreArchivo,tamanioTotalEnBytes);  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
+
 			free(nombreArchivo);
-			free(pathSolicitado);
+			free(copiaPath);
 			return archivoLeido;
 		}
 		else
 		{
-			free(nombreArchivo);
-			free(pathSolicitado);
+			free(copiaPath);
 			return NULL;
 		}
 	}
 	else
 	{
-		free(nombreArchivo);
-		free(pathSolicitado);
+		free(copiaPath);
 		return NULL;
 	}
 }
@@ -879,8 +886,6 @@ void escribirArchivo(char* path, char* fichero, int tam, char* mapa)
 						bloqueAGuardar[j] = fichero[contadorGlobal];
 						contadorGlobal++;
 					}
-					log_info(logger,"Inicio: %d", bloqueInicioDatos);
-					//log_info(logger,"lo que tengo: %d, %d",contadorGlobal,(bloqueInicioDatos + bloqueSiguienteEnTabla));
 
 					for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
 					{
@@ -912,6 +917,7 @@ void escribirArchivo(char* path, char* fichero, int tam, char* mapa)
 
 				guardarEstructuraEn(mapa);
 				log_info(logger,"Archivo correctamente guardado.");
+				free(copiaPath);
 			}
 		}
 	}
