@@ -63,6 +63,7 @@ void crearArchivo(char* path,char* mapa);
 void borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
+void escribirArchivo(char* path, char* fichero, int tam, char* mapa);
 
 
 //Variables globales
@@ -122,14 +123,30 @@ int main(void) {
 		return 1;
 	}
 
-	log_info(logger, "Se creó correctamente el socket servidor. Escuchando nuevas conexiones");
+	log_info(logger, "Se creo correctamente el socket servidor. Escuchando nuevas conexiones");
 
 	//crearDirectorio("/entrenador",archivoMapeado);
 	//crearDirectorio("/pokedex",archivoMapeado);
 	//crearDirectorio("/entrenador/juan",archivoMapeado);
 
-	//crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
+	crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
 	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
+
+	char* pruebaMapaArchivo;
+	FILE* el = fopen("pikachu.dat","rb+");
+	fdmax = fileno(el);
+
+	fseek(el,0,SEEK_END);
+	i = ftell(el);        //uso i temporariamente para sacar la longitud en bytes del archivo
+	pruebaMapaArchivo = malloc(i);
+
+	pruebaMapaArchivo = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);  //todo, problemas aca
+
+
+
+	escribirArchivo("/entrenador/juan/pikachu.dat",pruebaMapaArchivo,i,archivoMapeado);
+
+
 
 	//renombrar("/entrenador/juan/algo.dat","/entrenador/juan/esOtroAlgo.dat",archivoMapeado);
 
@@ -693,17 +710,16 @@ void borrarDirectorioVacio(char* path,char* mapa)
 
 bool comprobarPathValido(char* path)
 {
-	int offset;
+	int offset = 0xFFFF;
 	int i;
 	char* copiaPath = malloc(50);
-	char* viejoNombre = malloc(17);
+	char* viejoNombre;
 
 	strcpy(copiaPath,path);
 
-	offset = 0xFFFF;
 	while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...
 	{
-		viejoNombre = malloc(18);
+		viejoNombre = malloc(17);
 		recorrerDesdeIzquierda(copiaPath,viejoNombre);
 		i = 0;
 		while(i < 2048)
@@ -724,6 +740,7 @@ bool comprobarPathValido(char* path)
 
 		free(viejoNombre);
 	}
+	free(copiaPath);
 	return true;
 }
 
@@ -787,11 +804,115 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 				//una vez cambiadas las cosas necesarias, no queda mas que guardar
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo renombrado. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
+
+			free(copiaPathOriginal);
+			free(copiaPathNuevo);
+			free(nuevoNombre);
 		}
 	}
 }
 
-void escribirArchivo(char* fichero, char* mapa)
+void escribirArchivo(char* path, char* fichero, int tam, char* mapa)
 {
+	int i;
+	int j;
+	int otroContador = 0;
+	int offset = 0xFFFF;
+	int contadorGlobal = 0;
+	int bloqueSiguienteEnTabla;
+	int bloqueInicioDatos;
+	char* copiaPath = malloc(50);
+	char* viejoNombre;
+	char* bloqueAGuardar;
 
+	strcpy(copiaPath,path);
+
+	if(comprobarPathValido(path))
+	{
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+		{
+			viejoNombre = malloc(17);
+			recorrerDesdeIzquierda(copiaPath,viejoNombre);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				break;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(viejoNombre);
+		}
+							//aca tengo el offset de la tabla, o '2048' si es error
+		if(offset == 2048)
+			log_error(logger,"El archivo no existe. Path: '%s'",path);
+		else
+		{
+			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
+				log_error(logger,"No se puede escribir un directorio");
+			else
+			{
+				i = tam / BLOCK_SIZE;
+				if(tam % BLOCK_SIZE)
+					i++;               //aca tengo la cantidad de bloques que tengo que guardar
+
+				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+
+				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
+
+				while(otroContador < i)
+				{
+					bloqueAGuardar = malloc(BLOCK_SIZE);
+
+					for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
+					{
+						bloqueAGuardar[j] = fichero[contadorGlobal];
+						contadorGlobal++;
+					}
+					log_info(logger,"Inicio: %d", bloqueInicioDatos);
+					//log_info(logger,"lo que tengo: %d, %d",contadorGlobal,(bloqueInicioDatos + bloqueSiguienteEnTabla));
+
+					for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
+					{
+						mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
+					}
+
+					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
+					{
+						j = 0;
+						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+							j++;
+						   //donde para j, es el offset del bloque libre
+						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
+						   //aca ya reserve el bloque
+						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
+							//finalmente, le aseigno el nuevo bloque libre de datos
+					}
+					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+							//con esto obtengo el bloque siguiente para guardar datos
+					estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
+							//y finalmente, con esta mierda, le doy un cierre al puto archivo
+
+					free(bloqueAGuardar);
+					otroContador++;
+				}
+
+				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
+				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+
+				guardarEstructuraEn(mapa);
+				log_info(logger,"Archivo correctamente guardado.");
+			}
+		}
+	}
 }
