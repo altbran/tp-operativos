@@ -15,4 +15,4 @@ int iniciarHandshake(int socketDestino, uint8_t idOrigen);
 int responderHandshake(int socketDestino, uint8_t idOrigen, uint8_t idEsperado);
 int aceptarConexion(int socketServidor, struct sockaddr_in * direccionCliente);
 int recibirTodo(int socketOrigen,void * buffer, int largo);
-
+int enviarTodo(int socketDestino, void * buffer, int largo);

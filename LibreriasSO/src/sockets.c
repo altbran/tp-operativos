@@ -99,3 +99,15 @@ int recibirTodo(int socketOrigen, void * buffer, int largo) {
 	}
 	return 0;
 }
+int enviarTodo(int socketDestino, void* buffer, int largo){
+	int bytesEnviados = 0;
+	int bytesEnviadosTotales = 0;
+	bytesEnviadosTotales = send(socketDestino, buffer, largo, 0);
+	while(bytesEnviadosTotales < largo){
+		bytesEnviados = send(socketDestino, buffer+bytesEnviadosTotales, largo - bytesEnviadosTotales, 0);
+		bytesEnviadosTotales += bytesEnviados;
+		if (bytesEnviados <= 0)
+			return 1;
+	}
+	return 0;
+}
