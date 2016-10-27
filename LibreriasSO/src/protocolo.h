@@ -3,8 +3,10 @@
 
 enum headers { //Constantes que identifican los headers de los mensajes
 
+	socketDesconectado = 0,
 	datosInicialesMapa = 1,
 	datosPokenest = 2,
+	enviarDatosPokenest = 17,
 	posicionEntrenador = 3,
 	capturarPokemon = 7,
 	pokemonesDisponibles = 9,

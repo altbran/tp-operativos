@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
-	printf("%d",argc);
+	printf("%d", argc);
 
 	//busco las configuraciones
 	if (argc != 3) {
@@ -43,9 +43,6 @@ int main(int argc, char **argv) {
 	int nuevaConexion;
 	struct sockaddr_in direccionCliente;
 
-	//listaConsolas = list_create();
-	//listaFinalizacionesPendientes = list_create();
-
 	// temp file descriptor list for select()
 	int listener = servidorMapa;     // listening socket descriptor
 
@@ -65,7 +62,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	//todo dibujar();
+	dibujar();
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
@@ -98,18 +95,27 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						t_datosEntrenador entrenador = recibirEntrenador(nuevaConexion);
-						list_add(Entrenadores, &entrenador); //ingreso el entrenador a la lista de entrenadores
+						t_datosEntrenador entrenador;
+						//recibir datos del entrenador nuevo
+						if (recibirEntrenador(nuevaConexion, entrenador)) {
+							list_add(Entrenadores, *entrenador);
+						} else {
+							log_info(logger, "error en el recibir entrenador, socket %d", nuevaConexion);
+						}
 						//envio la posicion de la pokenest
 						char * identificador;
-						recibirTodo(nuevaConexion, identificador, sizeof(char));
-						//todo agregar header para enciar coord
-						enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
+						if (recibirTodo(nuevaConexion, identificador, sizeof(char))) {
+							enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
+						} else {
+							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
+						}
+						//todo agregar header para enviar coord
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
 							queue_push(listos, nuevaConexion);
+							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
+						} else {
+							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
 						}
-						log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
-
 						break;
 						/*
 						 case IDDIBUJADORMAPA:

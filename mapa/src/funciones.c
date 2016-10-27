@@ -8,14 +8,14 @@ void receptorSIG() {
 }
 //funciones entrenador
 
-t_datosEntrenador recibirEntrenador(int socketOrigen) {
-	t_datosEntrenador entrenador;
-	recibirTodo(socketOrigen, &entrenador.identificador, sizeof(char));
-	recibirTodo(socketOrigen, &entrenador.posicionX, sizeof(uint32_t));
-	recibirTodo(socketOrigen, &entrenador.posicionY, sizeof(uint32_t));
+int recibirEntrenador(int socketOrigen,t_datosEntrenador * entrenador) {
+	int i;
+	i = recibirTodo(socketOrigen, &entrenador.identificador, sizeof(char));
+	i += recibirTodo(socketOrigen, &entrenador.posicionX, sizeof(uint32_t));
+	i += recibirTodo(socketOrigen, &entrenador.posicionY, sizeof(uint32_t));
 	entrenador.socket = socketOrigen;
 	cargarEntrenador(entrenador);
-	return entrenador;
+	return i;
 }
 
 t_datosEntrenador devolverEntrenador(int socket) {
@@ -79,7 +79,7 @@ void cargarRecursos() {
 				t_metadataPokenest pokenest;
 				char ** tokens;
 				t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
-				pokenest.identificador = config_get_string_value(config, "Identificador");
+				pokenest.identificador = *(config_get_string_value(config, "Identificador"));
 				pokenest.tipo = config_get_string_value(config, "Tipo");
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
 				pokenest.posicionX = atoi(*tokens);
@@ -155,18 +155,22 @@ int devolverIndicePokenest(char identificador) {
 
 }
 
-void enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest) {
+int enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest) {
 
 	void *buffer = malloc(sizeof(int) + sizeof(int)); //posx + posy
 
 	int cursorMemoria = 0;
-
+	memcpy(buffer, enviarDatosPokenest, sizeof(uint32_t));
+	cursorMemoria += sizeof(uint32_t);
 	memcpy(buffer, &pokenest.posicionX, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
 	memcpy(buffer + cursorMemoria, &pokenest.posicionY, sizeof(uint32_t));
+	cursorMemoria += sizeof(uint32_t);
 
-	send(socketDestino, buffer, 21, 0); //hay que serializar algo acá?
+	int i = enviarTodo(socketDestino,buffer,cursorMemoria);
+	//send(socketDestino, buffer, cursorMemoria, 0); //hay que serializar algo acá?
 	free(buffer);
+	return i;
 }
 
 char* concat(int count, ...) {
