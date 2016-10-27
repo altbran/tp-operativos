@@ -8,13 +8,13 @@ void receptorSIG() {
 }
 //funciones entrenador
 
-int recibirEntrenador(int socketOrigen,t_datosEntrenador * entrenador) {
+int recibirEntrenador(int socketOrigen,t_datosEntrenador *entrenador) {
 	int i;
-	i = recibirTodo(socketOrigen, &entrenador.identificador, sizeof(char));
-	i += recibirTodo(socketOrigen, &entrenador.posicionX, sizeof(uint32_t));
-	i += recibirTodo(socketOrigen, &entrenador.posicionY, sizeof(uint32_t));
-	entrenador.socket = socketOrigen;
-	cargarEntrenador(entrenador);
+	i = recibirTodo(socketOrigen, &entrenador->identificador, sizeof(char));
+	i += recibirTodo(socketOrigen, &entrenador->posicionX, sizeof(uint32_t));
+	i += recibirTodo(socketOrigen, &entrenador->posicionY, sizeof(uint32_t));
+	entrenador->socket = socketOrigen;
+	cargarEntrenador(*entrenador);
 	return i;
 }
 
@@ -116,7 +116,7 @@ int contadorDePokemon(char * directorio) {
 }
 
 int pokemonDisponible(int indicePokenest) {
-	if (list_get(recursosTotales, indicePokenest) >= 1) {
+	if (*((int*)list_get(recursosTotales, indicePokenest)) >= 1) {
 		return EXIT_SUCCESS;
 	} else {
 		return EXIT_FAILURE;
@@ -125,46 +125,42 @@ int pokemonDisponible(int indicePokenest) {
 
 void restarRecursoDisponible(int indicePokenest) {
 	int cantidad;
-	cantidad = list_get(recursosTotales, indicePokenest) - 1;
-	list_replace(recursosTotales, indicePokenest, cantidad);
+	cantidad = *((int*)list_get(recursosTotales, indicePokenest)) - 1;
+	list_replace(recursosTotales, indicePokenest, &cantidad);
 }
 
-t_metadataPokenest devolverPokenest(char identificador) {
-	//todo
+t_metadataPokenest devolverPokenest(char * identificador) {
 	int i;
 	for (i = 0; i < list_size(Pokenests); i++) {
 		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
-		if (pokenest.identificador == identificador) {
+		if (pokenest.identificador == *identificador) {
 			return pokenest;
 		}
 	}
-	//return EXIT_FAILURE;
-
 }
 
-int devolverIndicePokenest(char identificador) {
-	//todo
+int devolverIndicePokenest(char * identificador) {
 	int i;
 	for (i = 0; i < list_size(Pokenests); i++) {
 		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
-		if (pokenest.identificador == identificador) {
+		if (pokenest.identificador == *identificador) {
 			return i;
 		}
 	}
-	//return EXIT_FAILURE;
-
 }
 
-int enviarCoordPokenest(int socketDestino, t_metadataPokenest pokenest) {
+int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {
 
 	void *buffer = malloc(sizeof(int) + sizeof(int)); //posx + posy
 
+	//envio header
+	enviarHeader(socketDestino,enviarDatosPokenest);
+
+	//serializo contenido
 	int cursorMemoria = 0;
-	memcpy(buffer, enviarDatosPokenest, sizeof(uint32_t));
+	memcpy(buffer, &pokenest->posicionX, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
-	memcpy(buffer, &pokenest.posicionX, sizeof(uint32_t));
-	cursorMemoria += sizeof(uint32_t);
-	memcpy(buffer + cursorMemoria, &pokenest.posicionY, sizeof(uint32_t));
+	memcpy(buffer + cursorMemoria, &pokenest->posicionY, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
 
 	int i = enviarTodo(socketDestino,buffer,cursorMemoria);

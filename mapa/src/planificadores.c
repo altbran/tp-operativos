@@ -10,16 +10,17 @@ void roundRobin() {
 
 			case datosPokenest: ;
 				char identificadorPokenest;
-				recibirTodo(turno, identificadorPokenest, sizeof(char));
-				enviarCoordPokenest(turno, devolverPokenest(identificadorPokenest));
+				recibirTodo(turno, &identificadorPokenest, sizeof(char));
+				t_metadataPokenest pokenest = devolverPokenest(&identificadorPokenest);
+				enviarCoordPokenest(turno, &pokenest);
 				i = -1;
 				break;
 
 			case posicionEntrenador: ;
 				int posX;
 				int posY;
-				recibirTodo(turno, posX, sizeof(int));
-				recibirTodo(turno, posY, sizeof(int));
+				recibirTodo(turno, &posX, sizeof(int));
+				recibirTodo(turno, &posY, sizeof(int));
 				if (movimientoValido(turno, posX, posY)) {
 					moverEntrenador(devolverEntrenador(turno));
 					enviarHeader(turno,movimientoAceptado);

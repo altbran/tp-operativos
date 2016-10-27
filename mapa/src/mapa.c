@@ -97,19 +97,19 @@ int main(int argc, char **argv) {
 						FD_SET(nuevaConexion, &bolsaDeSockets);
 						t_datosEntrenador entrenador;
 						//recibir datos del entrenador nuevo
-						if (recibirEntrenador(nuevaConexion, entrenador)) {
-							list_add(Entrenadores, *entrenador);
+						if (recibirEntrenador(nuevaConexion, &entrenador)) {
+							list_add(Entrenadores, &entrenador);
 						} else {
 							log_info(logger, "error en el recibir entrenador, socket %d", nuevaConexion);
 						}
 						//envio la posicion de la pokenest
-						char * identificador;
-						if (recibirTodo(nuevaConexion, identificador, sizeof(char))) {
-							enviarCoordPokenest(nuevaConexion, devolverPokenest(identificador));
+						char identificador;
+						if (recibirTodo(nuevaConexion, &identificador, sizeof(char))) {
+							t_metadataPokenest pokenest = devolverPokenest(&identificador);
+							enviarCoordPokenest(nuevaConexion, &pokenest);
 						} else {
 							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
 						}
-						//todo agregar header para enviar coord
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
 							queue_push(listos, nuevaConexion);
 							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
@@ -117,23 +117,6 @@ int main(int argc, char **argv) {
 							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
 						}
 						break;
-						/*
-						 case IDDIBUJADORMAPA:
-
-						 FD_SET(nuevaConexion, &bolsaDeSockets);
-						 t_metadataPokenest pk;
-						 char prueba[12] = "pika";
-						 pk.identificador = '$';
-						 pk.posicionX = 10;
-						 pk.posicionY = 10;
-						 strcpy(pk.tipo,prueba);
-						 enviarPokenestDibujador(nuevaConexion,pk,21);
-
-
-						 log_info(logger, "Dibujador conectado, socket %d", nuevaConexion);
-
-						 break;
-						 */
 					default:
 						close(nuevaConexion);
 						log_error(logger, "Error en el handshake. Conexion inesperada", texto);
