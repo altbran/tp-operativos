@@ -9,7 +9,12 @@
 
 void detectarDeadlock() {
 
+
+	logDeadlock = log_create("Deadlock.log", "deadlock", 0, log_level_from_string("INFO"));
+
 	sleep(configuracion.tiempoChequeoDeadlock / 1000);
+
+	hayDeadlock = EXIT_FAILURE;
 
 	cantidadDeEntrenadores = list_size(Entrenadores);
 	cantidadDePokemones = list_size(Pokenests);
@@ -17,9 +22,21 @@ void detectarDeadlock() {
 	inicializarMatrices();
 	inicializarVectores();
 
+	inicializarAlgoritmoVector();
+
 	noTieneAsignadosOPedidos();
 
 	algoritmo();
+
+	if(hayDeadlock == EXIT_SUCCESS){
+		log_info(logDeadlock, "Hay deadlock");
+		log_info(logDeadlock, "Matriz de asignados");
+		mostrarMatriz(asignadosMatriz);
+		log_info(logDeadlock, "Matriz de pedidos");
+		mostrarMatriz(pedidosMatriz);
+		log_info(logDeadlock, "Entrenadores en deadlock");
+		mostrarEntrenadoresEnDeadlock();
+	}
 
 }
 
@@ -50,61 +67,89 @@ void inicializarVectores() {
 	entrenadoresEnDeadlock = calloc(cantidadDeEntrenadores, sizeof(int*));
 }
 
+void inicializarAlgoritmoVector(){
+	int b;
+	for(b=0;b<cantidadDePokemones;b++){
+		algoritmoVector[b] = disponiblesVector[b];
+	}
+}
+
+void mostrarMatriz(int** matriz) {
+	int i;
+	int j;
+	char* vector = calloc(cantidadDePokemones, sizeof(int*));
+	for (i = 0; i < cantidadDeEntrenadores; i++) {
+		for(j=0; j<cantidadDePokemones; j++){
+			vector[j] = matriz[i][j] + '0';
+		}
+		log_info(logDeadlock,"%s" ,vector);
+
+	}
+}
+
+void mostrarEntrenadoresEnDeadlock(){
+	int p;
+	for(p=0;p<cantidadDeEntrenadores;p++){
+		if(entrenadoresEnDeadlock[p] == 0){
+			//log_info(logDeadlock,"%s", list_get(Entrenadores,p).nombre)
+			log_info(logDeadlock,"%d", p);
+		}
+	}
+}
+
+
 void noTieneAsignadosOPedidos(){
-	int marcar = 0;
 	int tienePedido;
 	int tieneAsignado;
 	int j;
 	int i;
 	for(i = 0; i < cantidadDeEntrenadores; i++){
 		j = 0;
-		tienePedido = 0;
-		tieneAsignado = 0;
-		while(j < cantidadDePokemones && (tienePedido == 0 || tieneAsignado == 0)){
+		tienePedido = EXIT_FAILURE;
+		tieneAsignado = EXIT_FAILURE;
+		while(j < cantidadDePokemones && (tienePedido ==  EXIT_FAILURE|| tieneAsignado ==  EXIT_FAILURE)){
 			if (pedidosMatriz[i][j] != 0){
-				tienePedido= 1;
+				tienePedido= EXIT_SUCCESS;
 			}
 			if(asignadosMatriz[i][j] != 0){
-				tieneAsignado = 1;
+				tieneAsignado = EXIT_SUCCESS;
 			}
 			j++;
 		}
 
-		if((tienePedido == 0 || tieneAsignado == 0)){
+		if((tienePedido ==  EXIT_FAILURE || tieneAsignado ==  EXIT_FAILURE)){
 			entrenadoresEnDeadlock[i] = 1;
 		}
-		marcar = 0;
 	}
 }
-
 void algoritmo(){
-
 	int marcar;
 	int j;
 	int i;
 	int k;
-	marcar = 0;
+	marcar = EXIT_SUCCESS;
 	for(i = 0; i < cantidadDeEntrenadores; i++){
 		if(entrenadoresEnDeadlock[i] == 0){
 			j = 0;
-			while(j < cantidadDePokemones && marcar == 0){
-				if (pedidosMatriz[i][j] > disponiblesVector[j]){
-					marcar = 1;
+			while(j < cantidadDePokemones && marcar ==  EXIT_SUCCESS){
+				if (pedidosMatriz[i][j] > algoritmoVector[j]){
+					marcar = EXIT_FAILURE;
 				}
 				j++;
 			}
 
-			if(marcar == 0){
+			if(marcar ==  EXIT_SUCCESS){
 				entrenadoresEnDeadlock[i] = 1;
 				for(k = 0;k < cantidadDePokemones; k++){
-					disponiblesVector[k] = disponiblesVector[k] + asignadosMatriz[i][k];
+					algoritmoVector[k] = algoritmoVector[k] + asignadosMatriz[i][k];
 				}
+				algoritmo();
 
 			}
 			else {
-				hayDeadlock = 1;
+				hayDeadlock = EXIT_SUCCESS;
 			}
-			marcar = 0;
+			marcar = EXIT_SUCCESS;
 		}
 		else {}
 	}

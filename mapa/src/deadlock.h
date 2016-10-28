@@ -29,6 +29,8 @@
 #include <signal.h>
 #include <pthread.h>
 */
+
+t_log* logDeadlock;
 int** pedidosMatriz;
 int** asignadosMatriz;
 int* recursosVector;
@@ -50,5 +52,8 @@ void agregarEntrenadorEnMatrices();
 void inicializarVectores();
 void noTieneAsignadosOPedidos();
 void algoritmo();
+void mostrarMatriz(int**);
+void mostrarEntrenadoresEnDeadlock();
+void inicializarAlgoritmoVector();
 
 #endif /* DEADLOCK_H_ */

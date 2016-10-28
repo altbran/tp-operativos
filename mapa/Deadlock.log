@@ -1,0 +1,29 @@
+[INFO] 01:13:23:838 deadlock/(5146:5146): Hay deadlock
+[INFO] 01:13:23:838 deadlock/(5146:5146): Matriz de asignados
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0100
+[INFO] 01:13:23:838 deadlock/(5146:5146): 1000
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0000
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0020
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0000
+[INFO] 01:13:23:838 deadlock/(5146:5146): Matriz de pedidos
+[INFO] 01:13:23:838 deadlock/(5146:5146): 1000
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0100
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0000
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0001
+[INFO] 01:13:23:838 deadlock/(5146:5146): 0100
+[INFO] 01:20:23:644 deadlock/(5347:5347): Hay deadlock
+[INFO] 01:20:23:651 deadlock/(5347:5347): Matriz de asignados
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0100
+[INFO] 01:20:23:651 deadlock/(5347:5347): 1000
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0000
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0020
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0000
+[INFO] 01:20:23:651 deadlock/(5347:5347): Matriz de pedidos
+[INFO] 01:20:23:651 deadlock/(5347:5347): 1000
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0100
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0000
+[INFO] 01:20:23:651 deadlock/(5347:5347): 0001
+[INFO] 01:20:23:652 deadlock/(5347:5347): 0100
+[INFO] 01:20:23:652 deadlock/(5347:5347): Entrenadores en deadlock
+[INFO] 01:20:23:652 deadlock/(5347:5347): 0
+[INFO] 01:20:23:652 deadlock/(5347:5347): 1
