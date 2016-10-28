@@ -36,6 +36,8 @@ void detectarDeadlock() {
 		mostrarMatriz(pedidosMatriz);
 		log_info(logDeadlock, "Entrenadores en deadlock");
 		mostrarEntrenadoresEnDeadlock();
+
+		batallaPokemon();
 	}
 
 }
@@ -91,7 +93,7 @@ void mostrarEntrenadoresEnDeadlock(){
 	int p;
 	for(p=0;p<cantidadDeEntrenadores;p++){
 		if(entrenadoresEnDeadlock[p] == 0){
-			//log_info(logDeadlock,"%s", list_get(Entrenadores,p).nombre)
+			//log_info(logDeadlock,"%s", list_get(Entrenadores,p)->nombre);
 			log_info(logDeadlock,"%d", p);
 		}
 	}
@@ -153,6 +155,66 @@ void algoritmo(){
 		}
 		else {}
 	}
+}
+
+void batallaPokemon(){
+
+	crearPokemones();
+
+	cantidadDeEntrenadoresEnDeadlock = 4;
+
+	printf("alalal");
+
+	pokemonA = create_pokemon(fabrica, "Pikachu", 200);
+	pokemonB = create_pokemon(fabrica, "Squirtle", 500);
+	pokemonC = create_pokemon(fabrica, "Rhyhorn", 15);
+	pokemonD = create_pokemon(fabrica, "Charmander", 100);
+
+	mejoresPokemones = list_create();
+
+
+	list_add(mejoresPokemones, pokemonA);
+	list_add(mejoresPokemones, pokemonB);
+	list_add(mejoresPokemones, pokemonC);
+	list_add(mejoresPokemones, pokemonD);
+
+	pokemonPerdedor = list_get(mejoresPokemones, 0);
+	int indiceDeEntrenadorPerdedor = 0;
+	int h = 1;
+	t_pokemon* pokemonPerdedorAnterior = pokemonPerdedor;
+	while(h < cantidadDeEntrenadoresEnDeadlock){
+		pokemonPerdedor = pkmn_battle(pokemonPerdedor,list_get(mejoresPokemones,h));
+		if(pokemonPerdedor != pokemonPerdedorAnterior){
+			pokemonPerdedorAnterior = pokemonPerdedor;
+			indiceDeEntrenadorPerdedor = h;
+		}
+		h++;
+	}
+	char str[100];
+	char str2[2];
+	str2[0] = indiceDeEntrenadorPerdedor + '0';
+	strcat(str,pokemonPerdedor->species);
+	strcat(str," del entrenador ");
+	strcat(str,str2);
+
+	log_info(logDeadlock,str);
+
+	//free(str);
+	free(algoritmoVector);
+	free(entrenadoresEnDeadlock);
+	list_destroy(mejoresPokemones);
+	destroy_pkmn_factory(fabrica);
+}
+
+void crearPokemones(){
+	fabrica = create_pkmn_factory();
+	/*int i;
+	for(i = 0; i < cantidadDeEntrenadores;i++){
+		if(entrenadoresEnDeadlock[i] == 0){
+			cantidadDeEntrenadoresEnDeadlock++;
+			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
+		}
+	}*/
 }
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){

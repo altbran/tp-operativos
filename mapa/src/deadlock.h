@@ -8,27 +8,8 @@
 #ifndef DEADLOCK_H_
 #define DEADLOCK_H_
 #include "funciones.h"
-/*
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <string.h>
-#include <dirent.h>
-#include "commons/log.h"
-#include <commons/config.h>
-#include <commons/collections/list.h>
-#include <commons/collections/queue.h>
-#include <curses.h>
-#include <nivel.h>
-#include <src/sockets.h>
-#include <src/structs.h>
-#include <src/protocolo.h>
-#include "dibujador.h"
-#include <signal.h>
-#include <pthread.h>
-*/
+#include <pkmn/battle.h>
+#include <pkmn/factory.h>
 
 t_log* logDeadlock;
 int** pedidosMatriz;
@@ -37,9 +18,17 @@ int* recursosVector;
 int* disponiblesVector;
 int* algoritmoVector;
 int* entrenadoresEnDeadlock;
+int cantidadDeEntrenadoresEnDeadlock;
 int cantidadDeEntrenadores;
 int cantidadDePokemones;
 int hayDeadlock;
+t_pkmn_factory* fabrica;
+t_pokemon* pokemonA;
+t_pokemon* pokemonB;
+t_pokemon* pokemonC;
+t_pokemon* pokemonD;
+t_pokemon* pokemonPerdedor;
+t_list * mejoresPokemones;
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest);
 void restarPedidosMatriz(int indiceEntrenador, int indicePokenest);
@@ -55,5 +44,7 @@ void algoritmo();
 void mostrarMatriz(int**);
 void mostrarEntrenadoresEnDeadlock();
 void inicializarAlgoritmoVector();
+void batallaPokemon();
+void crearPokemones();
 
 #endif /* DEADLOCK_H_ */
