@@ -6,10 +6,10 @@ void moverEntrenador(t_metadataPokenest);
 void moverEntrenadorcoordX(t_metadataPokenest);
 void moverEntrenadorcoordY(t_metadataPokenest);
 int cantidadDeMovimientosAPokenest(t_metadataPokenest);
-bool llegoAPokenest(t_metadataPokenest);
+int llegoAPokenest(t_metadataPokenest);
 void cargarDatos();
 int cantidadDeMovimientosAPokenest(t_metadataPokenest);
-char* crearRutaPkm(char*, char*,char*);
+char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro);
 char* crearRutaDirBill(char*);
 char* crearComando(char* ,char* );
 void solicitarUbicacionPokenest(int,char);
@@ -18,6 +18,12 @@ void solicitarAtraparPkm(char, int);
 void solicitarMovimiento(int, t_metadataPokenest);
 void desconectarseDe(int socketServer);
 //void solicitarYCopiarMedallaMapa(char*, int);
+void hastaQueNoReciba(int header, int socketOrigen);
+char* generarPathDelPokemon(char* nombreMapa, char* nombrePokenest);
+int existeArchivo(char* path);
+char* obtenerNumero(int decenas, int unidades);
+
+
 
 int main(int argc, char** argv){
 
@@ -90,7 +96,7 @@ int main(int argc, char** argv){
 				log_error(logger, "No se pudo responder handshake");
 				return 1;
 			}
-			log_info(logger, "Conexion establecida", mensaje);
+			log_info(logger, "Conexion establecida");
 
 
 		int j;
@@ -99,10 +105,8 @@ int main(int argc, char** argv){
 			char pokemon;
 			pokemon = list_get(elemento->objetivos,j);
 			int estado = 0;
-			char numeroPokemon[2];
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pokemon;
-			void *buffer = malloc(3);
 			while (estado != 3){
 				switch (estado){
 						case 0:
@@ -113,12 +117,9 @@ int main(int argc, char** argv){
 
 						case 1:
 							solicitarMovimiento(servidorMapa,*pokenestProxima);//le pido al mapa permiso para moverme
-							for(;;){
-								if(recibirHeader(servidorMapa) == movimientoAceptado) //hasta que no me de el OK
-									break;												//no me muevo
-							}
-							if(llegoAPokenest(*pokenestProxima)){
-								estado = 2;
+							hastaQueNoReciba(movimientoAceptado, servidorMapa);// <-funcion con bucle infinito,
+							if(llegoAPokenest(*pokenestProxima)){			   //hasta que reciba el header
+								estado = 2;									   //solicitado
 								log_info(logger, "Entrenador alcanza pokenest del pokemon %c", pokemon);
 							}
 						break;
@@ -132,23 +133,20 @@ int main(int argc, char** argv){
 							//tiene la opcion de volver a empezar, aumentando el contador de
 							//reintentos
 							// atrape pokemon,
-							if(!recibirTodo(servidorMapa, buffer, 3)){
-								memcpy(&numeroPokemon,buffer,3);
+							hastaQueNoReciba(capturarPokemon, servidorMapa);
 
-								estado = 3;
-							}
-							free(buffer);
+							estado = 3;
 							break;
 							}
-				/*char* rutaPokemon = string_new();
-				rutaPokemon = crearRutaPkm(nombreMapa, nombrePknest, numeroPokemon);
-
+				char* rutaPokemon = string_new();
+				//rutaPokemon = crearRutaPkm(nombreMapa, nombrePknest, numeroPokemon);//TODO leo el nombre del pkm
+																					// de un path ??
 				char* rutaDirBill= string_new();
 				rutaDirBill = crearRutaDirBill(rutaMetadata);
 
 				char* comando = string_new();
 				comando = crearComando(rutaPokemon,rutaDirBill);
-				system(comando);*/
+				system(comando);
 				}
 
 		free(pokenestProxima);
@@ -220,10 +218,10 @@ int cantidadDeMovimientosAPokenest(t_metadataPokenest pokenest){
 }
 
 t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
-	//log = log_create("MetadataEntrenador.log", "LEER_HOJADEVIAJE", 0, LOG_LEVEL_INFO);
+
 	t_list* hojaDeViaje = list_create();
 	char** arrayHojaDeViaje = config_get_array_value(metadata, "hojaDeViaje");
-	//log_info(log,"longitud hoja de viaje: %d", sizeof(arrayHojaDeViaje));
+	log_info(logger,"longitud hoja de viaje: %d", sizeof(arrayHojaDeViaje));
 	int i,j;
 	for(i=0; arrayHojaDeViaje[i]!= NULL; i++){ //recorro todos los mapas en la hoja de viaje
 		t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa*)); //reservo memoria para objetivosxmapa
@@ -234,16 +232,15 @@ t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
 		char** objetivos = config_get_array_value(metadata, metadataObjetivo); //leo del config los objetivos del mapa
 		for(j=0; objetivos[j]!= NULL; j++){
 			if(j>0)if(string_starts_with(objetivos[j], objetivos[j-1])) return NULL; //logica para que no pida  dos veces seguidas el mismo pkm
-			//log_info(log, "Para el mapa %d, %s, objetivos: %d -> %s", i, objetivosPorMapa ->mapa, j, objetivos[j]);//para tal mapa,cuales son sus objetivos
+			log_info(logger, "Para el mapa %d, %s, objetivos: %d -> %s", i, objetivosPorMapa ->mapa, j, objetivos[j]);//para tal mapa,cuales son sus objetivos
 			list_add(objetivosPorMapa->objetivos, objetivos[j]);
 			}			//agrego el objetivo leido al atributo de la struct objetivosPorMapa
 			list_add(hojaDeViaje, objetivosPorMapa);//agrego el ObjetivosPorMapa a la lista hoja de viaje
 	}
-	//log_destroy(log);
 	return hojaDeViaje;
 	}
 
-bool llegoAPokenest(t_metadataPokenest pokenest){
+int llegoAPokenest(t_metadataPokenest pokenest){
 	return((ubicacionEntrenador.coordenadasX == pokenest.posicionX) && (ubicacionEntrenador.coordenadasY == pokenest.posicionY));
 }
 
@@ -265,17 +262,66 @@ void cargarDatos(t_config* metaDataEntrenador){
 }
 
 
-char* crearRutaPkm(char* nombreMapa, char* nombrePknest, char* numeroPkm){
-	char* rutaPokemon = string_new();
-	string_append(&rutaPokemon,"/mnt/pokedex/Mapas/");
-	string_append(&rutaPokemon,nombreMapa);
-	string_append(&rutaPokemon,"/");
-	string_append(&rutaPokemon,nombrePknest);
-	string_append(&rutaPokemon,"/");
-	string_append(&rutaPokemon,nombrePknest);
-	string_append(&rutaPokemon, numeroPkm);
-	string_append(&rutaPokemon,".dat");
-	return rutaPokemon;
+char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
+	char* path = string_new();
+	string_append(&path, "/mnt/pokedex/Mapas/");
+	string_append(&path,nombreMapa);
+	string_append(&path,"/");
+	string_append(&path,nombrePokenest);
+	string_append(&path,"/");
+	string_append(&path,nombrePokenest);
+	string_append(&path,nro);
+	string_append(&path,".dat");
+
+	return path;
+}
+
+
+int existeArchivo(char* path){
+	FILE* archivo = fopen(path,"r");
+
+	if(archivo){
+		fclose(archivo);
+		return 1;
+	}
+	else
+		return 0;
+}
+
+char* obtenerNumero(int decenas, int unidades){
+
+	char* nro = string_new();
+	string_append(&nro,"0");
+	string_append(&nro,string_itoa(decenas));
+	string_append(&nro,string_itoa(unidades));
+
+	return nro;
+}
+
+char* generarPathDelPokemon(char* nombreMapa, char* nombrePokenest){
+
+	int decenas = 0;
+	int unidades = 1;
+
+	char* nro = obtenerNumero(decenas, unidades);
+
+	char* path = string_new();
+	path = armarRutaPokemon(nombreMapa, nombrePokenest, nro);
+
+	while(!existeArchivo(path)){
+
+		if(unidades == 9){
+			unidades = 0;
+			decenas++;
+		}
+		else
+			unidades++;
+
+		nro = obtenerNumero(decenas,unidades);
+
+		path = armarRutaPokemon(nombreMapa,nombrePokenest,nro);
+	}
+	return path;
 }
 
 char* crearRutaDirBill(char* ruta){
@@ -299,10 +345,11 @@ void desconectarseDe(int socketServer){
 	close(socketServer);
 }
 void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest){
+for(;;){
+	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
 
 	void *buffer = malloc(sizeof(int) + sizeof(int));
 	recv(socketOrigen, buffer, sizeof(t_metadataPokenest), 0);
-
 
 	int cursorMemoria = 0;
 	memcpy(&pokenest.posicionX,buffer, sizeof(uint32_t));
@@ -311,12 +358,12 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest)
 	memcpy(&pokenest.posicionY,buffer + cursorMemoria, sizeof(uint32_t));
 
 	free(buffer);
+	break;
+	}
+}
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemon){
-	void *buffer=malloc(sizeof(char));
-	memcpy(buffer,&pokemon,sizeof(char));
-	send(socketDestino,buffer,sizeof(char),0);
-	free(buffer);
+	enviarHeader(socketDestino,datosPokenest); //TODO esto es el header para solicitarDatosPokenest?
 }
 /*void solicitarYCopiarMedallaMapa(char* nombreMapa, int socketDestino){
 	enviarHeader(servidorMapa, finalizoMapa);
@@ -375,4 +422,11 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	//hasta aca envio el header con las coordenadas del entrenador
 
 	free(buffer);
+}
+
+void hastaQueNoReciba(int header, int socketOrigen){
+	for(;;){
+			if(recibirHeader(socketOrigen) == header) //hasta que no me de el OK no me muevo
+			break;
+		}
 }
