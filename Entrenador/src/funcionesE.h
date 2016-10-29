@@ -28,7 +28,6 @@
 #include "commons/temporal.h"
 
 
-
 uint32_t PUERTO_MAPA_SERVIDOR;
 char* IP_MAPA_SERVIDOR;
 
@@ -57,5 +56,33 @@ typedef struct{
 
 t_ubicacion ubicacionEntrenador;
 
+
+//FUNCIONES
+
+void senialRecibirVida();
+void senialQuitarVida();
+t_list* asignarHojaDeViajeYObjetivos(t_config*);
+void moverEntrenador(t_metadataPokenest);
+void moverEntrenadorcoordX(t_metadataPokenest);
+void moverEntrenadorcoordY(t_metadataPokenest);
+int cantidadDeMovimientosAPokenest(t_metadataPokenest);
+int llegoAPokenest(t_metadataPokenest);
+void cargarDatos();
+int cantidadDeMovimientosAPokenest(t_metadataPokenest);
+char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro);
+char* crearRutaDirBill(char*);
+char* crearComando(char* ,char* );
+void solicitarUbicacionPokenest(int,char);
+void recibirYAsignarCoordPokenest(int,t_metadataPokenest);
+void solicitarAtraparPkm(char, int);
+void solicitarMovimiento(int, t_metadataPokenest);
+void desconectarseDe(int socketServer);
+//void solicitarYCopiarMedallaMapa(char*, int);
+void hastaQueNoReciba(int header, int socketOrigen);
+char* generarPathDelPokemon(char* nombreMapa, char* nombrePokenest);
+int existeArchivo(char* path);
+char* obtenerNumero(int decenas, int unidades);
+void enviarMisDatos(int socketDestino);
+void reestablecerDatos();
 
 #endif /* FUNCIONESE_H_ */
