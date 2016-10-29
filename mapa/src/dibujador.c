@@ -31,7 +31,7 @@ void crearItems(){
 
 }
 
-void dibujar() {
+void dibujar(char* nombreMapa) {
 /*
 	int rows, cols;
 	int q, p;
@@ -47,7 +47,7 @@ void dibujar() {
 */
 
 
-	nivel_gui_dibujar(items, "Test Chamber 04");
+	nivel_gui_dibujar(items, nombreMapa);
 
 	/*	BorrarItem(items, '#');
 	 BorrarItem(items, '@');

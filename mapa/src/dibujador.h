@@ -7,7 +7,7 @@ t_list* items;
 
 //funciones
 void crearItems();
-void dibujar();
+void dibujar(char* nombreMapa);
 void cargarPokenest(t_metadataPokenest pokenest);
 void cargarEntrenador(t_datosEntrenador entrenador);
 void moverEntrenador(t_datosEntrenador entrenador);

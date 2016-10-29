@@ -25,6 +25,7 @@
 //variables
 t_log* logger;
 char *texto;
+char * nombreMapa;
 int clientePokeDex;
 int servidorMapa;
 fd_set bolsaDeSockets;
