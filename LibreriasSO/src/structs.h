@@ -34,7 +34,6 @@ typedef struct {
 }t_recursosPokenest;
 
 typedef struct{
-	//char* nombre;
 	char * tipo;
 	int posicionX;
 	int posicionY;
