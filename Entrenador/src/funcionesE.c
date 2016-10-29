@@ -89,7 +89,7 @@ int llegoAPokenest(t_metadataPokenest pokenest){
 void cargarDatos(t_config* metaDataEntrenador){
 	entrenador.nombre  = config_get_string_value(metaDataEntrenador, "nombre");
 	log_info(logger,"El nombre del entrenador es: %s\n", entrenador.nombre);
-	entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
+	//entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
 	char* simbolo = config_get_string_value(metaDataEntrenador, "simbolo");
 	entrenador.simbolo = simbolo[0];
 	log_info(logger,"El simbolo del entrenador es: %c", entrenador.simbolo);
