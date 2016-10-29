@@ -37,7 +37,7 @@ void detectarDeadlock() {
 		log_info(logDeadlock, "Entrenadores en deadlock");
 		mostrarEntrenadoresEnDeadlock();
 
-		batallaPokemon();
+		resolverDeadlock();
 	}
 
 }
@@ -65,6 +65,7 @@ void agregarEntrenadorEnMatrices(){
 
 void inicializarVectores() {
 	disponiblesVector = calloc(cantidadDePokemones, sizeof(int*));
+	algoritmoVector = calloc(cantidadDePokemones, sizeof(int*));
 	recursosVector = calloc(cantidadDePokemones, sizeof(int*));
 	entrenadoresEnDeadlock = calloc(cantidadDeEntrenadores, sizeof(int*));
 }
@@ -94,11 +95,19 @@ void mostrarEntrenadoresEnDeadlock(){
 	for(p=0;p<cantidadDeEntrenadores;p++){
 		if(entrenadoresEnDeadlock[p] == 0){
 			//log_info(logDeadlock,"%s", list_get(Entrenadores,p)->nombre);
+			notificarDeadlockAEntrenador(p);
 			log_info(logDeadlock,"%d", p);
 		}
 	}
 }
 
+void notificarDeadlockAEntrenador(int indice){
+	t_datosEntrenador* entrenador;
+	entrenador = malloc(sizeof(t_datosEntrenador));
+	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
+	enviarHeader(entrenador->socket,notificarDeadlock);
+	free(entrenador);
+}
 
 void noTieneAsignadosOPedidos(){
 	int tienePedido;
@@ -157,7 +166,7 @@ void algoritmo(){
 	}
 }
 
-void batallaPokemon(){
+void resolverDeadlock(){
 
 	crearPokemones();
 
@@ -172,7 +181,6 @@ void batallaPokemon(){
 
 	mejoresPokemones = list_create();
 
-
 	list_add(mejoresPokemones, pokemonA);
 	list_add(mejoresPokemones, pokemonB);
 	list_add(mejoresPokemones, pokemonC);
@@ -183,7 +191,7 @@ void batallaPokemon(){
 	int h = 1;
 	t_pokemon* pokemonPerdedorAnterior = pokemonPerdedor;
 	while(h < cantidadDeEntrenadoresEnDeadlock){
-		pokemonPerdedor = pkmn_battle(pokemonPerdedor,list_get(mejoresPokemones,h));
+		pokemonPerdedor = batallaPokemon(pokemonPerdedor,list_get(mejoresPokemones,h),indiceDeEntrenadorPerdedor,h);
 		if(pokemonPerdedor != pokemonPerdedorAnterior){
 			pokemonPerdedorAnterior = pokemonPerdedor;
 			indiceDeEntrenadorPerdedor = h;
@@ -206,15 +214,50 @@ void batallaPokemon(){
 	destroy_pkmn_factory(fabrica);
 }
 
+t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB){
+	pokemonPerdedor = pkmn_battle(pkmnA,pkmnB);
+	if(pokemonPerdedor == pkmnA){
+		notificarResultadoBatalla(indiceA, EXIT_SUCCESS);
+		notificarResultadoBatalla(indiceB, EXIT_FAILURE);
+	}
+	else{
+			notificarResultadoBatalla(indiceB, EXIT_SUCCESS);
+			notificarResultadoBatalla(indiceA, EXIT_FAILURE);
+		}
+	return pokemonPerdedor;
+}
+
+void notificarResultadoBatalla(int indice, int gano){
+	t_datosEntrenador* entrenador;
+	entrenador = malloc(sizeof(t_datosEntrenador));
+	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
+	if(gano){
+		enviarHeader(entrenador->socket,entrenadorGanador);
+	}
+	else {
+		enviarHeader(entrenador->socket,entrenadorPerdedor);
+	}
+	free(entrenador);
+}
+
 void crearPokemones(){
 	fabrica = create_pkmn_factory();
-	/*int i;
+	int i;
 	for(i = 0; i < cantidadDeEntrenadores;i++){
 		if(entrenadoresEnDeadlock[i] == 0){
 			cantidadDeEntrenadoresEnDeadlock++;
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
+			t_datosEntrenador* entrenador;
+			entrenador = malloc(sizeof(t_datosEntrenador));
+			t_metadataPokemon* pokemon;
+			pokemon = malloc(sizeof(t_metadataPokemon));
+			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
+			enviarHeader(entrenador->socket,mejorPokemon);
+			recibirTodo(entrenador->socket,pokemon,sizeof(t_metadataPokemon));
+			list_add(mejoresPokemones,pokemon);
+			free(entrenador);
 		}
-	}*/
+	}
 }
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
@@ -239,4 +282,3 @@ void liberarRecursosEntrenador(int indiceEntrenador){
 		}
 	}
 }
-

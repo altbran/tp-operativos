@@ -44,7 +44,10 @@ void algoritmo();
 void mostrarMatriz(int**);
 void mostrarEntrenadoresEnDeadlock();
 void inicializarAlgoritmoVector();
-void batallaPokemon();
+void resolverDeadlock();
+t_pokemon* batallaPokemon(t_pokemon* pkmnA,t_pokemon* pkmnB, int indiceA, int indiceB);
 void crearPokemones();
+void notificarDeadlockAEntrenador(int indice);
+void notificarResultadoBatalla(int indice, int gano);
 
 #endif /* DEADLOCK_H_ */
