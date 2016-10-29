@@ -31,21 +31,54 @@ int main(int argc, char** argv){
 
 	config_destroy(metaDataEntrenador);//YA LEI LO QUE QUE QUERIA, AHORA DESTRUYO EL CONFIG  DE ENTRENADOR
 
-	signal(SIGUSR1,senialRecibirVida);
-	signal(SIGTERM,senialQuitarVida);
+	//signal(SIGUSR1,senialRecibirVida);
+	//signal(SIGTERM,senialQuitarVida);
 
 
 	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
 
 	//creo el socket cliente
 	if(crearSocket(&socketCliente)){
+		printf("no se pudo crear socket cliente");
 		log_error(logger, "No se pudo crear socket cliente");
 		return 1;
 	}
 	log_info(logger, "Socket cliente creado");
 
+	reestablecerDatos(); //cargo posicion y ultimo movimiento
+	/*t_config* metadataMapa = config_create(rutaMetadataMapa);
+
+	IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
+	PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
+
+	config_destroy(metadataMapa);
+	if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
+			log_error(logger, "Fallo al conectarse al servidor.");
+			return 1;
+		}*/
+
+
+	if(conectarA(servidorMapa, "192.168.56.1", 5001)){
+				printf("no se pudo conectar\n");
+				log_error(logger, "Fallo al conectarse al servidor.");
+				return 1;
+			}
+
+	log_info(logger, "Se ha iniciado conexion con el servidor");
+	printf("conexion establecida\n");
+	if(responderHandshake(servidorMapa, IDENTRENADOR, IDMAPA)){
+			printf("no se pudo handshake\n");
+			log_error(logger, "No se pudo responder handshake");
+			return 1;
+		}
+		log_info(logger, "Conexion establecida");
+
+	printf("handshake correcto\n");
+	enviarMisDatos(servidorMapa);
+	desconectarseDe(servidorMapa);
+
 	//char* tiempoDeInicio = temporal_get_string_time();
-	int i;
+	/*int i;
 	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 		t_objetivosPorMapa *elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
@@ -78,19 +111,26 @@ int main(int argc, char** argv){
 
 
 		enviarMisDatos(servidorMapa);//LE ENVIO MIS DATOS A ENTRENADOR
-
+/*
+ *
+ *
 		int j;
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
 
-			char pokemon;
-			pokemon = list_get(elemento->objetivos,j);
+			char pkm = list_get(elemento->objetivos,j);
+			//char* nombrePokemon = obtenerNombre(pkm);//TODO HACER FUNCION obtener el nombre de mi pokemon
+			t_metadataPokemon pokemon;
+			strcpy(pokemon.nombre,nombrePokemon);
+
+			pkm = list_get(elemento->objetivos,j);
 			int estado = 0;
+			t_list* pokemones = list_create();
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
-			pokenestProxima->identificador = pokemon;
+			pokenestProxima->identificador = pkm;
 			while (estado != 3){
 				switch (estado){
 						case 0:
-							solicitarUbicacionPokenest(servidorMapa, pokemon);
+							solicitarUbicacionPokenest(servidorMapa, pkm);
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
 							estado = 1;
 						break;
@@ -100,12 +140,12 @@ int main(int argc, char** argv){
 							hastaQueNoReciba(movimientoAceptado, servidorMapa);// <-funcion con bucle infinito,
 							if(llegoAPokenest(*pokenestProxima)){			   //hasta que reciba el header
 								estado = 2;									   //solicitado
-								log_info(logger, "Entrenador alcanza pokenest del pokemon %c", pokemon);
+								log_info(logger, "Entrenador alcanza pokenest del pokemon %c", pkm);
 							}
 						break;
 
 						case 2:
-							solicitarAtraparPkm(pokemon,servidorMapa);
+							solicitarAtraparPkm(pkm,servidorMapa);
 							//aca puede ser elegido como victima, si lo es, mostrara en pantalla
 							//los motivos, borrara los archivos en su directorio de bill, se
 							//desconectara del mapa y perdera todos los pkms
@@ -114,7 +154,8 @@ int main(int argc, char** argv){
 							//reintentos
 							// atrape pokemon,
 							hastaQueNoReciba(capturarPokemon, servidorMapa);
-
+							//todo HACER CONFIG PARA OBTENER EL NIVEL DEL POKEMON
+							list_add(pokemones, pkm);
 							estado = 3;
 							break;
 							}
@@ -140,8 +181,7 @@ int main(int argc, char** argv){
 	//SE CONVIRTIO EN MAESTRO POKEMON, NOTIFICAR POR PANTALLA, INFORMAR TIEMPO TOTAL,
 	//CUANTO TIEMPO PASO BLOQUEADO EN LAS POKENESTS, EN CUANTOS DEADBLOCKS ESTUVO INVOLUCRADO
 	//Y CUANTAS VECES MURIO
-	//free(rutaMetadata); ??VA
+	//free(rutaMetadata); ??VA*/
+
 	return EXIT_SUCCESS;
 	}
-
-
