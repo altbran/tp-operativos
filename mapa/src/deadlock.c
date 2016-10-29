@@ -94,9 +94,12 @@ void mostrarEntrenadoresEnDeadlock(){
 	int p;
 	for(p=0;p<cantidadDeEntrenadores;p++){
 		if(entrenadoresEnDeadlock[p] == 0){
-			//log_info(logDeadlock,"%s", list_get(Entrenadores,p)->nombre);
-			notificarDeadlockAEntrenador(p);
+			t_datosEntrenador* entrenador;
+			entrenador = malloc(sizeof(t_datosEntrenador));
+			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, p));
+			log_info(logDeadlock,"%s", entrenador->nombre);
 			log_info(logDeadlock,"%d", p);
+			notificarDeadlockAEntrenador(p);
 		}
 	}
 }
