@@ -17,7 +17,7 @@ typedef struct {
 }t_metadataMapa;
 
 typedef struct {
-	char * identificador;
+	char identificador;
 	int posicionX;
 	int posicionY;
 	int socket;
