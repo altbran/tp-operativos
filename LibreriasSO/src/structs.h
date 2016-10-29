@@ -6,13 +6,12 @@
 #include <stdint.h>
 
 typedef struct {
-	char nombre[18];
 	uint32_t tiempoChequeoDeadlock;
 	uint32_t batalla;
-	char * algoritmo;
+	char algoritmo;
 	uint32_t quantum;
 	uint32_t retardo;
-	char * ip;
+	char ip[15];
 	uint32_t puerto;
 }t_metadataMapa;
 

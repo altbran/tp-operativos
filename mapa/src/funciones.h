@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <assert.h>
+#include "deadlock.h"
 
 //variables
 t_log* logger;
@@ -31,7 +32,7 @@ int servidorMapa;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 pthread_mutex_t mutex;
-t_metadataMapa configuracion;
+t_metadataMapa * configuracion;
 char * ruta;
 t_list * Pokenests;
 t_list * Entrenadores;

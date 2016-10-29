@@ -9,13 +9,15 @@ void receptorSIG() {
 //funciones entrenador
 
 int recibirEntrenador(int socketOrigen,t_datosEntrenador *entrenador) {
-	int i;
-	i = recibirTodo(socketOrigen, &entrenador->identificador, sizeof(char));
+	int i= 0;
+	i = recibirTodo(socketOrigen, &entrenador->nombre, 18);
+	i += recibirTodo(socketOrigen, &entrenador->identificador, 1);
 	i += recibirTodo(socketOrigen, &entrenador->posicionX, sizeof(uint32_t));
 	i += recibirTodo(socketOrigen, &entrenador->posicionY, sizeof(uint32_t));
-	i += recibirTodo(socketOrigen, &entrenador->nombre, sizeof(char[18]));
+
 	entrenador->socket = socketOrigen;
 	cargarEntrenador(*entrenador);
+	dibujar(nombreMapa);
 	return i;
 }
 
@@ -55,13 +57,15 @@ int movimientoValido(int socket, int posX, int posY) {
 //funciones mapa
 void cargarMetadata() {
 	t_config * config = config_create(concat(2, ruta, "metadata"));
-	configuracion.tiempoChequeoDeadlock = config_get_int_value(config, "TiempoChequeoDeadlock");
-	configuracion.batalla = config_get_int_value(config, "Batalla");
-	configuracion.algoritmo = config_get_string_value(config, "algoritmo");
-	configuracion.quantum = config_get_int_value(config, "quantum");
-	configuracion.retardo = config_get_int_value(config, "retardo");
-	configuracion.ip = config_get_string_value(config, "IP");
-	configuracion.puerto = config_get_int_value(config, "Puerto");
+	configuracion = malloc(sizeof(t_metadataMapa));
+	configuracion->tiempoChequeoDeadlock = config_get_int_value(config, "TiempoChequeoDeadlock");
+	configuracion->batalla = config_get_int_value(config, "Batalla");
+	configuracion->algoritmo = *(config_get_string_value(config, "algoritmo"));
+	configuracion->quantum = config_get_int_value(config, "quantum");
+	configuracion->retardo = config_get_int_value(config, "retardo");
+	//configuracion.ip = config_get_string_value(config, "IP");
+	strcpy(configuracion->ip,config_get_string_value(config, "IP"));
+	configuracion->puerto = config_get_int_value(config, "Puerto");
 }
 
 //funciones de pokenest

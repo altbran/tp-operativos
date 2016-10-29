@@ -10,6 +10,8 @@ int main(int argc, char **argv) {
 	//busco las configuraciones
 	if (argc != 3) {
 		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
+		nombreMapa = malloc(sizeof(argv[1]));
+		nombreMapa = "Paleta";
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
 		nombreMapa = malloc(sizeof(argv[1]));
@@ -33,7 +35,7 @@ int main(int argc, char **argv) {
 		printf("Error creando socket");
 		return 1;
 	}
-	if (escucharEn(servidorMapa, configuracion.puerto)) {
+	if (escucharEn(servidorMapa, configuracion->puerto)) {
 		printf("Error al conectar");
 		log_error(logger, "Se produjo un error creando el socket servidor", texto);
 		return 1;
@@ -115,7 +117,7 @@ int main(int argc, char **argv) {
 						}
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
 							queue_push(listos, &nuevaConexion);
-							cargarEntrenador(*entrenador);
+							//cargarEntrenador(*entrenador);
 							dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
 						} else {
