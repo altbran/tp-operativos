@@ -12,6 +12,8 @@ int main(int argc, char **argv) {
 		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
+		nombreMapa = malloc(sizeof(argv[1]));
+		nombreMapa = argv[1];
 	}
 
 	//inicializo el mutex
@@ -62,7 +64,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	dibujar();
+	dibujar(nombreMapa);
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
@@ -95,9 +97,10 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						t_datosEntrenador entrenador;
+						t_datosEntrenador * entrenador;
+						entrenador = malloc(sizeof(t_datosEntrenador));
 						//recibir datos del entrenador nuevo
-						if (recibirEntrenador(nuevaConexion, &entrenador)) {
+						if (recibirEntrenador(nuevaConexion, entrenador)) {
 							list_add(Entrenadores, &entrenador);
 						} else {
 							log_info(logger, "error en el recibir entrenador, socket %d", nuevaConexion);
@@ -111,7 +114,9 @@ int main(int argc, char **argv) {
 							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
 						}
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
-							queue_push(listos, nuevaConexion);
+							queue_push(listos, &nuevaConexion);
+							cargarEntrenador(*entrenador);
+							dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
 						} else {
 							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);

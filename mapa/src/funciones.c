@@ -13,6 +13,7 @@ int recibirEntrenador(int socketOrigen,t_datosEntrenador *entrenador) {
 	i = recibirTodo(socketOrigen, &entrenador->identificador, sizeof(char));
 	i += recibirTodo(socketOrigen, &entrenador->posicionX, sizeof(uint32_t));
 	i += recibirTodo(socketOrigen, &entrenador->posicionY, sizeof(uint32_t));
+	i += recibirTodo(socketOrigen, &entrenador->nombre, sizeof(char[18]));
 	entrenador->socket = socketOrigen;
 	cargarEntrenador(*entrenador);
 	return i;

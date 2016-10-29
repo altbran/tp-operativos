@@ -13,7 +13,7 @@ void roundRobin() {
 				recibirTodo(turno, &identificadorPokenest, sizeof(char));
 				t_metadataPokenest pokenest = devolverPokenest(&identificadorPokenest);
 				enviarCoordPokenest(turno, &pokenest);
-				i = -1;
+				i = i -1;
 				break;
 
 			case posicionEntrenador: ;
@@ -24,7 +24,7 @@ void roundRobin() {
 				if (movimientoValido(turno, posX, posY)) {
 					moverEntrenador(devolverEntrenador(turno));
 					enviarHeader(turno,movimientoAceptado);
-					dibujar();
+					dibujar(nombreMapa);
 				} else {
 					log_info(logger,"movimiento invalido");
 					//todo responder invalido
@@ -42,7 +42,6 @@ void roundRobin() {
 				//todo poner mutex para atrapar pokemon
 				break;
 			}
-			dibujar();
 		}
 		if (!quedoBloqueado) {
 			queue_push(listos, &turno);
