@@ -14,6 +14,8 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	finalizoMapa = 11,
 	movimientoAceptado= 15,
 	mejorPokemon = 19,
+	notificarDeadlock= 20,
+	notificarResultadoBatalla,
 	//Headers para comunicacion entre cliente y servidor pokedex
 	privilegiosArchivo = 4,
 	contenidoDirectorio = 5,
