@@ -45,6 +45,7 @@ typedef struct{
 
 typedef struct{
 	int nivel;
+	char nombre[18];
 }t_metadataPokemon;
 
 typedef struct{
