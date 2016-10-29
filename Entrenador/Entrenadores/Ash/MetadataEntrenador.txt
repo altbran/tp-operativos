@@ -1,0 +1,4 @@
+nombre=Ash
+simbolo=@
+vidas=3
+reintentos=0
