@@ -21,6 +21,7 @@ typedef struct {
 	int posicionX;
 	int posicionY;
 	int socket;
+	char nombre[18];
 }t_datosEntrenador;
 
 typedef struct {
