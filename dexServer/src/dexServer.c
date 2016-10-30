@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>			 //
+#include <stdlib.h>			 //recargar el FS con dos nuevos dir, y volver a probar fuse
 #include <stdbool.h>         //
 #include <time.h>
 #include <commons/string.h>
@@ -8,6 +8,7 @@
 #include <src/sockets.h>
 #include <src/protocolo.h>
 #include <commons/log.h>
+#include <pthread.h>
 #include <sys/mman.h>
 
 
@@ -57,6 +58,9 @@ void sacarNombre(char* path,char* nombre);
 bool comprobarPathValido(char* path);
 void recorrerDesdeIzquierda(char* path, char* nombre);
 void guardarEstructuraEn(char* mapa);
+void atenderConexion(int socket, char* mapa);
+int getAtr(char* path,char* mapa,int* tamanio);
+void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 void crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
@@ -75,7 +79,7 @@ int main(void) {
 
 	logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));  //creo el archivo de log
 
-	int PUERTO_POKEDEX_SERVIDOR; //getenv("PUERTO_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = 9000; //getenv("PUERTO_POKEDEX_SERVIDOR");
 	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
 
@@ -198,7 +202,7 @@ int main(void) {
 						case IDPOKEDEXCLIENTE:
 							FD_SET(socketNuevo, &bolsaDeSockets);
 
-							log_info(logger, "Nuevo dexCliente conectado, socket: %d", socketNuevo);
+							log_info(logger, "Nuevo dexCliente conectado, socket= %d", socketNuevo);
 							break;
 
 						default:
@@ -210,14 +214,7 @@ int main(void) {
 				else
 				{  //aca mas adelante, voy a tener que crear hilos
 
-					//int header = recibirHeader(i);
-
-					/*switch(header)
-					{
-						case IDENTRENADOR:
-							recibirTodo(i,&paquete,4);
-							printf("%d\n",paquete);
-					}*/
+					atenderConexion(i,archivoMapeado);
 				}
 			}
 		} //for del select
@@ -242,20 +239,43 @@ int main(void) {
 void atenderConexion(int socket, char* mapa)
 {
 	int operacion;
-	int* tamanio = NULL;
+	int tamanio;
 	char* path = malloc(50);
 	void* archivo = NULL;
 
-	operacion = recibirHeader(socket);
-
-	switch(operacion)
+	while(operacion != IDERROR)
 	{
-		case contenidoArchivo:
-			recibirTodo(socket,path,50);
-			archivo = leerArchivo(path,mapa,tamanio);
-			enviarHeader(socket,(int)tamanio);
-			send(socket,archivo,(int)tamanio,0); //hacer un array de flags de archivos abietos todo
+		operacion = recibirHeader(socket);
+
+		log_info(logger,"socket: %d, operacion: %d",socket,operacion);
+
+		switch(operacion)
+		{
+			case contenidoArchivo:
+				recibirTodo(socket,path,50);
+				archivo = leerArchivo(path,mapa,&tamanio);
+				enviarHeader(socket,tamanio);
+				send(socket,archivo,tamanio,0); //hacer un array de flags de archivos abietos todo
+				break;
+
+			case privilegiosArchivo:
+				recibirTodo(socket,path,50);
+
+				log_info(logger,"Path enviado por el getAttr: %s",path);
+
+				int esDir = getAtr(path,mapa,&tamanio);
+				enviarHeader(socket,esDir);
+				enviarHeader(socket,tamanio);
+				break;
+
+			case contenidoDirectorio:
+				recibirTodo(socket,path,50);
+				log_info(logger,"path para readdir: %s",path);
+				enviarHeader(socket,comprobarPathValido(path));
+				leerDirectorio(path,socket);
+		}
 	}
+
 }
 
 void leerEstructurasAdministrativas(FILE* archivo)
@@ -289,10 +309,125 @@ void leerEstructurasAdministrativas(FILE* archivo)
 	rewind(archivo);
 }
 
+int getAtr(char* path,char* mapa,int* tamanio)
+{
+	char* nombreArchivo;
+	char* copiaPath = malloc(50);
+	int i = 0;
+	int offset = 0xFFFF;
+
+	strcpy(copiaPath,path);
+
+	if(comprobarPathValido(copiaPath))
+	{
+		if(!strcmp(copiaPath,"/"))
+		{
+			log_info(logger,"Es el directorio raiz");
+			copiaPath[0] = '\0';
+		}
+
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				*tamanio = 0;
+				free(nombreArchivo);
+				free(copiaPath);
+				return -1;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+			free(copiaPath);
+		}
+
+		*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
+
+		log_info(logger,"Tamaño: %d,  estado: %u",*tamanio,estructuraAdministrativa.tablaArchivos[offset].estado);
+		if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
+			return 0;
+		else
+			return 1;
+	}
+	*tamanio = 0;
+	return -1;
+}
+
+void leerDirectorio(char* path, int socket)
+{
+	char* nombreArchivo;
+	char* copiaPath = malloc(50);
+	int i = 0;
+	int offset = 0xFFFF;
+
+	strcpy(copiaPath,path);
+
+	if(comprobarPathValido(copiaPath))
+	{
+		if(!strcmp(copiaPath,"/"))
+			copiaPath[0] = '\0';
+
+		while(strlen(copiaPath))
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				break;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+		}
+			//aca tenemos el offset del directorio a contar
+
+		i = 0;
+		while(i < 2048)
+		{
+			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+			{
+				nombreArchivo = malloc(18);
+				strcpy(nombreArchivo,(char*)estructuraAdministrativa.tablaArchivos[i].nombre);
+				send(socket,nombreArchivo,50,0);
+
+				log_info(logger,"Nombre enviado: %s",nombreArchivo);
+
+				free(nombreArchivo);
+			}
+			i++;
+		}
+	}
+}
+
 void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 {
 	char* nombreArchivo;
-	char* copiaPath = malloc(60);
+	char* copiaPath = malloc(50);
 	int tamanioTotalEnBytes;
 	int bloqueSiguienteEnTabla;
 	int posicionDelMapa;
@@ -367,7 +502,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 
 			archivoLeido = malloc(tamanioTotalEnBytes);
 			memcpy(archivoLeido,nombreArchivo,tamanioTotalEnBytes);  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
-			tamArchivo = (int*)tamanioTotalEnBytes;
+			*tamArchivo = tamanioTotalEnBytes;
 
 			free(nombreArchivo);
 			free(copiaPath);
@@ -735,29 +870,35 @@ bool comprobarPathValido(char* path)
 
 	strcpy(copiaPath,path);
 
-	while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...
+	if(!strcmp(copiaPath,"/"))
+		return true;
+	else
 	{
-		viejoNombre = malloc(17);
-		recorrerDesdeIzquierda(copiaPath,viejoNombre);
-		i = 0;
-		while(i < 2048)
+		while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...
 		{
-			if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
-				if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
-					break;
-			i++;
-		}
+			viejoNombre = malloc(17);
+			recorrerDesdeIzquierda(copiaPath,viejoNombre);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
 
-		if(i == 2048) //si llego al final es porque no encontró nada
-		{
-			log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-			return false;
-		}
-		else
-			offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				return false;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
 
-		free(viejoNombre);
+			free(viejoNombre);
+		}
 	}
+
 	free(copiaPath);
 	return true;
 }
