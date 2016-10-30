@@ -106,7 +106,7 @@ void cargarRecursos() {
 				pokenest.cantidad = cantidad;
 				int i;
 				for(i=1;i<=cantidad;i++){
-					t_pokemon pokemon = malloc(sizeof(t_pokemon));
+					t_duenioPokemon pokemon = malloc(sizeof(t_duenioPokemon));
 					pokemon.socketEntrenador = -1;
 					pokemon.identificadorPokemon = pokenest.identificador;
 					pokemon.numeroPokemon = i;
@@ -145,7 +145,7 @@ int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon
 	if (*((int*)list_get(recursosTotales, indicePokenest)) >= 1) {
 		int i;
 		for(i=0;i<list_size(pokemones);i++){
-			t_pokemon pokemon = list_get(pokemones,i);
+			t_duenioPokemon pokemon = list_get(pokemones,i);
 			if(pokemon.identificadorPokemon == identificador && pokemon.socketEntrenador == -1){
 				numeroPokemon = pokemon.numeroPokemon;
 				i = list_size(pokemones);
