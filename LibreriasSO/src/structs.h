@@ -16,6 +16,12 @@ typedef struct {
 }t_metadataMapa;
 
 typedef struct {
+	int socketEntrenador;
+	int numeroPokemon;
+	char identificadorPokemon;
+}t_pokemon;
+
+typedef struct {
 	char identificador;
 	int posicionX;
 	int posicionY;

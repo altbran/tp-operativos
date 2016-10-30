@@ -39,6 +39,10 @@ t_list * Entrenadores;
 t_queue * listos;
 t_queue * bloqueados;
 t_list * recursosTotales;
+pthread_t planificador;
+pthread_t deadlock;
+pthread_t atrapadorPokemon;
+t_list * pokemones;
 
 
 //funciones
@@ -54,8 +58,9 @@ int recibirEntrenador(int socketOrigen,t_datosEntrenador * entrenador);
 t_datosEntrenador devolverEntrenador(int socketOrigen);
 int devolverIndiceEntrenador(int socket);
 int movimientoValido(int socket,int posX, int posY);
-int pokemonDisponible(int indicePokenest);
+int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon, int * indice);
 char** str_split(char* a_str, const char a_delim);
 void restarRecursoDisponible(int indicePokenest);
+void iniciarPlanificador();
 
 #endif /* FUNCIONES_H_ */

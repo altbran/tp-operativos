@@ -4,7 +4,18 @@ void receptorSIG() {
 	//todo
 	pthread_mutex_lock(&mutex);
 	cargarMetadata();
+	pthread_cancel(planificador);
+	iniciarPlanificador();
 	pthread_mutex_unlock(&mutex);
+}
+
+void iniciarPlanificador() {
+	if(configuracion->algoritmo == 'R'){
+		pthread_create(&planificador,NULL,(void*)roundRobin(),NULL);
+	}else{
+		pthread_create(&planificador,NULL,(void*) sjfs(),NULL);
+	}
+
 }
 //funciones entrenador
 
@@ -73,6 +84,7 @@ void cargarMetadata() {
 void cargarRecursos() {
 	Pokenests = list_create();
 	recursosTotales = list_create();
+	pokemones = list_create();
 	DIR *dir;
 	struct dirent *ent;
 	if ((dir = opendir(concat(2, ruta, "Pokenests/"))) != NULL) {
@@ -81,7 +93,7 @@ void cargarRecursos() {
 			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
 				// do nothing (straight logic)
 			} else {
-				t_metadataPokenest pokenest;
+				t_metadataPokenest pokenest = malloc(sizeof(t_metadataPokenest));
 				char ** tokens;
 				t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
 				pokenest.identificador = *(config_get_string_value(config, "Identificador"));
@@ -89,8 +101,17 @@ void cargarRecursos() {
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
 				pokenest.posicionX = atoi(*tokens);
 				pokenest.posicionY = atoi(*(tokens + 1));
-				int cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
+				int cantidad = malloc(sizeof(int));
+				cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 				pokenest.cantidad = cantidad;
+				int i;
+				for(i=1;i<=cantidad;i++){
+					t_pokemon pokemon = malloc(sizeof(t_pokemon));
+					pokemon.socketEntrenador = -1;
+					pokemon.identificadorPokemon = pokenest.identificador;
+					pokemon.numeroPokemon = i;
+					list_add(pokemones,&pokemon);
+				}
 				list_add(recursosTotales, &cantidad);
 				list_add(Pokenests, &pokenest);
 				cargarPokenest(pokenest);
@@ -120,8 +141,16 @@ int contadorDePokemon(char * directorio) {
 	return file_count - 1; //descarto el archivo metadata
 }
 
-int pokemonDisponible(int indicePokenest) {
+int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon, int * indice) {
 	if (*((int*)list_get(recursosTotales, indicePokenest)) >= 1) {
+		int i;
+		for(i=0;i<list_size(pokemones);i++){
+			t_pokemon pokemon = list_get(pokemones,i);
+			if(pokemon.identificadorPokemon == identificador && pokemon.socketEntrenador == -1){
+				numeroPokemon = pokemon.numeroPokemon;
+				i = list_size(pokemones);
+			}
+		}
 		return EXIT_SUCCESS;
 	} else {
 		return EXIT_FAILURE;

@@ -21,10 +21,16 @@ int main(int argc, char **argv) {
 	//inicializo el mutex
 	pthread_mutex_init(&mutex, NULL);
 
+
 	//cargo recursos de mapa
 	cargarMetadata();
 	crearItems();
 	cargarRecursos();
+
+	//inicializo hilos
+	iniciarPlanificador();
+	pthread_create(&deadlock,NULL,(void*)detectarDeadlock(),NULL); //todo falta el semaforo!!!
+	pthread_create(&atrapadorPokemon,NULL,(void*)atraparPokemon(),NULL); //todo falta semaforo tmb!!
 
 	//creo el hilo para reconocer señales SIGUSR2
 
@@ -103,25 +109,24 @@ int main(int argc, char **argv) {
 						entrenador = malloc(sizeof(t_datosEntrenador));
 						//recibir datos del entrenador nuevo
 						if (recibirEntrenador(nuevaConexion, entrenador)) {
-							list_add(Entrenadores, &entrenador);
-						} else {
 							log_info(logger, "error en el recibir entrenador, socket %d", nuevaConexion);
+						} else {
+							list_add(Entrenadores, &entrenador);
 						}
 						//envio la posicion de la pokenest
 						char identificador;
 						if (recibirTodo(nuevaConexion, &identificador, sizeof(char))) {
+							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
+						} else {
 							t_metadataPokenest pokenest = devolverPokenest(&identificador);
 							enviarCoordPokenest(nuevaConexion, &pokenest);
-						} else {
-							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
 						}
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
+							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
+						} else {
 							queue_push(listos, &nuevaConexion);
-							//cargarEntrenador(*entrenador);
 							dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
-						} else {
-							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
 						}
 						break;
 					default:

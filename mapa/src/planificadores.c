@@ -1,8 +1,11 @@
 #include "funciones.h"
 
+void sjfs(){}
+
 void roundRobin() {
 	int i;
 	while (1) {
+		pthread_mutex_lock(&mutex);
 		int turno = *(int*) (queue_pop(listos));
 		int quedoBloqueado = 1;
 		for (i = 0; i < configuracion->quantum; i++) {
@@ -50,7 +53,7 @@ void roundRobin() {
 		if (!quedoBloqueado) {
 			queue_push(listos, &turno);
 		}
-
+		pthread_mutex_unlock(&mutex);
 	}
 }
 
@@ -59,10 +62,17 @@ void atraparPokemon() {
 		//todo poner mutex si hay entrenadores bloqueados
 		if (!queue_is_empty(bloqueados)) {
 			t_entrenadorBloqueado entrenador = *(t_entrenadorBloqueado*) queue_pop(bloqueados);
-			if (pokemonDisponible(devolverIndicePokenest(entrenador.identificadorPokemon))) {
+			int numeroPokemon;
+			int indice;
+			if (pokemonDisponible(devolverIndicePokenest(entrenador.identificadorPokemon),entrenador.identificadorPokemon,numeroPokemon,indice)) {
 				enviarHeader(entrenador.socket, pokemonesDisponibles);
+				send(entrenador.socket,numeroPokemon,sizeof(int),0);
 				int header = recibirHeader(entrenador.socket);
 				if (header == entrenadorListo) {
+					t_pokemon * pokemon = list_get(pokemones,indice);
+					pokemon.socketEntrenador = entrenador.socket;
+					//todo consultar a juan si hay que hacer replace
+					list_replace(pokemones,indice,pokemon);
 					restarRecursoDisponible(devolverIndicePokenest(entrenador.identificadorPokemon));
 					restarPokemon(entrenador.identificadorPokemon);
 					sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador.socket),devolverIndicePokenest(entrenador.identificadorPokemon));
