@@ -69,7 +69,7 @@ void atraparPokemon() {
 				send(entrenador.socket,numeroPokemon,sizeof(int),0);
 				int header = recibirHeader(entrenador.socket);
 				if (header == entrenadorListo) {
-					t_pokemon * pokemon = list_get(pokemones,indice);
+					t_duenioPokemon * pokemon = list_get(pokemones,indice);
 					pokemon.socketEntrenador = entrenador.socket;
 					//todo consultar a juan si hay que hacer replace
 					list_replace(pokemones,indice,pokemon);

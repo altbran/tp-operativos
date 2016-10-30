@@ -19,7 +19,7 @@ typedef struct {
 	int socketEntrenador;
 	int numeroPokemon;
 	char identificadorPokemon;
-}t_pokemon;
+}t_duenioPokemon;
 
 typedef struct {
 	char identificador;
