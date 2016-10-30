@@ -64,13 +64,13 @@ void atraparPokemon() {
 			t_entrenadorBloqueado entrenador = *(t_entrenadorBloqueado*) queue_pop(bloqueados);
 			int numeroPokemon;
 			int indice;
-			if (pokemonDisponible(devolverIndicePokenest(entrenador.identificadorPokemon),entrenador.identificadorPokemon,numeroPokemon,indice)) {
+			if (pokemonDisponible(devolverIndicePokenest(entrenador.identificadorPokemon),*entrenador.identificadorPokemon,&numeroPokemon,&indice)) {
 				enviarHeader(entrenador.socket, pokemonesDisponibles);
-				send(entrenador.socket,numeroPokemon,sizeof(int),0);
+				send(entrenador.socket,&numeroPokemon,sizeof(int),0);
 				int header = recibirHeader(entrenador.socket);
 				if (header == entrenadorListo) {
 					t_duenioPokemon * pokemon = list_get(pokemones,indice);
-					pokemon.socketEntrenador = entrenador.socket;
+					pokemon->socketEntrenador = entrenador.socket;
 					//todo consultar a juan si hay que hacer replace
 					list_replace(pokemones,indice,pokemon);
 					restarRecursoDisponible(devolverIndicePokenest(entrenador.identificadorPokemon));

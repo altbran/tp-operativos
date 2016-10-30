@@ -93,28 +93,29 @@ void cargarRecursos() {
 			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
 				// do nothing (straight logic)
 			} else {
-				t_metadataPokenest pokenest = malloc(sizeof(t_metadataPokenest));
+				t_metadataPokenest * pokenest;
+				pokenest = malloc(sizeof(t_metadataPokenest));
 				char ** tokens;
 				t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
-				pokenest.identificador = *(config_get_string_value(config, "Identificador"));
-				pokenest.tipo = config_get_string_value(config, "Tipo");
+				pokenest->identificador = *(config_get_string_value(config, "Identificador"));
+				pokenest->tipo = config_get_string_value(config, "Tipo");
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
-				pokenest.posicionX = atoi(*tokens);
-				pokenest.posicionY = atoi(*(tokens + 1));
+				pokenest->posicionX = atoi(*tokens);
+				pokenest->posicionY = atoi(*(tokens + 1));
 				int cantidad = malloc(sizeof(int));
 				cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
-				pokenest.cantidad = cantidad;
+				pokenest->cantidad = cantidad;
 				int i;
 				for(i=1;i<=cantidad;i++){
-					t_duenioPokemon pokemon = malloc(sizeof(t_duenioPokemon));
-					pokemon.socketEntrenador = -1;
-					pokemon.identificadorPokemon = pokenest.identificador;
-					pokemon.numeroPokemon = i;
+					t_duenioPokemon * pokemon = malloc(sizeof(t_duenioPokemon));
+					pokemon->socketEntrenador = -1;
+					pokemon->identificadorPokemon = pokenest->identificador;
+					pokemon->numeroPokemon = i;
 					list_add(pokemones,&pokemon);
 				}
 				list_add(recursosTotales, &cantidad);
 				list_add(Pokenests, &pokenest);
-				cargarPokenest(pokenest);
+				cargarPokenest(*pokenest);
 			}
 		}
 		closedir(dir);
@@ -145,9 +146,9 @@ int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon
 	if (*((int*)list_get(recursosTotales, indicePokenest)) >= 1) {
 		int i;
 		for(i=0;i<list_size(pokemones);i++){
-			t_duenioPokemon pokemon = list_get(pokemones,i);
-			if(pokemon.identificadorPokemon == identificador && pokemon.socketEntrenador == -1){
-				numeroPokemon = pokemon.numeroPokemon;
+			t_duenioPokemon * pokemon = list_get(pokemones,i);
+			if(pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1){
+				numeroPokemon = pokemon->numeroPokemon;
 				i = list_size(pokemones);
 			}
 		}
