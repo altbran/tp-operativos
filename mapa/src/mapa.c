@@ -21,6 +21,9 @@ int main(int argc, char **argv) {
 	//inicializo el mutex
 	pthread_mutex_init(&mutex, NULL);
 
+	//inicio colas
+	listos = queue_create();
+	bloqueados = queue_create();
 
 	//cargo recursos de mapa
 	cargarMetadata();
@@ -29,8 +32,8 @@ int main(int argc, char **argv) {
 
 	//inicializo hilos
 	iniciarPlanificador();
-	pthread_create(&deadlock,NULL,(void*)detectarDeadlock(),NULL); //todo falta el semaforo!!!
-	pthread_create(&atrapadorPokemon,NULL,(void*)atraparPokemon(),NULL); //todo falta semaforo tmb!!
+	//pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
+	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
 
 	//creo el hilo para reconocer señales SIGUSR2
 
@@ -122,11 +125,13 @@ int main(int argc, char **argv) {
 							enviarCoordPokenest(nuevaConexion, &pokenest);
 						}
 						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
-							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
-						} else {
+							recibirTodo(nuevaConexion, &entrenador->distanciaAPokenest, sizeof(int));
 							queue_push(listos, &nuevaConexion);
 							dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
+
+						} else {
+							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
 						}
 						break;
 					default:

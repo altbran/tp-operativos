@@ -10,17 +10,21 @@ void receptorSIG() {
 }
 
 void iniciarPlanificador() {
-	if(configuracion->algoritmo == 'R'){
-		pthread_create(&planificador,NULL,(void*)roundRobin(),NULL);
-	}else{
-		pthread_create(&planificador,NULL,(void*) sjfs(),NULL);
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr,
+	PTHREAD_CREATE_DETACHED);
+	if (configuracion->algoritmo == 'R') {
+		pthread_create(&planificador, &attr, (void*) roundRobin, NULL);
+	} else {
+		pthread_create(&planificador, &attr, (void*) srdf, NULL);
 	}
 
 }
 //funciones entrenador
 
-int recibirEntrenador(int socketOrigen,t_datosEntrenador *entrenador) {
-	int i= 0;
+int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
+	int i = 0;
 	i = recibirTodo(socketOrigen, &entrenador->nombre, 18);
 	i += recibirTodo(socketOrigen, &entrenador->identificador, 1);
 	i += recibirTodo(socketOrigen, &entrenador->posicionX, sizeof(uint32_t));
@@ -58,6 +62,7 @@ int movimientoValido(int socket, int posX, int posY) {
 	if (i == 1 || i == -1) {
 		entrenador.posicionX = posX;
 		entrenador.posicionY = posY;
+		entrenador.distanciaAPokenest = entrenador.distanciaAPokenest - 1;
 		list_replace(Entrenadores, devolverIndiceEntrenador(socket), &entrenador);
 		return EXIT_SUCCESS;
 	} else {
@@ -71,11 +76,16 @@ void cargarMetadata() {
 	configuracion = malloc(sizeof(t_metadataMapa));
 	configuracion->tiempoChequeoDeadlock = config_get_int_value(config, "TiempoChequeoDeadlock");
 	configuracion->batalla = config_get_int_value(config, "Batalla");
-	configuracion->algoritmo = *(config_get_string_value(config, "algoritmo"));
+	char * algoritmo = config_get_string_value(config, "algoritmo");
+	if (strcmp(algoritmo,"RR")) {
+		configuracion->algoritmo = 'R';
+	} else {
+		configuracion->algoritmo = 'S';
+	}
 	configuracion->quantum = config_get_int_value(config, "quantum");
 	configuracion->retardo = config_get_int_value(config, "retardo");
 	//configuracion.ip = config_get_string_value(config, "IP");
-	strcpy(configuracion->ip,config_get_string_value(config, "IP"));
+	strcpy(configuracion->ip, config_get_string_value(config, "IP"));
 	configuracion->puerto = config_get_int_value(config, "Puerto");
 }
 
@@ -106,12 +116,12 @@ void cargarRecursos() {
 				cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 				pokenest->cantidad = cantidad;
 				int i;
-				for(i=1;i<=cantidad;i++){
+				for (i = 1; i <= cantidad; i++) {
 					t_duenioPokemon * pokemon = malloc(sizeof(t_duenioPokemon));
 					pokemon->socketEntrenador = -1;
 					pokemon->identificadorPokemon = pokenest->identificador;
 					pokemon->numeroPokemon = i;
-					list_add(pokemones,&pokemon);
+					list_add(pokemones, &pokemon);
 				}
 				list_add(recursosTotales, &cantidad);
 				list_add(Pokenests, &pokenest);
@@ -142,12 +152,12 @@ int contadorDePokemon(char * directorio) {
 	return file_count - 1; //descarto el archivo metadata
 }
 
-int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon, int * indice) {
-	if (*((int*)list_get(recursosTotales, indicePokenest)) >= 1) {
+int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemon, int * indice) {
+	if (*((int*) list_get(recursosTotales, indicePokenest)) >= 1) {
 		int i;
-		for(i=0;i<list_size(pokemones);i++){
-			t_duenioPokemon * pokemon = list_get(pokemones,i);
-			if(pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1){
+		for (i = 0; i < list_size(pokemones); i++) {
+			t_duenioPokemon * pokemon = list_get(pokemones, i);
+			if (pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1) {
 				numeroPokemon = pokemon->numeroPokemon;
 				i = list_size(pokemones);
 			}
@@ -160,7 +170,7 @@ int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon
 
 void restarRecursoDisponible(int indicePokenest) {
 	int cantidad;
-	cantidad = *((int*)list_get(recursosTotales, indicePokenest)) - 1;
+	cantidad = *((int*) list_get(recursosTotales, indicePokenest)) - 1;
 	list_replace(recursosTotales, indicePokenest, &cantidad);
 }
 
@@ -189,7 +199,7 @@ int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {
 	void *buffer = malloc(sizeof(int) + sizeof(int)); //posx + posy
 
 	//envio header
-	enviarHeader(socketDestino,enviarDatosPokenest);
+	enviarHeader(socketDestino, enviarDatosPokenest);
 
 	//serializo contenido
 	int cursorMemoria = 0;
@@ -198,7 +208,7 @@ int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {
 	memcpy(buffer + cursorMemoria, &pokenest->posicionY, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
 
-	int i = enviarTodo(socketDestino,buffer,cursorMemoria);
+	int i = enviarTodo(socketDestino, buffer, cursorMemoria);
 	//send(socketDestino, buffer, cursorMemoria, 0); //hay que serializar algo acá?
 	free(buffer);
 	return i;

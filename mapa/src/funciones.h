@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include "deadlock.h"
+#include "planificadores.h"
 
 //variables
 t_log* logger;
