@@ -80,6 +80,7 @@ char* obtenerNumero(int decenas, int unidades);
 void enviarMisDatos(int socketDestino);
 void reestablecerDatos();
 void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa);
-
+void victimaDeDeadlock(int servidorMapa);
+char* obtenerNombre(char identificador);
 
 #endif /* FUNCIONESE_H_ */

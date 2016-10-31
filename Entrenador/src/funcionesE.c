@@ -303,3 +303,15 @@ void enviarCantidadDeMovsAPokenest(int socketDestino,t_metadataPokenest pokenest
 	send(socketDestino,buffer,sizeof(int),0);
 	free(buffer);
 }*/
+void victimaDeDeadlock(int servidorMapa){
+	/*En este caso, el Entrenador mostrará por pantalla el motivo de su muerte,
+	 *  borrará todos los archivos en su Directorio de Bill,
+	 *   se desconectará del Mapa y este le expropiará todos los Pokémons que había capturado*/
+	printf("Entrenador salio perdedor de la batalla y por eso morira, perdera todos sus pokemons atrapados en el mapa y"
+			"se desconectara del mismo/n");
+	desconectarseDe(servidorMapa);//TODO TERMINAR FUNCION
+}
+char* obtenerNombre(char identificador){
+	char* nombrePokemon;
+	return nombrePokemon;//TODO TERMINAR FUNCION
+}

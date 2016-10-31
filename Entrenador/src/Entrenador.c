@@ -87,7 +87,7 @@ int main(int argc, char** argv){
 	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 		t_objetivosPorMapa *elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
-														// segun indice
+
 		char* nombreMapa = string_new();
 		nombreMapa = elemento->mapa;
 		char* rutaMetadataMapa = string_new();
@@ -95,7 +95,7 @@ int main(int argc, char** argv){
 		string_append(&rutaMetadataMapa,nombreMapa);			//CREO EL PATH DE METADATA MAPA
 
 
-		reestablecerDatos(); //cargo posicion y ultimo movimiento
+		reestablecerDatos(); //cargo posicion en (0;0) y ultimo movimiento = 'y' para que empiece moviendose horizontalmente
 		t_config* metadataMapa = config_create(rutaMetadataMapa);
 
 		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
@@ -129,18 +129,25 @@ int main(int argc, char** argv){
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
 
 			char pkm = list_get(elemento->objetivos,j);
-			//char* nombrePokemon = obtenerNombre(pkm);//TODO HACER FUNCION obtener el nombre de mi pokemon
+			char* nombrePokemon = obtenerNombre(pkm);
 			t_metadataPokemon pokemon;
-			//strcpy(pokemon.nombre,nombrePokemon);
+			strcpy(pokemon.nombre,nombrePokemon);
 
 			int estado = 0;
-			t_list* pokemones = list_create();
+			t_list* pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS, LISTA CON STRUCTS METADATA POKEMON
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pkm;
-			while (estado != 3){
+
+
+			while (estado != 4){
 				switch (estado){
 						case 0:
 							solicitarUbicacionPokenest(servidorMapa, pkm);
+							if(recibirHeader(servidorMapa) == notificarDeadlock){
+								estado = 3;
+								log_info(logger, "Entrenador entra en Deadlock");
+								break;
+							}
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
 							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
@@ -148,9 +155,9 @@ int main(int argc, char** argv){
 
 						case 1:
 							solicitarMovimiento(servidorMapa,*pokenestProxima);//le pido al mapa permiso para moverme
-							hastaQueNoReciba(movimientoAceptado, servidorMapa);// <-funcion con bucle infinito,
-							if(llegoAPokenest(*pokenestProxima)){			   //hasta que reciba el header
-								estado = 2;									   //solicitado
+							hastaQueNoReciba(movimientoAceptado, servidorMapa);// bucle infinito,
+							if(llegoAPokenest(*pokenestProxima)){
+								estado = 2;
 								log_info(logger, "Entrenador alcanza pokenest del pokemon %c", pkm);
 							}
 						break;
@@ -165,20 +172,36 @@ int main(int argc, char** argv){
 							//reintentos
 							// atrape pokemon,
 							hastaQueNoReciba(capturarPokemon, servidorMapa);
-							//todo HACER CONFIG PARA OBTENER EL NIVEL DEL POKEMON
-							list_add(pokemones, pkm);
-							estado = 3;
+							estado = 4;
+							break;
+
+						case 3:
+							if(recibirHeader(servidorMapa) == entrenadorGanador){ //atrape al pkm
+								log_info(logger, "Entrenador sale vencedor del Deadlock");
+								estado = 4;
+							}
+							else
+								if(recibirHeader(servidorMapa) == entrenadorPerdedor){
+									log_info(logger, "Entrenador sale perdedor del Deadlock");
+									victimaDeDeadlock(servidorMapa);
+								}
 							break;
 							}
 				char* rutaPokemon = string_new();
 				//rutaPokemon = crearRutaPkm(nombreMapa, nombrePknest, numeroPokemon);//TODO leo el nombre del pkm
-																					// de un path ??
+																					// de un path
+
+				t_config* metadataPokemon = config_create(rutaPokemon);
+				pokemon.nivel = config_get_int_value(metadataPokemon, "nivel");		//leo el nivel del pokemon
+
+				list_add(pokemonesAtrapados, &pokemon); //agrego el pkm a la lista de pokemones
+
 				char* rutaDirBill= string_new();
 				rutaDirBill = crearRutaDirBill(rutaMetadata);
 
 				char* comando = string_new();
 				comando = crearComando(rutaPokemon,rutaDirBill);
-				system(comando);
+				system(comando);									//copio el archivo pkm en mi directorio Bill
 				}
 
 		free(pokenestProxima);
