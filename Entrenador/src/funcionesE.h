@@ -47,7 +47,6 @@ char* mensaje;
 char* nombre;
 t_log* logger;
 t_log* loger;
-int socketCliente;
 int servidorMapa;
 t_metadataEntrenador entrenador;
 t_ubicacion ubicacionEntrenador;

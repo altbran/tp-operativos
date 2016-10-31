@@ -276,14 +276,14 @@ void hastaQueNoReciba(int header, int socketOrigen){
 
 void enviarMisDatos(int socketDestino){
 
-	int tamanio = sizeof(int)+sizeof(int)+strlen(entrenador.nombre)+sizeof(char);
+	int tamanio = sizeof(int)+sizeof(int)+18+sizeof(char);
 	void* buffer = malloc(tamanio);
 	int cursor = 0;
 
-	memcpy(buffer,&entrenador.nombre ,strlen(entrenador.nombre));
-	cursor += sizeof(char);
+	memcpy(buffer,&entrenador.nombre ,18);
+	cursor += 18;
 	memcpy(buffer+cursor,&entrenador.simbolo ,sizeof(char));
-	cursor += sizeof(int);
+	cursor += sizeof(char);
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasX,sizeof(int));
 	cursor += sizeof(int);
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasY,sizeof(int));
