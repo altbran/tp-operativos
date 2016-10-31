@@ -76,11 +76,14 @@ int main(int argc, char** argv){
 		log_info(logger, "Conexion establecida");
 
 	printf("handshake correcto\n");
+
 	enviarMisDatos(servidorMapa);
+
+
 
 	sleep(60000000);
 	//char* tiempoDeInicio = temporal_get_string_time();
-	/*int i;
+	int i;
 	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 		t_objetivosPorMapa *elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
@@ -121,17 +124,15 @@ int main(int argc, char** argv){
 
 		enviarMisDatos(servidorMapa);//LE ENVIO MIS DATOS A ENTRENADOR
 
- *
- *
+
 		int j;
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
 
 			char pkm = list_get(elemento->objetivos,j);
 			//char* nombrePokemon = obtenerNombre(pkm);//TODO HACER FUNCION obtener el nombre de mi pokemon
 			t_metadataPokemon pokemon;
-			strcpy(pokemon.nombre,nombrePokemon);
+			//strcpy(pokemon.nombre,nombrePokemon);
 
-			pkm = list_get(elemento->objetivos,j);
 			int estado = 0;
 			t_list* pokemones = list_create();
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
@@ -141,6 +142,7 @@ int main(int argc, char** argv){
 						case 0:
 							solicitarUbicacionPokenest(servidorMapa, pkm);
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
+							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
 						break;
 

@@ -235,14 +235,6 @@ void copiarMedalla(char* nombreMapa){
 	system(comando);
 }
 
-void enviarCantidadDeMovsAPokenest(int socketDestino,t_metadataPokenest pokenest){
-	int movs = cantidadDeMovimientosAPokenest(pokenest);
-	void *buffer = malloc(sizeof(int));
-	memcpy(buffer,&movs,sizeof(int));
-	send(socketDestino,buffer,sizeof(int),0);
-	free(buffer);
-}
-
 void solicitarAtraparPkm(char pokemon, int servidorMapa){
 	enviarHeader(servidorMapa, capturarPokemon);
 	void *buffer = malloc(sizeof(char));
@@ -298,3 +290,16 @@ void reestablecerDatos(){
 	ubicacionEntrenador.coordenadasY = 0;
 	ubicacionEntrenador.ultimoMov = 'y';
 }
+void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa){
+	enviarHeader(serverMapa, entrenadorListo);
+	int movs = cantidadDeMovimientosAPokenest(pokenest);
+	send(serverMapa, &movs, sizeof(int), 0);
+}
+/*
+void enviarCantidadDeMovsAPokenest(int socketDestino,t_metadataPokenest pokenest){
+	int movs = cantidadDeMovimientosAPokenest(pokenest);
+	void *buffer = malloc(sizeof(int));
+	memcpy(buffer,&movs,sizeof(int));
+	send(socketDestino,buffer,sizeof(int),0);
+	free(buffer);
+}*/

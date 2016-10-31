@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "commons/log.h"
-#include <curses.h>
-#include <nivel.h>
+//#include <curses.h>
+//#include <nivel.h>
 #include <src/sockets.h>
 #include <src/structs.h>
 #include <src/protocolo.h>
@@ -79,5 +79,7 @@ int existeArchivo(char* path);
 char* obtenerNumero(int decenas, int unidades);
 void enviarMisDatos(int socketDestino);
 void reestablecerDatos();
+void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa);
+
 
 #endif /* FUNCIONESE_H_ */
