@@ -68,12 +68,14 @@ void borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
 void escribirArchivo(char* path, char* fichero, int tam, char* mapa);
+int aperturaArchivo(char* path,int socket);
 
 
 //Variables globales
 
 t_log* logger;
 t_estructuraAdministrativa estructuraAdministrativa;
+int aperturado[2048] = {0};
 
 int main(void) {
 
@@ -249,13 +251,20 @@ void atenderConexion(int socket, char* mapa)
 	{
 		log_info(logger,"socket: %d, operacion: %d",socket,operacion);
 
-		switch(operacion)
+		switch(operacion)  //magia potagia TODO
 		{
+			case abrirArchivo:
+				recibirTodo(socket,path,50);
+				int estaAbierto = aperturaArchivo(path,socket);
+				enviarHeader(socket,estaAbierto);
+				break;
+
 			case contenidoArchivo:
 				recibirTodo(socket,path,50);
 				archivo = leerArchivo(path,mapa,&tamanio);
 				enviarHeader(socket,tamanio);
-				send(socket,archivo,tamanio,0); //hacer un array de flags de archivos abietos todo
+				send(socket,archivo,tamanio,0);
+				log_info(logger,"Se envio el archivo %s",path);
 				free(archivo);
 				break;
 
@@ -273,6 +282,10 @@ void atenderConexion(int socket, char* mapa)
 				recibirTodo(socket,path,50);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
+				break;
+
+			default:
+				log_info(logger,"Todavia no implementado. Codigo operacion: %d",operacion);
 				break;
 		}
 
@@ -321,7 +334,6 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 	strcpy(copiaPath,path);
 
-
 	if(comprobarPathValido(copiaPath))
 	{
 		if(!strcmp(copiaPath,"/"))
@@ -360,6 +372,9 @@ int getAtr(char* path,char* mapa,int* tamanio)
 			}
 
 			*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
+
+			log_warning(logger,"Lo encontrado. Nombre: %s   Estado: %u",estructuraAdministrativa.tablaArchivos[offset].nombre,estructuraAdministrativa.tablaArchivos[offset].estado);
+
 			free(copiaPath);
 			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
 				return 0;
@@ -1107,4 +1122,51 @@ void escribirArchivo(char* path, char* fichero, int tam, char* mapa)
 			}
 		}
 	}
+}
+
+int aperturaArchivo(char* path,int socket)
+{
+	char* nombreArchivo;
+	char* copiaPath = malloc(50);
+	int i = 0;
+	int offset = 0xFFFF;
+
+	strcpy(copiaPath,path);
+
+	if(comprobarPathValido(copiaPath))
+	{
+		while(strlen(copiaPath))
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				break;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+		}
+			//aca tenemos el offset del directorio a contar
+
+		if(aperturado[offset] != 0)   //si el archivo ya esta abierto, sea por quien sea, devuelve ERROR
+			return -1;
+		else
+			aperturado[offset] = socket;
+
+	}
+	log_info(logger,"Archivo '%s' abierto por el dexCliente N. %d",estructuraAdministrativa.tablaArchivos[offset].nombre,socket);
+	free(copiaPath);
+	return 0;
 }

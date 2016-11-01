@@ -63,8 +63,6 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
-	printf("Path enviado readdir: %s\n",path);
-
 	header = recibirHeader(S_POKEDEX_CLIENTE);
 	printf("Header recibido para el readdir: %d   PATH: %s\n",header,path);
 
@@ -95,27 +93,6 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 	{
 		return -ENOENT;
 	}
-
-
-
-
-	/*int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
-	switch (cantidadArchivos) {
-	case 0:
-		break;
-	case -1:
-		resultado = -ENOENT;
-		break;
-	default:
-		for (i = 0; i < cantidadArchivos; i++) {
-			cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
-			cadenaARecibir = malloc(18);
-			recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir,
-					cantidadBytesARecibir);
-			filler(buf, cadenaARecibir, NULL, 0);
-			free(cadenaARecibir);
-		}
-	}*/
 }
 
 static int f_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
@@ -184,15 +161,10 @@ static int f_unlink(const char *path) {
 }
 
 static int f_open(const char *path, struct fuse_file_info *fi) {
-	int res;
+
 	enviarHeader(S_POKEDEX_CLIENTE, abrirArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	recibirTodo(S_POKEDEX_CLIENTE,&res,sizeof(int));//resultado de la operacion
-		if (res){
-			return 0;
-		}else{
-			return -1;
-		}
+	return recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
 }
 
 static int f_close(const char *path, struct fuse_file_info *fi) {
