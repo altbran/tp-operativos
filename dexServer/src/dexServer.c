@@ -243,10 +243,10 @@ void atenderConexion(int socket, char* mapa)
 	char* path = malloc(50);
 	void* archivo = NULL;
 
-	while(operacion != IDERROR)
-	{
-		operacion = recibirHeader(socket);
+	operacion = recibirHeader(socket);
 
+	while(operacion != socketDesconectado)
+	{
 		log_info(logger,"socket: %d, operacion: %d",socket,operacion);
 
 		switch(operacion)
@@ -256,24 +256,27 @@ void atenderConexion(int socket, char* mapa)
 				archivo = leerArchivo(path,mapa,&tamanio);
 				enviarHeader(socket,tamanio);
 				send(socket,archivo,tamanio,0); //hacer un array de flags de archivos abietos todo
+				free(archivo);
 				break;
 
 			case privilegiosArchivo:
 				recibirTodo(socket,path,50);
 
-				log_info(logger,"Path enviado por el getAttr: %s",path);
-
 				int esDir = getAtr(path,mapa,&tamanio);
+				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,esDir,tamanio);
+
 				enviarHeader(socket,esDir);
 				enviarHeader(socket,tamanio);
 				break;
 
 			case contenidoDirectorio:
 				recibirTodo(socket,path,50);
-				log_info(logger,"path para readdir: %s",path);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
+				break;
 		}
+
+		operacion = recibirHeader(socket);
 	}
 
 }
@@ -318,52 +321,54 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 	strcpy(copiaPath,path);
 
+
 	if(comprobarPathValido(copiaPath))
 	{
 		if(!strcmp(copiaPath,"/"))
 		{
-			log_info(logger,"Es el directorio raiz");
-			copiaPath[0] = '\0';
-		}
-
-		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
-		{
-			nombreArchivo = malloc(18);
-			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
-			i = 0;
-			while(i < 2048)
-			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
-					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
-						break;
-				i++;
-			}
-
-
-			if(i == 2048) //si llego al final es porque no encontró nada
-			{
-				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				*tamanio = 0;
-				free(nombreArchivo);
-				free(copiaPath);
-				return -1;
-			}
-			else
-				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
-
-			free(nombreArchivo);
-			free(copiaPath);
-		}
-
-		*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
-
-		log_info(logger,"Tamaño: %d,  estado: %u",*tamanio,estructuraAdministrativa.tablaArchivos[offset].estado);
-		if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
-			return 0;
-		else
+			*tamanio = 0;
 			return 1;
+		}
+		else
+		{
+			while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+			{
+				nombreArchivo = malloc(18);
+				recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+				i = 0;
+				while(i < 2048)
+				{
+					if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+						if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+							break;
+					i++;
+				}
+
+
+				if(i == 2048) //si llego al final es porque no encontró nada
+				{
+					log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+					*tamanio = 0;
+					free(nombreArchivo);
+					free(copiaPath);
+					return -1;
+				}
+				else
+					offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+				free(nombreArchivo);
+			}
+
+			*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
+			free(copiaPath);
+			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
+				return 0;
+			else
+				return 1;
+		}
 	}
 	*tamanio = 0;
+	free(copiaPath);
 	return -1;
 }
 
@@ -372,6 +377,7 @@ void leerDirectorio(char* path, int socket)
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
 	int i = 0;
+	int contador = 0;
 	int offset = 0xFFFF;
 
 	strcpy(copiaPath,path);
@@ -407,20 +413,30 @@ void leerDirectorio(char* path, int socket)
 			//aca tenemos el offset del directorio a contar
 
 		i = 0;
+		while(i < 2048)		//primera ronda, cuenta los archivos que tiene que mandar
+		{
+			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+				contador++;
+			i++;
+		}
+		enviarHeader(socket,contador);
+
+		i = 0;
 		while(i < 2048)
 		{
-			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			{
 				nombreArchivo = malloc(18);
 				strcpy(nombreArchivo,(char*)estructuraAdministrativa.tablaArchivos[i].nombre);
-				send(socket,nombreArchivo,50,0);
+				send(socket,nombreArchivo,18,0);
 
 				log_info(logger,"Nombre enviado: %s",nombreArchivo);
-
 				free(nombreArchivo);
 			}
 			i++;
 		}
+	log_info(logger,"PATH: '%s' leido correctamente",path);
+	free(copiaPath);
 	}
 }
 
@@ -866,12 +882,30 @@ bool comprobarPathValido(char* path)
 	int offset = 0xFFFF;
 	int i;
 	char* copiaPath = malloc(50);
+	char* otraCopia = malloc(50);
 	char* viejoNombre;
+	char* otroNombre = malloc(18);
 
 	strcpy(copiaPath,path);
+	strcpy(otraCopia,path);
 
 	if(!strcmp(copiaPath,"/"))
+	{
+		free(copiaPath);
+		free(otroNombre);
+		free(otraCopia);
 		return true;
+	}
+
+	recorrerDesdeIzquierda(otraCopia,otroNombre);
+	if(!strcmp(otroNombre,".Trash"))
+	{
+		free(otraCopia);
+		free(otroNombre);
+		free(copiaPath);
+		return false;
+	}
+
 	else
 	{
 		while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...

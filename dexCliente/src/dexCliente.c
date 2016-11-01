@@ -22,27 +22,17 @@ void enviarPath(const char *path, int socketDestino) {
 	free(buffer);
 }
 
-/*	void enviarPath(const char *path, int socketDestino) {
-	int longitud;
-	longitud = strlen(path);
-	void *buffer = malloc(sizeof(longitud));
-	strcpy(buffer, path);
-	send(socketDestino, buffer, sizeof(buffer), 0);
-	free(buffer);
-}
-*/
-
-static int f_getattr(
-		const char *path/*ruta del archivo cuyos atributos deben ser retornados*/,
-		struct stat *stbuf/*puntero a la estructura que contiene los atributos luego de terminar la ejecucion*/) {
+static int f_getattr(const char *path, struct stat *stbuf) {
 	/*se llama a esta funcion cuando el sistema trata de obtener los atributos de un archivo*/
 
 	int resultado = 0;
 	t_privilegiosArchivo privilegios;
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
-
 	enviarPath(path, S_POKEDEX_CLIENTE);
+
+	printf("Path enviado. getattr: %s\n",path);
+
 	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
 	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
 
@@ -56,37 +46,58 @@ static int f_getattr(
 	}else {
 		resultado = -ENOENT;
 	}
+
+	printf("Atributos recibidos para: %s\n",path);
+	printf("Dir: %d   Tam: %d\n",privilegios.esDir,privilegios.tamanio);
+
 	//Agregar caso fallo
 	return resultado;
 }
 
-static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		off_t offset, struct fuse_file_info *fi) {
-	/*Se llama a esta funcion cuando el usuario trata de mostrar los archivos y directorios en un directorio especifico*/
-	int resultado = 0;
+static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t offset, struct fuse_file_info *fi)
+{
 	char* cadenaARecibir;
+	int header;
+	int i = 0;
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
-	if(recibirHeader(S_POKEDEX_CLIENTE))
+	printf("Path enviado readdir: %s\n",path);
+
+	header = recibirHeader(S_POKEDEX_CLIENTE);
+	printf("Header recibido para el readdir: %d   PATH: %s\n",header,path);
+
+	if(header)
 	{
+		filler(buf, ".", NULL, 0);
+		filler(buf, "..", NULL, 0);
+
 		cadenaARecibir = malloc(18);
 
-		while(!recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, 18))
+		header = recibirHeader(S_POKEDEX_CLIENTE);
+
+		while(i < header)
 		{
+			recv(S_POKEDEX_CLIENTE, cadenaARecibir, 18,0);
+			printf("Readdir. Cadena recibida: %s\n",cadenaARecibir);
+
 			filler(buf, cadenaARecibir, NULL, 0);
 			free(cadenaARecibir);
-			resultado++;
-
 			cadenaARecibir = malloc(18);
+			i++;
 		}
 
 		free(cadenaARecibir);
-		return resultado;
+		return 0;
 	}
 	else
+	{
 		return -ENOENT;
+	}
+
+
+
 
 	/*int cantidadArchivos = recibirHeader(S_POKEDEX_CLIENTE);
 	switch (cantidadArchivos) {
