@@ -11,7 +11,7 @@
 void srdf();
 void roundRobin();
 void atraparPokemon();
-int entrenadorMasCercano();
+int * entrenadorMasCercano();
 void jugada(int * turno, int * quedoBloqueado, int * i, int total);
 
 #endif /* PLANIFICADORES_H_ */

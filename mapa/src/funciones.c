@@ -16,8 +16,10 @@ void iniciarPlanificador() {
 	PTHREAD_CREATE_DETACHED);
 	if (configuracion->algoritmo == 'R') {
 		pthread_create(&planificador, &attr, (void*) roundRobin, NULL);
+		log_info(logger, "Arranque el hilo planificador en Round Robin");
 	} else {
 		pthread_create(&planificador, &attr, (void*) srdf, NULL);
+		log_info(logger, "Arranque el hilo planificador en SRDF");
 	}
 
 }
@@ -36,11 +38,11 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 	return i;
 }
 
-t_datosEntrenador devolverEntrenador(int socket) {
+t_datosEntrenador* devolverEntrenador(int socket) {
 	int i;
 	for (i = 0; i < list_size(Entrenadores); i++) {
-		t_datosEntrenador entrenador = *(t_datosEntrenador*) (list_get(Entrenadores, i));
-		if (entrenador.socket == socket) {
+		t_datosEntrenador * entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
+		if (entrenador->socket == socket) {
 			return entrenador;
 		}
 	}
@@ -48,22 +50,23 @@ t_datosEntrenador devolverEntrenador(int socket) {
 
 int devolverIndiceEntrenador(int socket) {
 	int i;
+	int indice;
 	for (i = 0; i < list_size(Entrenadores); i++) {
 		t_datosEntrenador entrenador = *(t_datosEntrenador*) (list_get(Entrenadores, i));
 		if (entrenador.socket == socket) {
-			return i;
+			indice = i;
 		}
 	}
+	return indice;
 }
 
 int movimientoValido(int socket, int posX, int posY) {
-	t_datosEntrenador entrenador = devolverEntrenador(socket);
-	int i = entrenador.posicionX - posX + entrenador.posicionY - posY;
+	t_datosEntrenador * entrenador = devolverEntrenador(socket);
+	int i = entrenador->posicionX - posX + entrenador->posicionY - posY;
 	if (i == 1 || i == -1) {
-		entrenador.posicionX = posX;
-		entrenador.posicionY = posY;
-		entrenador.distanciaAPokenest = entrenador.distanciaAPokenest - 1;
-		list_replace(Entrenadores, devolverIndiceEntrenador(socket), &entrenador);
+		entrenador->posicionX = posX;
+		entrenador->posicionY = posY;
+		entrenador->distanciaAPokenest = entrenador->distanciaAPokenest - 1;
 		return EXIT_SUCCESS;
 	} else {
 		return EXIT_FAILURE;
@@ -87,6 +90,7 @@ void cargarMetadata() {
 	//configuracion.ip = config_get_string_value(config, "IP");
 	strcpy(configuracion->ip, config_get_string_value(config, "IP"));
 	configuracion->puerto = config_get_int_value(config, "Puerto");
+	log_info(logger, "Cargue el metadata");
 }
 
 //funciones de pokenest
@@ -112,7 +116,7 @@ void cargarRecursos() {
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
 				pokenest->posicionX = atoi(*tokens);
 				pokenest->posicionY = atoi(*(tokens + 1));
-				int cantidad = malloc(sizeof(int));
+				int cantidad;
 				cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 				pokenest->cantidad = cantidad;
 				int i;
@@ -129,6 +133,7 @@ void cargarRecursos() {
 			}
 		}
 		closedir(dir);
+		log_info(logger, "Cargue mis recursos");
 	} else {
 		/* could not open directory */
 		perror("");
@@ -158,7 +163,7 @@ int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemo
 		for (i = 0; i < list_size(pokemones); i++) {
 			t_duenioPokemon * pokemon = list_get(pokemones, i);
 			if (pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1) {
-				numeroPokemon = pokemon->numeroPokemon;
+				*numeroPokemon = pokemon->numeroPokemon;
 				i = list_size(pokemones);
 			}
 		}
@@ -174,11 +179,11 @@ void restarRecursoDisponible(int indicePokenest) {
 	list_replace(recursosTotales, indicePokenest, &cantidad);
 }
 
-t_metadataPokenest devolverPokenest(char * identificador) {
+t_metadataPokenest * devolverPokenest(char * identificador) {
 	int i;
 	for (i = 0; i < list_size(Pokenests); i++) {
-		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
-		if (pokenest.identificador == *identificador) {
+		t_metadataPokenest * pokenest = (t_metadataPokenest*) (list_get(Pokenests, i));
+		if (pokenest->identificador == *identificador) {
 			return pokenest;
 		}
 	}
@@ -186,12 +191,14 @@ t_metadataPokenest devolverPokenest(char * identificador) {
 
 int devolverIndicePokenest(char * identificador) {
 	int i;
+	int indice;
 	for (i = 0; i < list_size(Pokenests); i++) {
 		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
 		if (pokenest.identificador == *identificador) {
-			return i;
+			indice = i;
 		}
 	}
+	return indice;
 }
 
 int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {

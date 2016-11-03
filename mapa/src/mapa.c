@@ -10,10 +10,12 @@ int main(int argc, char **argv) {
 	//busco las configuraciones
 	if (argc != 3) {
 		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
+		log_info(logger, "La ruta es: ", ruta);
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = "Paleta";
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
+		log_info(logger, "La ruta es: ", ruta);
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = argv[1];
 	}
@@ -34,9 +36,9 @@ int main(int argc, char **argv) {
 	iniciarPlanificador();
 	//pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
+	log_info(logger, "Arranque hilo atrapador");
 
-	//creo el hilo para reconocer señales SIGUSR2
-
+	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
 
 	//creo socket servidor
@@ -108,30 +110,34 @@ int main(int argc, char **argv) {
 					case IDENTRENADOR:
 
 						FD_SET(nuevaConexion, &bolsaDeSockets);
-						t_datosEntrenador * entrenador;
-						entrenador = malloc(sizeof(t_datosEntrenador));
+						t_datosEntrenador * entrenador = malloc(sizeof(t_datosEntrenador));
+						int * socketNuevo = malloc(sizeof(int));
+						*socketNuevo = nuevaConexion;
+
 						//recibir datos del entrenador nuevo
-						if (recibirEntrenador(nuevaConexion, entrenador)) {
-							log_info(logger, "error en el recibir entrenador, socket %d", nuevaConexion);
+						if (recibirEntrenador(*socketNuevo, entrenador)) {
+							log_info(logger, "error en el recibir entrenador, socket %d", *socketNuevo);
 						} else {
 							list_add(Entrenadores, &entrenador);
 						}
 						//envio la posicion de la pokenest
 						char identificador;
-						if (recibirTodo(nuevaConexion, &identificador, sizeof(char))) {
-							log_info(logger, "error al recibir identificador pokenest, socket %d", nuevaConexion);
+						if (recibirTodo(*socketNuevo, &identificador, sizeof(char))) {
+							log_info(logger, "error al recibir identificador pokenest, socket %d", *socketNuevo);
 						} else {
-							t_metadataPokenest pokenest = devolverPokenest(&identificador);
-							enviarCoordPokenest(nuevaConexion, &pokenest);
+							t_metadataPokenest * pokenest = devolverPokenest(&identificador);
+							enviarCoordPokenest(*socketNuevo, pokenest);
 						}
-						if (recibirHeader(nuevaConexion) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
-							recibirTodo(nuevaConexion, &entrenador->distanciaAPokenest, sizeof(int));
-							queue_push(listos, &nuevaConexion);
+						if (recibirHeader(*socketNuevo) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
+							recibirTodo(*socketNuevo, &entrenador->distanciaAPokenest, sizeof(int));
+							queue_push(listos, &socketNuevo);
 							dibujar(nombreMapa);
-							log_info(logger, "Nuevo entrenador conectado, socket %d", nuevaConexion);
-
+							log_info(logger, "Nuevo entrenador conectado, socket %d", *socketNuevo);
 						} else {
-							log_info(logger, "error en el listo al conectar entrenador, socket %d", nuevaConexion);
+							log_info(logger, "error en el listo al conectar entrenador, socket %d", *socketNuevo);
+							list_remove(Entrenadores,devolverIndiceEntrenador(*socketNuevo));
+							free(socketNuevo);
+							free(entrenador);
 						}
 						break;
 					default:
