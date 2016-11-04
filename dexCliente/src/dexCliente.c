@@ -40,7 +40,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 	} else if(privilegios.esDir == 0){
-		stbuf->st_mode = S_IFREG | 0444;
+		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_nlink = 1;
 		stbuf->st_size = privilegios.tamanio;
 	}else {
@@ -150,7 +150,10 @@ static int f_unlink(const char *path) {
 	int res;
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
+	printf("Archivo que se quiere eliminar. Path: %s\n",path);
 	res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	printf("Resultado de eliminar. Path: %s   Res %d\n",path,res);
 
 	return res;
 }
@@ -159,13 +162,15 @@ static int f_open(const char *path, struct fuse_file_info *fi) {
 
 	enviarHeader(S_POKEDEX_CLIENTE, abrirArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
+	printf("Archivo abierto. Path: %s\n",path);
 	return recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
 }
 
 static int f_close(const char *path, struct fuse_file_info *fi) {
 	enviarHeader(S_POKEDEX_CLIENTE, cerrarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	return 0;
+	printf("Archivo cerrado. Path: %s\n",path);
+	return recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
 }
 
 static int f_rename(const char *pathAntiguo, const char *pathNuevo)

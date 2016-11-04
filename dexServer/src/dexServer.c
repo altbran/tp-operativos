@@ -63,7 +63,7 @@ int getAtr(char* path,char* mapa,int* tamanio);
 void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 void crearDirectorio(char* path,char* mapa);
-void crearArchivo(char* path,char* mapa,int socket);
+void crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
@@ -217,6 +217,7 @@ int main(void) {
 				else
 				{  //aca mas adelante, voy a tener que crear hilos
 
+					//TODO hilos
 					atenderConexion(i,archivoMapeado);
 				}
 			}
@@ -242,6 +243,7 @@ int main(void) {
 void atenderConexion(int socket, char* mapa)
 {
 	int operacion;
+	int resultado;
 	int tamanio;
 	char* path = malloc(50);
 	void* archivo = NULL;
@@ -256,8 +258,8 @@ void atenderConexion(int socket, char* mapa)
 		{
 			case abrirArchivo:
 				recibirTodo(socket,path,50);
-				int estaAbierto = aperturaArchivo(path,mapa,socket);
-				enviarHeader(socket,estaAbierto);
+				resultado = aperturaArchivo(path,mapa,socket);
+				enviarHeader(socket,resultado);
 				break;
 
 			case contenidoArchivo:
@@ -272,10 +274,10 @@ void atenderConexion(int socket, char* mapa)
 			case privilegiosArchivo:
 				recibirTodo(socket,path,50);
 
-				int esDir = getAtr(path,mapa,&tamanio);
-				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,esDir,tamanio);
+				resultado = getAtr(path,mapa,&tamanio);
+				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,resultado,tamanio);
 
-				enviarHeader(socket,esDir);
+				enviarHeader(socket,resultado);
 				enviarHeader(socket,tamanio);
 				break;
 
@@ -292,16 +294,23 @@ void atenderConexion(int socket, char* mapa)
 				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
-				int des = escribirArchivo(path,ficheroEnviado,tamanio,mapa,socket);
-				enviarHeader(socket,des);
-				log_info(logger,"Resultado de la escritura de '%s': %d",des);
+				resultado = escribirArchivo(path,ficheroEnviado,tamanio,mapa,socket);
+				enviarHeader(socket,resultado);
+				log_info(logger,"Resultado de la escritura de '%s': %d",resultado);
+				free(ficheroEnviado);
 				break;
 
 			case eliminarArchivo:
 				recibirTodo(socket,path,50);
-				int res = borrarArchivo(path,mapa);
-				enviarHeader(socket,res);
-				log_info(logger,"Resultado del borrado de '%s': %d",res);
+				resultado = borrarArchivo(path,mapa);
+				enviarHeader(socket,resultado);
+				log_info(logger,"Resultado del borrado de '%s': %d",path,resultado);
+				break;
+
+			case cerrarArchivo:
+				recibirTodo(socket,path,50);
+				resultado = cerradoArchivo(path,socket);
+				enviarHeader(socket,resultado);
 				break;
 
 			default:
@@ -753,13 +762,12 @@ void crearDirectorio(char* path,char* mapa)
 	}
 }
 
-void crearArchivo(char* path,char* mapa,int socket)
+void crearArchivo(char* path,char* mapa)
 {
 	int i = 0;
 	int offset = 0;  //con esta recorro el bitmap
 	char* nombreEfectivo = malloc(18);
 	char* pathAuxiliar = malloc(50);
-
 
 	strcpy(pathAuxiliar,path);
 	sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
@@ -808,7 +816,6 @@ void crearArchivo(char* path,char* mapa,int socket)
 			free(pathAuxiliar);
 
 			guardarEstructuraEn(mapa);
-			aperturado[i] = socket;
 			log_info(logger,"Archivo creado. Nombre '%s'",path);
 		}
 	}
@@ -817,7 +824,7 @@ void crearArchivo(char* path,char* mapa,int socket)
 int borrarArchivo(char* path,char* mapa)
 {
 	int i = 0;
-	int offset = 0;
+	int offset = 0xFFFF;
 	int bloqueInicioDatos;
 	char* nombreArchivo = malloc(18);
 	char* copiaPath = malloc(50);
@@ -838,7 +845,6 @@ int borrarArchivo(char* path,char* mapa)
 				i++;
 			}
 
-
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
@@ -857,6 +863,7 @@ int borrarArchivo(char* path,char* mapa)
 		}
 
 		i = offset;
+		int viejoOffset;
 		estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
 		strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
 		estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF;
@@ -865,22 +872,24 @@ int borrarArchivo(char* path,char* mapa)
 				//ahora le tengo que borrar los bloques ocupados
 		bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
 		offset = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
+		viejoOffset = offset;
 		while(offset != 0xFFFFFFFF)
 		{
 			bitarray_clean_bit(estructuraAdministrativa.punteroBitmap,(offset + bloqueInicioDatos)); //limpio el bit
 			offset = estructuraAdministrativa.tablaAsignaciones[offset]; //paso al siguiente bloque
+			estructuraAdministrativa.tablaAsignaciones[viejoOffset] = 0; //reinicio la tabla de asignaciones
+			viejoOffset = offset;
 		}
 			//una vez que limpie el bitmap, termino de acondicionar la estructura de ese archivo eliminado
 		estructuraAdministrativa.tablaArchivos[i].bloqueInicial = 0;
 		estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0;
 
-		free(nombreArchivo);
-		free(copiaPath);
-
 		guardarEstructuraEn(mapa);
 		log_info(logger,"Archivo eliminado. Nombre '%s'",path);
+		free(copiaPath);
 		return 0;
 	}
+	free(copiaPath);
 	return -1;
 }
 
@@ -1099,7 +1108,7 @@ int escribirArchivo(char* path, char* fichero, int tam, char* mapa, int socket)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				break;
+				return -1;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -1212,7 +1221,7 @@ int aperturaArchivo(char* path,char* mapa, int socket)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				break;
+				return -1;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -1230,11 +1239,7 @@ int aperturaArchivo(char* path,char* mapa, int socket)
 	free(copiaPath);
 	return 0;
 	}
-	else		//si no existe, es porque lo quiere crear
-	{
-		crearArchivo(copiaPath,mapa,socket);
-		return 0;
-	}
+	return -1;
 }
 
 int cerradoArchivo(char* path,int socket)
@@ -1264,7 +1269,7 @@ int cerradoArchivo(char* path,int socket)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				break;
+				return 0;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -1278,7 +1283,6 @@ int cerradoArchivo(char* path,int socket)
 
 	log_info(logger,"Archivo '%s' cerrado por el dexCliente N. %d",estructuraAdministrativa.tablaArchivos[offset].nombre,socket);
 	free(copiaPath);
-	return 0;
 	}
 	return 0;
 }
