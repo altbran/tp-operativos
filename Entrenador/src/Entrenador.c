@@ -58,9 +58,9 @@ int main(int argc, char** argv){
 			return 1;
 		}*/
 
-	char * ip = "127.0.0.1";
+	char * ip = "10.0.2.15";
 
-	if(conectarA(servidorMapa, ip, 8080)){
+	if(conectarA(servidorMapa, "192.168.0.39", 8000)){
 				printf("no se pudo conectar\n");
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;

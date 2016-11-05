@@ -315,3 +315,6 @@ char* obtenerNombre(char identificador){
 	char* nombrePokemon;
 	return nombrePokemon;//TODO TERMINAR FUNCION
 }
+void enviarPokemon(int servidor, char pokemon){
+	send(servidor, &pokemon, sizeof(char),0);
+}
