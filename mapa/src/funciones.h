@@ -40,6 +40,7 @@ t_list * Entrenadores;
 t_queue * listos;
 t_queue * bloqueados;
 t_list * recursosTotales;
+t_list * listaRecursosDisponibles;
 pthread_t planificador;
 pthread_t deadlock;
 pthread_t atrapadorPokemon;
@@ -53,7 +54,7 @@ char* concat(int count, ...);
 void cargarRecursos();
 int contadorDePokemon(char * directorio);
 t_metadataPokenest* devolverPokenest(char * identificador);
-int devolverIndicePokenest(char * identificador);
+int devolverIndicePokenest(char identificador);
 int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest);
 int recibirEntrenador(int socketOrigen,t_datosEntrenador * entrenador);
 t_datosEntrenador * devolverEntrenador(int socketOrigen);
@@ -63,5 +64,7 @@ int pokemonDisponible(int indicePokenest, char identificador,int * numeroPokemon
 char** str_split(char* a_str, const char a_delim);
 void restarRecursoDisponible(int indicePokenest);
 void iniciarPlanificador();
+void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador);
+void desconectadoOFinalizado(int socketEntrenador);
 
 #endif /* FUNCIONES_H_ */

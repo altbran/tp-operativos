@@ -12,8 +12,7 @@ void receptorSIG() {
 void iniciarPlanificador() {
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr,
-	PTHREAD_CREATE_DETACHED);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	if (configuracion->algoritmo == 'R') {
 		pthread_create(&planificador, &attr, (void*) roundRobin, NULL);
 		log_info(logger, "Arranque el hilo planificador en Round Robin");
@@ -40,12 +39,15 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 
 t_datosEntrenador* devolverEntrenador(int socket) {
 	int i;
+	t_datosEntrenador * entrenadorARetornar;
 	for (i = 0; i < list_size(Entrenadores); i++) {
 		t_datosEntrenador * entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
 		if (entrenador->socket == socket) {
-			return entrenador;
+			entrenadorARetornar = entrenador;
+			break;
 		}
 	}
+	return entrenadorARetornar;
 }
 
 int devolverIndiceEntrenador(int socket) {
@@ -67,9 +69,9 @@ int movimientoValido(int socket, int posX, int posY) {
 		entrenador->posicionX = posX;
 		entrenador->posicionY = posY;
 		entrenador->distanciaAPokenest = entrenador->distanciaAPokenest - 1;
-		return EXIT_SUCCESS;
+		return 0;
 	} else {
-		return EXIT_FAILURE;
+		return 1;
 	}
 }
 
@@ -80,7 +82,7 @@ void cargarMetadata() {
 	configuracion->tiempoChequeoDeadlock = config_get_int_value(config, "TiempoChequeoDeadlock");
 	configuracion->batalla = config_get_int_value(config, "Batalla");
 	char * algoritmo = config_get_string_value(config, "algoritmo");
-	if (strcmp(algoritmo,"RR")) {
+	if (!strcmp(algoritmo, "RR")) {
 		configuracion->algoritmo = 'R';
 	} else {
 		configuracion->algoritmo = 'S';
@@ -107,20 +109,19 @@ void cargarRecursos() {
 			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
 				// do nothing (straight logic)
 			} else {
-				t_metadataPokenest * pokenest;
-				pokenest = malloc(sizeof(t_metadataPokenest));
+				t_metadataPokenest * pokenest = malloc(sizeof(t_metadataPokenest));
 				char ** tokens;
 				t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
 				pokenest->identificador = *(config_get_string_value(config, "Identificador"));
-				pokenest->tipo = config_get_string_value(config, "Tipo");
+				strcpy(pokenest->tipo, config_get_string_value(config, "Tipo"));
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
 				pokenest->posicionX = atoi(*tokens);
 				pokenest->posicionY = atoi(*(tokens + 1));
-				int cantidad;
-				cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
-				pokenest->cantidad = cantidad;
+				int * cantidad = malloc(sizeof(int));
+				*cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
+				pokenest->cantidad = *cantidad;
 				int i;
-				for (i = 1; i <= cantidad; i++) {
+				for (i = 1; i <= *cantidad; i++) {
 					t_duenioPokemon * pokemon = malloc(sizeof(t_duenioPokemon));
 					pokemon->socketEntrenador = -1;
 					pokemon->identificadorPokemon = pokenest->identificador;
@@ -128,6 +129,7 @@ void cargarRecursos() {
 					list_add(pokemones, &pokemon);
 				}
 				list_add(recursosTotales, &cantidad);
+				list_add(listaRecursosDisponibles, &cantidad);
 				list_add(Pokenests, &pokenest);
 				cargarPokenest(*pokenest);
 			}
@@ -137,8 +139,7 @@ void cargarRecursos() {
 	} else {
 		/* could not open directory */
 		perror("");
-		log_info(logger, "no se pudo abrir el directorio");
-		//return EXIT_FAILURE;
+		log_error(logger, "no se pudo abrir el directorio");
 	}
 }
 
@@ -158,7 +159,7 @@ int contadorDePokemon(char * directorio) {
 }
 
 int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemon, int * indice) {
-	if (*((int*) list_get(recursosTotales, indicePokenest)) >= 1) {
+	if (*((int*) list_get(listaRecursosDisponibles, indicePokenest)) >= 1) {
 		int i;
 		for (i = 0; i < list_size(pokemones); i++) {
 			t_duenioPokemon * pokemon = list_get(pokemones, i);
@@ -167,35 +168,59 @@ int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemo
 				i = list_size(pokemones);
 			}
 		}
-		return EXIT_SUCCESS;
+		return 1;
 	} else {
-		return EXIT_FAILURE;
+		return 0;
 	}
 }
 
-void restarRecursoDisponible(int indicePokenest) {
-	int cantidad;
-	cantidad = *((int*) list_get(recursosTotales, indicePokenest)) - 1;
-	list_replace(recursosTotales, indicePokenest, &cantidad);
+void desconectadoOFinalizado(int socketEntrenador) {
+	liberarRecursosEntrenador(devolverIndiceEntrenador(socketEntrenador));
+	reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
+	t_datosEntrenador * finalizado = list_remove(Entrenadores, devolverIndiceEntrenador(socketEntrenador));
+	free(finalizado);
+	close(socketEntrenador);
+	free(socketEntrenador);
 }
 
-t_metadataPokenest * devolverPokenest(char * identificador) {
+void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 	int i;
-	for (i = 0; i < list_size(Pokenests); i++) {
-		t_metadataPokenest * pokenest = (t_metadataPokenest*) (list_get(Pokenests, i));
-		if (pokenest->identificador == *identificador) {
-			return pokenest;
+	for (i = 0; i < list_size(pokemones); i++) {
+		t_duenioPokemon * pokemon = list_get(pokemones, i);
+		if (pokemon->socketEntrenador == socketEntrenador) {
+			pokemon->socketEntrenador = -1;
+			int * pokemonesDisponibles = list_get(listaRecursosDisponibles, devolverIndicePokenest(pokemon->identificadorPokemon));
+			*pokemonesDisponibles = *pokemonesDisponibles + 1;
 		}
 	}
 }
 
-int devolverIndicePokenest(char * identificador) {
+void restarRecursoDisponible(int indicePokenest) {
+	int * cantidad = (int*) list_get(listaRecursosDisponibles, indicePokenest);
+	*cantidad = *cantidad - 1;
+}
+
+t_metadataPokenest * devolverPokenest(char * identificador) {
+	int i;
+	t_metadataPokenest * pokenestARetornar;
+	for (i = 0; i < list_size(Pokenests); i++) {
+		t_metadataPokenest * pokenest = (t_metadataPokenest*) (list_get(Pokenests, i));
+		if (pokenest->identificador == *identificador) {
+			pokenestARetornar = pokenest;
+			break;
+		}
+	}
+	return pokenestARetornar;
+}
+
+int devolverIndicePokenest(char identificador) {
 	int i;
 	int indice;
 	for (i = 0; i < list_size(Pokenests); i++) {
 		t_metadataPokenest pokenest = *(t_metadataPokenest*) (list_get(Pokenests, i));
-		if (pokenest.identificador == *identificador) {
+		if (pokenest.identificador == identificador) {
 			indice = i;
+			break;
 		}
 	}
 	return indice;

@@ -116,29 +116,42 @@ int main(int argc, char **argv) {
 
 						//recibir datos del entrenador nuevo
 						if (recibirEntrenador(*socketNuevo, entrenador)) {
-							log_info(logger, "error en el recibir entrenador, socket %d", *socketNuevo);
-						} else {
-							list_add(Entrenadores, &entrenador);
-						}
-						//envio la posicion de la pokenest
-						char identificador;
-						if (recibirTodo(*socketNuevo, &identificador, sizeof(char))) {
-							log_info(logger, "error al recibir identificador pokenest, socket %d", *socketNuevo);
-						} else {
-							t_metadataPokenest * pokenest = devolverPokenest(&identificador);
-							enviarCoordPokenest(*socketNuevo, pokenest);
-						}
-						if (recibirHeader(*socketNuevo) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
-							recibirTodo(*socketNuevo, &entrenador->distanciaAPokenest, sizeof(int));
-							queue_push(listos, &socketNuevo);
-							dibujar(nombreMapa);
-							log_info(logger, "Nuevo entrenador conectado, socket %d", *socketNuevo);
-						} else {
-							log_info(logger, "error en el listo al conectar entrenador, socket %d", *socketNuevo);
-							list_remove(Entrenadores,devolverIndiceEntrenador(*socketNuevo));
+							log_error(logger, "error en el recibir entrenador, socket %d", *socketNuevo);
 							free(socketNuevo);
 							free(entrenador);
+							break;
+						} else {
+							list_add(Entrenadores, &entrenador);
+
+							//envio la posicion de la pokenest
+							char identificador;
+							if (recibirTodo(*socketNuevo, &identificador, sizeof(char))) {
+								log_error(logger, "error al recibir identificador pokenest, socket %d", *socketNuevo);
+								desconectadoOFinalizado(*socketNuevo);
+							} else {
+								t_metadataPokenest * pokenest = devolverPokenest(&identificador);
+								if (enviarCoordPokenest(*socketNuevo, pokenest)) {
+									log_error(logger, "error al coordenadas pokenest");
+									desconectadoOFinalizado(*socketNuevo);
+								} else {
+									if (recibirHeader(*socketNuevo) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
+										if (recibirTodo(*socketNuevo, &entrenador->distanciaAPokenest, sizeof(int))) {
+											log_error(logger, "error al recibir distancia a la pokenest");
+											desconectadoOFinalizado(*socketNuevo);
+										} else {
+											queue_push(listos, &socketNuevo);
+											dibujar(nombreMapa);
+											log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
+										}
+									} else {
+										log_error(logger, "error en el listo al conectar entrenador, socket %d", *socketNuevo);
+										desconectadoOFinalizado(*socketNuevo);
+									}
+								}
+							}
+
 						}
+
 						break;
 					default:
 						close(nuevaConexion);

@@ -45,27 +45,50 @@ void atraparPokemon() {
 		//todo poner mutex si hay entrenadores bloqueados
 		if (!queue_is_empty(bloqueados)) {
 			t_entrenadorBloqueado * entrenador = (t_entrenadorBloqueado*) queue_pop(bloqueados);
-			int numeroPokemon;
-			int indice;
-			if (pokemonDisponible(devolverIndicePokenest(entrenador->identificadorPokemon), *entrenador->identificadorPokemon,&numeroPokemon, &indice)) {
+			int * numeroPokemon = malloc(sizeof(int));
+			int * indice = malloc(sizeof(int));
+
+			//me fijo si hay pokemones disponibles
+			if (pokemonDisponible(devolverIndicePokenest(entrenador->identificadorPokemon), entrenador->identificadorPokemon,
+					numeroPokemon, indice)) {
+
+				//aviso a entrenador que hay pokemones
 				enviarHeader(entrenador->socket, pokemonesDisponibles);
-				send(entrenador->socket, &numeroPokemon, sizeof(int), 0);
-				int header = recibirHeader(entrenador->socket);
-				if (header == entrenadorListo) {
-					t_duenioPokemon * pokemon = list_get(pokemones, indice);
-					pokemon->socketEntrenador = entrenador->socket;
-					list_replace(pokemones, indice, pokemon);
-					restarRecursoDisponible(devolverIndicePokenest(entrenador->identificadorPokemon));
-					restarPokemon(entrenador->identificadorPokemon);
-					sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),devolverIndicePokenest(entrenador->identificadorPokemon));
-					queue_push(listos, &entrenador->socket);
-				} else if (header == finalizoMapa) {
-					list_remove(Entrenadores, devolverIndiceEntrenador(entrenador->socket));
-					liberarRecursosEntrenador(devolverIndiceEntrenador(entrenador->socket));
-					//todo devolver todos los recursos
+				if (enviarTodo(entrenador->socket, &numeroPokemon, sizeof(int))) {
+					//error, se desconecto
+					desconectadoOFinalizado(entrenador->socket);
+				} else {
+
+					int header = recibirHeader(entrenador->socket);
+
+					//entrenador avisa que ya lo copio
+					if (header == entrenadorListo) {
+
+						//hago cosas correspondientes a que lo atrapo
+						t_duenioPokemon * pokemon = list_get(pokemones, *indice);
+						pokemon->socketEntrenador = entrenador->socket;
+						restarRecursoDisponible(devolverIndicePokenest(entrenador->identificadorPokemon));
+						restarPokemon(&entrenador->identificadorPokemon);
+						sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),devolverIndicePokenest(entrenador->identificadorPokemon));
+						queue_push(listos, &entrenador->socket);
+						log_info(logger,"Pasa a listo el entrenador del socket: ",entrenador->socket);
+
+						//en caso de terminar el mapa devolver todos los recursos
+					} else if (header == finalizoMapa) {
+						desconectadoOFinalizado(entrenador->socket);
+						log_info(logger,"Termino el mapa el entrenador del socket: ",entrenador->socket);
+					} else {
+						//problema en el header, asumo que se desconecto
+						log_error(logger,"Se desconecto el entrenador del socket: ",entrenador->socket);
+						desconectadoOFinalizado(entrenador->socket);
+					}
+					free(entrenador);
 				}
-				free(entrenador);
+			} else {
+				queue_push(bloqueados, entrenador);
 			}
+			free(numeroPokemon);
+			free(indice);
 		}
 	}
 }
@@ -103,11 +126,23 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 	case datosPokenest:
 		;
 		char * identificadorPokenest = malloc(sizeof(char));
-		recibirTodo(*turno, &identificadorPokenest, sizeof(char));
+		if (recibirTodo(*turno, &identificadorPokenest, sizeof(char))) {
+			//error al enviar, supongo que se desconecto
+			log_error(logger, "error al recibir identificador de pokenest");
+			desconectadoOFinalizado(*turno);
+		}
 		t_metadataPokenest * pokenest = devolverPokenest(identificadorPokenest);
-		enviarCoordPokenest(*turno, pokenest);
+		if (enviarCoordPokenest(*turno, pokenest)) {
+			log_error(logger, "error al enviar las coordenadas de la pokenest");
+			//error al enviar, supongo que se desconecto
+			desconectadoOFinalizado(*turno);
+		}
 		t_datosEntrenador * entrenador = devolverEntrenador(*turno);
-		recibirTodo(*turno, &entrenador->distanciaAPokenest, sizeof(int));
+		if (recibirTodo(*turno, &entrenador->distanciaAPokenest, sizeof(int))) {
+			log_error(logger, "error al recibir la distancia a la pokenest");
+			//error al enviar, supongo que se desconecto
+			desconectadoOFinalizado(*turno);
+		}
 		free(identificadorPokenest);
 		*i = *i - 1;
 		break;
@@ -116,11 +151,19 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 		;
 		int * posX = malloc(sizeof(int));
 		int * posY = malloc(sizeof(int));
-		recibirTodo(*turno, &posX, sizeof(int));
-		recibirTodo(*turno, &posY, sizeof(int));
+		if (recibirTodo(*turno, &posX, sizeof(int))) {
+			log_error(logger, "error al recibir la posicion X");
+			//error al enviar, supongo que se desconecto
+			desconectadoOFinalizado(*turno);
+		}
+		if (recibirTodo(*turno, &posY, sizeof(int))) {
+			log_error(logger, "error al recibir la posicion Y");
+			//error al enviar, supongo que se desconecto
+			desconectadoOFinalizado(*turno);
+		}
 		if (movimientoValido(*turno, *posX, *posY)) {
-			log_info(logger, "movimiento invalido");
-			//todo responder invalido
+			log_error(logger, "movimiento invalido");
+			enviarHeader(*turno, movimientoInvalido);
 		} else {
 			moverEntrenador(*devolverEntrenador(*turno));
 			enviarHeader(*turno, movimientoAceptado);
@@ -134,12 +177,18 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 		;
 		t_entrenadorBloqueado * entrenadorBloqueado = malloc(sizeof(t_entrenadorBloqueado));
 		entrenadorBloqueado->socket = *turno;
-		recibirTodo(*turno, &entrenadorBloqueado->identificadorPokemon, sizeof(char));
-		queue_push(bloqueados, &entrenadorBloqueado);
-		sumarPedidosMatriz(devolverIndiceEntrenador(*turno), devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
-		*i = total;
-		*quedoBloqueado = 1;
-		//todo poner mutex para atrapar pokemon
+		if (recibirTodo(*turno, &entrenadorBloqueado->identificadorPokemon, sizeof(char))) {
+			log_error(logger, "error al recibir el identificador de la pokenest");
+			//error al enviar, supongo que se desconecto
+			desconectadoOFinalizado(*turno);
+		} else {
+			log_info(logger,"Quedo bloqueado el entrenador del socket: ",*turno);
+			queue_push(bloqueados, &entrenadorBloqueado);
+			sumarPedidosMatriz(devolverIndiceEntrenador(*turno),devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
+			*i = total;
+			*quedoBloqueado = 1;
+			//todo poner mutex para atrapar pokemon
+		}
 		break;
 	}
 }

@@ -32,16 +32,16 @@ typedef struct {
 
 typedef struct {
 	int socket;
-	char * identificadorPokemon;
+	char identificadorPokemon;
 }t_entrenadorBloqueado;
 
 typedef struct {
-	char * identificador;
+	char identificador;
 	int cantidad;
 }t_recursosPokenest;
 
 typedef struct{
-	char * tipo;
+	char tipo[10];
 	int posicionX;
 	int posicionY;
 	int cantidad;
