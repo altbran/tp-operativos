@@ -127,8 +127,8 @@ int main(int argc, char** argv){
 
 		int j;
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
-
-			char pkm = list_get(elemento->objetivos,j);
+			char* puntero = list_get(elemento->objetivos,j);
+			char pkm = *puntero;
 			char* nombrePokemon = obtenerNombre(pkm);
 			t_metadataPokemon pokemon;
 			strcpy(pokemon.nombre,nombrePokemon);
