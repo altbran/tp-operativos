@@ -79,9 +79,7 @@ int main(int argc, char** argv){
 
 	enviarMisDatos(servidorMapa);
 
-
-
-	sleep(60000000);
+/*
 	//char* tiempoDeInicio = temporal_get_string_time();
 	int i;
 	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
@@ -207,7 +205,7 @@ int main(int argc, char** argv){
 		free(pokenestProxima);
 
 		}
-		//solicitarYCopiarMedallaMapa(nombreMapa, servidorMapa);
+
 		config_destroy(metadataMapa);
 		free(elemento);
 		desconectarseDe(servidorMapa);
