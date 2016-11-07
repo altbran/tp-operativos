@@ -141,7 +141,7 @@ static int f_crearCarpeta(const char *path, mode_t modo) {
 
 	enviarHeader(S_POKEDEX_CLIENTE, crearCarpeta);
 	enviarPath(path,S_POKEDEX_CLIENTE);
-	modo = S_IFDIR;
+	modo;
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
@@ -198,6 +198,23 @@ static int f_removerDirectorio(const char *path,  mode_t modo) {
 	return 0;
 }
 
+static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
+	int res;
+
+	enviarHeader(S_POKEDEX_CLIENTE, crearArchivo);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+
+	res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	if(res)
+	{
+		return 0;
+	}else
+	{
+		return -1;
+	}
+
+}
 
 static struct fuse_operations ejemplo_oper = {
 		.readdir = f_readdir,
@@ -210,6 +227,7 @@ static struct fuse_operations ejemplo_oper = {
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
+		.mknod = f_crearArchivo,
 };
 
 int main(int argc, char *argv[])
