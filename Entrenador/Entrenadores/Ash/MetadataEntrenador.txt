@@ -2,3 +2,6 @@ nombre=Ash
 simbolo=@
 vidas=3
 reintentos=0
+hojaDeViaje=[puebloPaleta,puebloVerde]
+obj[puebloPaleta]=[P,S]
+obj[puebloVerde]=[V,Q]
