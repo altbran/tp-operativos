@@ -113,12 +113,19 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
-	cadenaARecibir = malloc(cantidadBytesARecibir);
+	if(cantidadBytesARecibir == -1)
+	{
+		return -1;
+	}else
+	{
+		cadenaARecibir = malloc(cantidadBytesARecibir);
 
-	recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
-	memcpy(buf, cadenaARecibir + offset, size);
+		recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
+		memcpy(buf, cadenaARecibir + offset, size);
 
-	return size;
+		return size;
+	}
+
 }
 
 static int f_write(const void *buffer, const char *path, size_t size,off_t offset, struct fuse_file_info *fi)
@@ -131,7 +138,7 @@ static int f_write(const void *buffer, const char *path, size_t size,off_t offse
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
-	if(!res)
+	if(res)
 		return size;
 	else
 		return -1;
@@ -141,7 +148,6 @@ static int f_crearCarpeta(const char *path, mode_t modo) {
 
 	enviarHeader(S_POKEDEX_CLIENTE, crearCarpeta);
 	enviarPath(path,S_POKEDEX_CLIENTE);
-	modo;
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
@@ -150,6 +156,7 @@ static int f_crearCarpeta(const char *path, mode_t modo) {
 
 static int f_unlink(const char *path) {
 	int res;
+
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	printf("Archivo que se quiere eliminar. Path: %s\n",path);
