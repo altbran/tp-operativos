@@ -67,7 +67,7 @@ void crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
-int escribirArchivo(char* path, char* fichero, int tam, char* mapa,int socket);
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket);
 int aperturaArchivo(char* path,char* mapa,int socket);
 int cerradoArchivo(char* path,int socket);
 
@@ -246,7 +246,7 @@ void atenderConexion(int socket, char* mapa)
 	int operacion;
 	int resultado;
 	int tamanio;
-	char* path = malloc(50);
+	char* path;
 	void* archivo = NULL;
 
 	operacion = recibirHeader(socket);
@@ -254,6 +254,8 @@ void atenderConexion(int socket, char* mapa)
 	while(operacion != socketDesconectado)
 	{
 		log_info(logger,"socket: %d, operacion: %d",socket,operacion);
+
+		path = malloc(50);
 
 		switch(operacion)  //magia potagia TODO
 		{
@@ -288,14 +290,21 @@ void atenderConexion(int socket, char* mapa)
 				leerDirectorio(path,socket);
 				break;
 
+			case crearFichero:
+				recibirTodo(socket,path,50);
+				crearArchivo(path,mapa);
+				break;
+
+
 			case escribirEnFichero:
 				recibirTodo(socket,path,50);
+				resultado = recibirHeader(socket);    //uso 'resultado', para no crear una variable nueva y desperdiciar 4 bytes
 				tamanio = recibirHeader(socket);
 
 				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
-				resultado = escribirArchivo(path,ficheroEnviado,tamanio,mapa,socket);
+				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la escritura de '%s': %d",resultado);
 				free(ficheroEnviado);
@@ -325,7 +334,7 @@ void atenderConexion(int socket, char* mapa)
 				log_info(logger,"Todavia no implementado. Codigo operacion: %d",operacion);
 				break;
 		}
-
+		free(path);
 		operacion = recibirHeader(socket);
 	}
 
@@ -762,7 +771,6 @@ int crearDirectorio(char* path,char* mapa)
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
 			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;
-			log_info(logger,"asdasdasdasdasdasdasdasdasdasdasdsadasdadasddddddddddddd %s",nombreDirectorio);
 			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreDirectorio);
 
 					//ahora le asigno un bloque libre
@@ -1095,7 +1103,7 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	}
 }
 
-int escribirArchivo(char* path, char* fichero, int tam, char* mapa, int socket)
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket) //todo usar mknod
 {
 	int i;
 	int j;
@@ -1137,78 +1145,69 @@ int escribirArchivo(char* path, char* fichero, int tam, char* mapa, int socket)
 			free(viejoNombre);
 		}
 							//aca tengo el offset de la tabla, o '2048' si es error
-		if(offset == 2048)
+		if(aperturado[offset] != socket)   //si no tiene este archivo abierto, o si está abierto y no es de el, no puede escribir
 		{
-			log_error(logger,"El archivo no existe. Path: '%s'",path);
+			log_error(logger,"No tiene permiso para escribir este archivo. Path: '%s'",path);
 			return -1;
 		}
 		else
 		{
-			if(aperturado[offset] != socket)   //si no tiene este archivo abierto, o si está abierto y no es de el, no puede escribir
+			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
 			{
-				log_error(logger,"No tiene permiso para escribir este archivo. Path: '%s'",path);
+				log_error(logger,"No se puede escribir un directorio");
 				return -1;
 			}
 			else
 			{
-				if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
+				i = tam / BLOCK_SIZE;
+				if(tam % BLOCK_SIZE)
+					i++;               //aca tengo la cantidad de bloques que tengo que guardar
+
+				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
+
+				while(otroContador < i)
 				{
-					log_error(logger,"No se puede escribir un directorio");
-					return -1;
-				}
-				else
-				{
-					i = tam / BLOCK_SIZE;
-					if(tam % BLOCK_SIZE)
-						i++;               //aca tengo la cantidad de bloques que tengo que guardar
+					bloqueAGuardar = malloc(BLOCK_SIZE);
 
-					bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
-
-					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
-
-					while(otroContador < i)
+					for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
 					{
-						bloqueAGuardar = malloc(BLOCK_SIZE);
-
-						for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
-						{
-							bloqueAGuardar[j] = fichero[contadorGlobal];
-							contadorGlobal++;
-						}
-
-						for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
-						{
-							mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
-						}
-
-						if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
-						{
-							j = 0;
-							while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
-								j++;
-							   //donde para j, es el offset del bloque libre
-							bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
-							   //aca ya reserve el bloque
-							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
-								//finalmente, le aseigno el nuevo bloque libre de datos
-						}
-						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-								//con esto obtengo el bloque siguiente para guardar datos
-						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
-								//y finalmente, con esta mierda, le doy un cierre al puto archivo
-
-						free(bloqueAGuardar);
-						otroContador++;
+						bloqueAGuardar[j] = fichero[contadorGlobal];
+						contadorGlobal++;
 					}
 
-					estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
-					estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+					for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
+					{
+						mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
+					}
 
-					guardarEstructuraEn(mapa);
-					log_info(logger,"Archivo correctamente guardado.");
-					free(copiaPath);
-					return 0;
+					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
+					{
+						j = 0;
+						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+							j++;
+						   //donde para j, es el offset del bloque libre
+						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
+						   //aca ya reserve el bloque
+						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
+							//finalmente, le aseigno el nuevo bloque libre de datos
+					}
+					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+							//con esto obtengo el bloque siguiente para guardar datos
+					estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
+							//y finalmente, con esta mierda, le doy un cierre al puto archivo
+
+					free(bloqueAGuardar);
+					otroContador++;
 				}
+
+				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
+				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+
+				guardarEstructuraEn(mapa);
+				log_info(logger,"Archivo correctamente guardado.");
+				free(copiaPath);
+				return 0;
 			}
 		}
 	}

@@ -208,7 +208,7 @@ static int f_removerDirectorio(const char *path,  mode_t modo) {
 static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 	int res;
 
-	enviarHeader(S_POKEDEX_CLIENTE, crearArchivo);
+	enviarHeader(S_POKEDEX_CLIENTE, crearFichero);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	res = recibirHeader(S_POKEDEX_CLIENTE);
