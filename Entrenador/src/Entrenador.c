@@ -30,16 +30,17 @@ int main(int argc, char** argv){
 	cargarDatos(metaDataEntrenador);//cargo metadata
 
 
-	//config_destroy(metaDataEntrenador);
+	config_destroy(metaDataEntrenador);
 
 	log_info(logger,"Entrenador leera sus atributos de la ruta %s", rutaMetadata);
-	int i;
+
 
 
 	//signal(SIGUSR1,senialRecibirVida);
 	//signal(SIGTERM,senialQuitarVida);
 
 	//char* tiempoDeInicio = temporal_get_string_time();
+
 	int i;
 	for(i=0;i < list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 
@@ -53,16 +54,15 @@ int main(int argc, char** argv){
 		string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);			//CREO EL PATH DE METADATA MAPA
 		string_append(&rutaMetadataMapa,"/MetadataMapa.txt");
+
 		log_info(logger, "ruta metadata del mapa: %s", rutaMetadataMapa);
-
-
 		reestablecerDatos(); //cargo posicion en (0;0) y ultimo movimiento = 'y' para que empiece moviendose horizontalmente
-		t_config* metadataMapa = config_create(rutaMetadataMapa);
+		//t_config* metadataMapa = config_create(rutaMetadataMapa);
 
-		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
-		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
-
-		if(crearSocket(&servidorMapa)){
+		//IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
+		//PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
+	}
+		/*if(crearSocket(&servidorMapa)){
 		printf("no se pudo crear socket cliente");
 		log_error(logger, "No se pudo crear socket cliente");
 		return 1;
@@ -87,13 +87,13 @@ int main(int argc, char** argv){
 		enviarMisDatos(servidorMapa);//LE ENVIO MIS DATOS A ENTRENADOR
 
 		//HASTA ACA TOO TESTEADO
+
 		int j;
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
 			char* puntero = list_get(elemento->objetivos,j);
 			char pkm = *puntero;
-			char* nombrePokemon = obtenerNombre(pkm);
 			t_metadataPokemon pokemon;
-			strcpy(pokemon.nombre,nombrePokemon);
+
 
 			int estado = 0;
 			t_list* pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS, LISTA CON STRUCTS METADATA POKEMON
@@ -111,6 +111,7 @@ int main(int argc, char** argv){
 								break;
 							}
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
+							pokemon.nombre = recibirNombrePkm(*pokenestProxima);
 							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
 						break;
@@ -164,16 +165,17 @@ int main(int argc, char** argv){
 				char* comando = string_new();
 				comando = crearComando(rutaPokemon,rutaDirBill);
 				system(comando);									//copio el archivo pkm en mi directorio Bill
-				}
+				*/
+				//}
 
-		free(pokenestProxima);
+		//free(pokenestProxima);
 
-		}
+		//}
 
-		config_destroy(metadataMapa);
-		free(elemento);
-		desconectarseDe(servidorMapa);
-		}
+		//config_destroy(metadataMapa);
+		//free(elemento);
+		//desconectarseDe(servidorMapa);
+
 	//SE CONVIRTIO EN MAESTRO POKEMON, NOTIFICAR POR PANTALLA, INFORMAR TIEMPO TOTAL,
 	//CUANTO TIEMPO PASO BLOQUEADO EN LAS POKENESTS, EN CUANTOS DEADBLOCKS ESTUVO INVOLUCRADO
 	//printf("Cantidad de muertes: %d", entrenador.reintentos);
