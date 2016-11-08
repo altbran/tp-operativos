@@ -20,21 +20,25 @@ int main(int argc, char **argv) {
 		nombreMapa = argv[1];
 	}
 
-	//inicializo el mutex
+	//inicializo semaforos
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&mutexDeadlock, NULL);
+	sem_init(&contadorEntrenadoresBloqueados,0,0);
+	sem_init(&contadorEntrenadoresListos,0,0);
 
-	//inicio colas
+	//inicio colas y listas
 	listos = queue_create();
 	bloqueados = queue_create();
+	Entrenadores = list_create();
 
 	//cargo recursos de mapa
 	cargarMetadata();
-	crearItems();
+	//crearItems();
 	cargarRecursos();
 
 	//inicializo hilos
 	iniciarPlanificador();
-	//pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
+	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
 	log_info(logger, "Arranque hilo atrapador");
 
@@ -77,7 +81,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	dibujar(nombreMapa);
+	//dibujar(nombreMapa);
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
@@ -140,8 +144,10 @@ int main(int argc, char **argv) {
 											desconectadoOFinalizado(*socketNuevo);
 										} else {
 											queue_push(listos, &socketNuevo);
+											agregarEntrenadorEnMatrices();
 											dibujar(nombreMapa);
 											log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
+											sem_post(&contadorEntrenadoresListos);
 										}
 									} else {
 										log_error(logger, "error en el listo al conectar entrenador, socket %d", *socketNuevo);

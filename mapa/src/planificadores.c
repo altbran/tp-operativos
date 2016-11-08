@@ -3,20 +3,22 @@
 void srdf() {
 	int i;
 	while (1) {
+		sem_wait(&contadorEntrenadoresListos);
 		if (!queue_is_empty(listos)) {
-			pthread_mutex_lock(&mutex);
 			int * turno;
 			int * movimientos = malloc(sizeof(int));
 			turno = entrenadorMasCercano(&movimientos);
 			int quedoBloqueado = 0;
 			for (i = 0; i < *movimientos; i++) {
+				pthread_mutex_lock(&mutex);
 				jugada(turno, &quedoBloqueado, &i, *movimientos);
+				pthread_mutex_unlock(&mutex);
 			}
 			free(movimientos);
 			if (!quedoBloqueado) {
 				queue_push(listos, &turno);
+				sem_post(&contadorEntrenadoresListos);
 			}
-			pthread_mutex_unlock(&mutex);
 		}
 	}
 }
@@ -24,25 +26,27 @@ void srdf() {
 void roundRobin() {
 	int i;
 	while (1) {
+		sem_wait(&contadorEntrenadoresListos);
 		if (!queue_is_empty(listos)) {
-			pthread_mutex_lock(&mutex);
 			int * turno;
 			turno = queue_pop(listos);
 			int quedoBloqueado = 0;
 			for (i = 0; i < configuracion->quantum; i++) {
+				pthread_mutex_lock(&mutex);
 				jugada(turno, &quedoBloqueado, &i, configuracion->quantum);
+				pthread_mutex_unlock(&mutex);
 			}
 			if (!quedoBloqueado) {
 				queue_push(listos, &turno);
+				sem_post(&contadorEntrenadoresListos);
 			}
-			pthread_mutex_unlock(&mutex);
 		}
 	}
 }
 
 void atraparPokemon() {
 	while (1) {
-		//todo poner mutex si hay entrenadores bloqueados
+		sem_wait(&contadorEntrenadoresBloqueados);
 		if (!queue_is_empty(bloqueados)) {
 			t_entrenadorBloqueado * entrenador = (t_entrenadorBloqueado*) queue_pop(bloqueados);
 			int * numeroPokemon = malloc(sizeof(int));
@@ -52,6 +56,7 @@ void atraparPokemon() {
 			if (pokemonDisponible(devolverIndicePokenest(entrenador->identificadorPokemon), entrenador->identificadorPokemon,
 					numeroPokemon, indice)) {
 
+				pthread_mutex_lock(&mutexDeadlock);
 				//aviso a entrenador que hay pokemones
 				enviarHeader(entrenador->socket, pokemonesDisponibles);
 				if (enviarTodo(entrenador->socket, &numeroPokemon, sizeof(int))) {
@@ -71,6 +76,7 @@ void atraparPokemon() {
 						restarPokemon(&entrenador->identificadorPokemon);
 						sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),devolverIndicePokenest(entrenador->identificadorPokemon));
 						queue_push(listos, &entrenador->socket);
+						sem_post(&contadorEntrenadoresListos);
 						log_info(logger,"Pasa a listo el entrenador del socket: ",entrenador->socket);
 
 						//en caso de terminar el mapa devolver todos los recursos
@@ -82,10 +88,12 @@ void atraparPokemon() {
 						log_error(logger,"Se desconecto el entrenador del socket: ",entrenador->socket);
 						desconectadoOFinalizado(entrenador->socket);
 					}
+					pthread_mutex_unlock(&mutexDeadlock);
 					free(entrenador);
 				}
 			} else {
 				queue_push(bloqueados, entrenador);
+				sem_post(&contadorEntrenadoresBloqueados);
 			}
 			free(numeroPokemon);
 			free(indice);
@@ -187,7 +195,7 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 			sumarPedidosMatriz(devolverIndiceEntrenador(*turno),devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
 			*i = total;
 			*quedoBloqueado = 1;
-			//todo poner mutex para atrapar pokemon
+			sem_post(&contadorEntrenadoresBloqueados);
 		}
 		break;
 	}

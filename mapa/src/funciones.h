@@ -23,6 +23,7 @@
 #include <assert.h>
 #include "deadlock.h"
 #include "planificadores.h"
+#include <semaphore.h>
 
 //variables
 t_log* logger;
@@ -32,7 +33,10 @@ int clientePokeDex;
 int servidorMapa;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
+sem_t contadorEntrenadoresListos;
+sem_t contadorEntrenadoresBloqueados;
 pthread_mutex_t mutex;
+pthread_mutex_t mutexDeadlock;
 t_metadataMapa * configuracion;
 char * ruta;
 t_list * Pokenests;

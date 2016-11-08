@@ -13,7 +13,7 @@ void iniciarPlanificador() {
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	if (configuracion->algoritmo == 'R') {
+	if (strcmp(&configuracion->algoritmo,"RR")) {
 		pthread_create(&planificador, &attr, (void*) roundRobin, NULL);
 		log_info(logger, "Arranque el hilo planificador en Round Robin");
 	} else {
@@ -32,8 +32,8 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 	i += recibirTodo(socketOrigen, &entrenador->posicionY, sizeof(uint32_t));
 
 	entrenador->socket = socketOrigen;
-	cargarEntrenador(*entrenador);
-	dibujar(nombreMapa);
+	//cargarEntrenador(*entrenador);
+	//dibujar(nombreMapa);
 	return i;
 }
 
@@ -100,6 +100,7 @@ void cargarMetadata() {
 void cargarRecursos() {
 	Pokenests = list_create();
 	recursosTotales = list_create();
+	listaRecursosDisponibles = list_create();
 	pokemones = list_create();
 	DIR *dir;
 	struct dirent *ent;
@@ -118,6 +119,7 @@ void cargarRecursos() {
 				pokenest->posicionX = atoi(*tokens);
 				pokenest->posicionY = atoi(*(tokens + 1));
 				int * cantidad = malloc(sizeof(int));
+				int * cantidadDisponibles = malloc(sizeof(int));
 				*cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 				pokenest->cantidad = *cantidad;
 				int i;
@@ -128,10 +130,11 @@ void cargarRecursos() {
 					pokemon->numeroPokemon = i;
 					list_add(pokemones, &pokemon);
 				}
+				*cantidadDisponibles = *cantidad;
 				list_add(recursosTotales, &cantidad);
-				list_add(listaRecursosDisponibles, &cantidad);
+				list_add(listaRecursosDisponibles, &cantidadDisponibles);
 				list_add(Pokenests, &pokenest);
-				cargarPokenest(*pokenest);
+				//cargarPokenest(*pokenest);
 			}
 		}
 		closedir(dir);
