@@ -63,10 +63,15 @@ t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
 
 	t_list* hojaDeViaje = list_create();
 	char** arrayHojaDeViaje = config_get_array_value(metadata, "hojaDeViaje");
-	log_info(logger,"longitud hoja de viaje: %d", sizeof(arrayHojaDeViaje));
+
+	int c=0;
+	while(arrayHojaDeViaje[c]!= NULL)
+		c++;
+	log_info(logger,"Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: %d", c);
 	int i,j;
+	t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa));
 	for(i=0; arrayHojaDeViaje[i]!= NULL; i++){ //recorro todos los mapas en la hoja de viaje
-		t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa*)); //reservo memoria para objetivosxmapa
+		t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa)); //reservo memoria para objetivosxmapa
 		objetivosPorMapa->mapa = arrayHojaDeViaje[i]; //le asigno el nombre del mapa q este leyendo
 		objetivosPorMapa->objetivos = list_create(); //creo la lista con sus objetivos
 		char* metadataObjetivo = string_new(); //aca se va aguardar lo q tendra q leer del archivo config
@@ -74,7 +79,7 @@ t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
 		char** objetivos = config_get_array_value(metadata, metadataObjetivo); //leo del config los objetivos del mapa
 		for(j=0; objetivos[j]!= NULL; j++){
 			if(j>0)if(string_starts_with(objetivos[j], objetivos[j-1])) return NULL; //logica para que no pida  dos veces seguidas el mismo pkm
-			log_info(logger, "Para el mapa %d, %s, objetivos: %d -> %s", i, objetivosPorMapa ->mapa, j, objetivos[j]);//para tal mapa,cuales son sus objetivos
+			log_info(logger, "Para el mapa %d, %s, el objetivo numero %d es %s", i+1 , objetivosPorMapa ->mapa, j+1, objetivos[j]);//para tal mapa,cuales son sus objetivos
 			list_add(objetivosPorMapa->objetivos, objetivos[j]);
 			}			//agrego el objetivo leido al atributo de la struct objetivosPorMapa
 			list_add(hojaDeViaje, objetivosPorMapa);//agrego el ObjetivosPorMapa a la lista hoja de viaje
@@ -88,15 +93,15 @@ int llegoAPokenest(t_metadataPokenest pokenest){
 
 void cargarDatos(t_config* metaDataEntrenador){
 	entrenador.nombre  = config_get_string_value(metaDataEntrenador, "nombre");
-	log_info(logger,"El nombre del entrenador es: %s\n", entrenador.nombre);
-	//entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
+	log_info(logger,"Nombre: %s", entrenador.nombre);
 	char* simbolo = config_get_string_value(metaDataEntrenador, "simbolo");
 	entrenador.simbolo = simbolo[0];
-	log_info(logger,"El simbolo del entrenador es: %c", entrenador.simbolo);
+	log_info(logger,"Simbolo: %c", entrenador.simbolo);
 	entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
-	log_info(logger,"Las vidas del entrenador son: %d", entrenador.vidas);
+	log_info(logger,"Vidas: %d", entrenador.vidas);
 	entrenador.reintentos = config_get_int_value(metaDataEntrenador, "reintentos");
-	log_info(logger,"Los reintentos del entrenador son: %d", entrenador.reintentos);
+	log_info(logger,"Reintentos: %d", entrenador.reintentos);
+	entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
 
 }
 
@@ -314,4 +319,7 @@ void victimaDeDeadlock(int servidorMapa){
 char* obtenerNombre(char identificador){
 	char* nombrePokemon;
 	return nombrePokemon;//TODO TERMINAR FUNCION
+}
+void enviarPokemon(int servidor, char pokemon){
+	send(servidor, &pokemon, sizeof(char),0);
 }

@@ -62,12 +62,12 @@ void atenderConexion(int socket, char* mapa);
 int getAtr(char* path,char* mapa,int* tamanio);
 void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
-void crearDirectorio(char* path,char* mapa);
+int crearDirectorio(char* path,char* mapa);
 void crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
-int escribirArchivo(char* path, char* fichero, int tam, char* mapa,int socket);
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket);
 int aperturaArchivo(char* path,char* mapa,int socket);
 int cerradoArchivo(char* path,int socket);
 
@@ -133,9 +133,10 @@ int main(void) {
 
 	log_info(logger, "Se creo correctamente el socket servidor. Escuchando nuevas conexiones");
 
-	//crearDirectorio("/entrenador",archivoMapeado);
-	//crearDirectorio("/pokedex",archivoMapeado);
-	//crearDirectorio("/entrenador/juan",archivoMapeado);
+	/*crearDirectorio("/Entrenadores",archivoMapeado);
+	crearDirectorio("/Mapas",archivoMapeado);
+	crearDirectorio("/Mapas/Paleta",archivoMapeado);
+	crearDirectorio("/Mapas/Paleta/Pokenests",archivoMapeado);*/
 
 	//crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
 	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
@@ -245,7 +246,7 @@ void atenderConexion(int socket, char* mapa)
 	int operacion;
 	int resultado;
 	int tamanio;
-	char* path = malloc(50);
+	char* path;
 	void* archivo = NULL;
 
 	operacion = recibirHeader(socket);
@@ -253,6 +254,8 @@ void atenderConexion(int socket, char* mapa)
 	while(operacion != socketDesconectado)
 	{
 		log_info(logger,"socket: %d, operacion: %d",socket,operacion);
+
+		path = malloc(50);
 
 		switch(operacion)  //magia potagia TODO
 		{
@@ -287,14 +290,21 @@ void atenderConexion(int socket, char* mapa)
 				leerDirectorio(path,socket);
 				break;
 
+			case crearFichero:
+				recibirTodo(socket,path,50);
+				crearArchivo(path,mapa);
+				break;
+
+
 			case escribirEnFichero:
 				recibirTodo(socket,path,50);
+				resultado = recibirHeader(socket);    //uso 'resultado', para no crear una variable nueva y desperdiciar 4 bytes
 				tamanio = recibirHeader(socket);
 
 				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
-				resultado = escribirArchivo(path,ficheroEnviado,tamanio,mapa,socket);
+				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la escritura de '%s': %d",resultado);
 				free(ficheroEnviado);
@@ -313,11 +323,18 @@ void atenderConexion(int socket, char* mapa)
 				enviarHeader(socket,resultado);
 				break;
 
+			case crearCarpeta:
+				recibirTodo(socket,path,50);
+				resultado = crearDirectorio(path,mapa);
+				enviarHeader(socket,resultado);
+				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
+				break;
+
 			default:
 				log_info(logger,"Todavia no implementado. Codigo operacion: %d",operacion);
 				break;
 		}
-
+		free(path);
 		operacion = recibirHeader(socket);
 	}
 
@@ -702,64 +719,86 @@ void guardarEstructuraEn(char* mapa)
 	log_info(logger,"Estructuras administrativas guardadas correctamente");
 }
 
-void crearDirectorio(char* path,char* mapa)
+int crearDirectorio(char* path,char* mapa)
 {
 	int i = 0;
-	int offset = 0;  //con esta recorro el bitmap
-	char* nombreEfectivo = malloc(18);
-	char* pathAuxiliar = malloc(50);
+	int offset = 0xFFFF;  //con esta recorro el bitmap
+	char* nombreArchivo = malloc(18);
+	char* nombreDirectorio = malloc(18);
+	char* copiaPath = malloc(50);
 
+	strcpy(copiaPath,path);
+	sacarNombre(copiaPath,nombreDirectorio);   //ahora tengo el nombre que le quieren dar al directorio
 
-	strcpy(pathAuxiliar,path);
-	sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al directorio
+	log_info(logger,"path: %s, nombre: %s",copiaPath,nombreDirectorio);
 
-	if(comprobarPathValido(pathAuxiliar))  //si el path es correcto
+	if(comprobarPathValido(copiaPath))  //si el path es correcto
 	{
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				return -1;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+		}					//aca tengo el offset del bloque padre, en offset
+
+		i = 0;
 		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			i++;
 
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
+			return -1;
+		}
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
-			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreDirectorio);
 
 					//ahora le asigno un bloque libre
-			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
-				offset++;
-			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,offset); //y actualizo el bitmap
+			int bitmapOffset = 0;
+			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,bitmapOffset))  //hasta que no encuentre un '0'...
+				bitmapOffset++;
+			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,bitmapOffset); //y actualizo el bitmap
 				//este es el offset global del bitmap, pero en realidad yo quiero el offset en la tablaAsignaciones
 
-			offset = offset - (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos);
+			bitmapOffset = bitmapOffset - (estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos);
 				//aca tengo el offset de la tabla, me dice que bloque de datos es el que tengo en esta posicion
-			estructuraAdministrativa.tablaAsignaciones[offset] = 0xFFFFFFFF;
+			estructuraAdministrativa.tablaAsignaciones[bitmapOffset] = 0xFFFFFFFF;
 				//voy a la tabla en ese offset, y como es unico, le pongo 0xFFFFFF
 
-			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset;
+			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = bitmapOffset;
 					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
 			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el directorio vacio no pesa nada
-			if(strlen(pathAuxiliar))
-			{
-				sacarNombre(pathAuxiliar,nombreEfectivo); //reutilizo la variable 'nombreEfectivo', total no se vuelve a usar
-				offset = 0;
-				while(strcmp((char*)estructuraAdministrativa.tablaArchivos[offset].nombre,nombreEfectivo)) //ahora debo saber el offset del bloque padre
-					offset++;
-				estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset; //una vez que encontre el offset del bloque padre, guardo
-			}
-			else
-				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF; //si el path está vacio, entonces esta en el raiz
-
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
-			free(nombreEfectivo);
-			free(pathAuxiliar);
+			free(copiaPath);
 
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Directorio creado. Nombre: '%s'",path);
+			return 0;
 		}
 	}
+	return -1;
 }
 
 void crearArchivo(char* path,char* mapa)
@@ -965,16 +1004,6 @@ bool comprobarPathValido(char* path)
 		free(otraCopia);
 		return true;
 	}
-
-	recorrerDesdeIzquierda(otraCopia,otroNombre);
-	if(!strcmp(otroNombre,".Trash"))
-	{
-		free(otraCopia);
-		free(otroNombre);
-		free(copiaPath);
-		return false;
-	}
-
 	else
 	{
 		while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...
@@ -1074,7 +1103,7 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	}
 }
 
-int escribirArchivo(char* path, char* fichero, int tam, char* mapa, int socket)
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket) //todo usar mknod
 {
 	int i;
 	int j;
@@ -1116,78 +1145,69 @@ int escribirArchivo(char* path, char* fichero, int tam, char* mapa, int socket)
 			free(viejoNombre);
 		}
 							//aca tengo el offset de la tabla, o '2048' si es error
-		if(offset == 2048)
+		if(aperturado[offset] != socket)   //si no tiene este archivo abierto, o si está abierto y no es de el, no puede escribir
 		{
-			log_error(logger,"El archivo no existe. Path: '%s'",path);
+			log_error(logger,"No tiene permiso para escribir este archivo. Path: '%s'",path);
 			return -1;
 		}
 		else
 		{
-			if(aperturado[offset] != socket)   //si no tiene este archivo abierto, o si está abierto y no es de el, no puede escribir
+			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
 			{
-				log_error(logger,"No tiene permiso para escribir este archivo. Path: '%s'",path);
+				log_error(logger,"No se puede escribir un directorio");
 				return -1;
 			}
 			else
 			{
-				if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
+				i = tam / BLOCK_SIZE;
+				if(tam % BLOCK_SIZE)
+					i++;               //aca tengo la cantidad de bloques que tengo que guardar
+
+				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
+
+				while(otroContador < i)
 				{
-					log_error(logger,"No se puede escribir un directorio");
-					return -1;
-				}
-				else
-				{
-					i = tam / BLOCK_SIZE;
-					if(tam % BLOCK_SIZE)
-						i++;               //aca tengo la cantidad de bloques que tengo que guardar
+					bloqueAGuardar = malloc(BLOCK_SIZE);
 
-					bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
-
-					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
-
-					while(otroContador < i)
+					for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
 					{
-						bloqueAGuardar = malloc(BLOCK_SIZE);
-
-						for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
-						{
-							bloqueAGuardar[j] = fichero[contadorGlobal];
-							contadorGlobal++;
-						}
-
-						for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
-						{
-							mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
-						}
-
-						if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
-						{
-							j = 0;
-							while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
-								j++;
-							   //donde para j, es el offset del bloque libre
-							bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
-							   //aca ya reserve el bloque
-							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
-								//finalmente, le aseigno el nuevo bloque libre de datos
-						}
-						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-								//con esto obtengo el bloque siguiente para guardar datos
-						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
-								//y finalmente, con esta mierda, le doy un cierre al puto archivo
-
-						free(bloqueAGuardar);
-						otroContador++;
+						bloqueAGuardar[j] = fichero[contadorGlobal];
+						contadorGlobal++;
 					}
 
-					estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
-					estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+					for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
+					{
+						mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
+					}
 
-					guardarEstructuraEn(mapa);
-					log_info(logger,"Archivo correctamente guardado.");
-					free(copiaPath);
-					return 0;
+					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
+					{
+						j = 0;
+						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+							j++;
+						   //donde para j, es el offset del bloque libre
+						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
+						   //aca ya reserve el bloque
+						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
+							//finalmente, le aseigno el nuevo bloque libre de datos
+					}
+					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+							//con esto obtengo el bloque siguiente para guardar datos
+					estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
+							//y finalmente, con esta mierda, le doy un cierre al puto archivo
+
+					free(bloqueAGuardar);
+					otroContador++;
 				}
+
+				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
+				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+
+				guardarEstructuraEn(mapa);
+				log_info(logger,"Archivo correctamente guardado.");
+				free(copiaPath);
+				return 0;
 			}
 		}
 	}

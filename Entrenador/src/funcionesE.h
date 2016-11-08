@@ -82,5 +82,6 @@ void reestablecerDatos();
 void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa);
 void victimaDeDeadlock(int servidorMapa);
 char* obtenerNombre(char identificador);
+void enviarPokemon(int servidor, char pokemon);
 
 #endif /* FUNCIONESE_H_ */

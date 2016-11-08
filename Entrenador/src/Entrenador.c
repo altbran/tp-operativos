@@ -25,83 +25,44 @@ int main(int argc, char** argv){
 
 	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
 
-	log_info(logger,"Entrenador leera sus atributos de la ruta %s\n", rutaMetadata);
+
 
 	cargarDatos(metaDataEntrenador);//cargo metadata
 
 
-	config_destroy(metaDataEntrenador);//YA LEI LO QUE QUE QUERIA, AHORA DESTRUYO EL CONFIG  DE ENTRENADOR
+	config_destroy(metaDataEntrenador);
+
+	log_info(logger,"Entrenador leera sus atributos de la ruta %s", rutaMetadata);
+
+
 
 	//signal(SIGUSR1,senialRecibirVida);
 	//signal(SIGTERM,senialQuitarVida);
 
-
-	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
-
-	//creo el socket mapa
-	if(crearSocket(&servidorMapa)){
-		printf("no se pudo crear socket cliente");
-		log_error(logger, "No se pudo crear socket cliente");
-		return 1;
-	}
-	log_info(logger, "Socket mapa creado");
-
-	reestablecerDatos(); //cargo posicion y ultimo movimiento
-	/*t_config* metadataMapa = config_create(rutaMetadataMapa);
-
-	IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
-	PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
-
-	config_destroy(metadataMapa);
-	if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
-			log_error(logger, "Fallo al conectarse al servidor.");
-			return 1;
-		}*/
-
-	char * ip = "127.0.0.1";
-
-	if(conectarA(servidorMapa, ip, 8080)){
-				printf("no se pudo conectar\n");
-				log_error(logger, "Fallo al conectarse al servidor.");
-				return 1;
-			}
-
-	log_info(logger, "Se ha iniciado conexion con el servidor");
-	printf("conexion establecida\n");
-	if(responderHandshake(servidorMapa, IDENTRENADOR, IDMAPA)){
-			printf("no se pudo handshake\n");
-			log_error(logger, "No se pudo responder handshake");
-			return 1;
-		}
-		log_info(logger, "Conexion establecida");
-
-	printf("handshake correcto\n");
-
-	enviarMisDatos(servidorMapa);
-
-
-
-	sleep(60000000);
 	//char* tiempoDeInicio = temporal_get_string_time();
+
 	int i;
-	for(i=0;i <= list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
+	for(i=0;i < list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
+
+
 		t_objetivosPorMapa *elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
-
 		char* nombreMapa = string_new();
 		nombreMapa = elemento->mapa;
+		log_info(logger, "Mapa a completar: %s", nombreMapa);
 		char* rutaMetadataMapa = string_new();
 		string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);			//CREO EL PATH DE METADATA MAPA
+		string_append(&rutaMetadataMapa,"/MetadataMapa.txt");
 
-
+		log_info(logger, "ruta metadata del mapa: %s", rutaMetadataMapa);
 		reestablecerDatos(); //cargo posicion en (0;0) y ultimo movimiento = 'y' para que empiece moviendose horizontalmente
-		t_config* metadataMapa = config_create(rutaMetadataMapa);
+		//t_config* metadataMapa = config_create(rutaMetadataMapa);
 
-		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
-		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
-
-		if(crearSocket(&servidorMapa)){
+		//IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
+		//PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
+	}
+		/*if(crearSocket(&servidorMapa)){
 		printf("no se pudo crear socket cliente");
 		log_error(logger, "No se pudo crear socket cliente");
 		return 1;
@@ -109,11 +70,12 @@ int main(int argc, char** argv){
 		log_info(logger, "Socket mapa creado");
 
 		config_destroy(metadataMapa);
+
 		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
 			}
-		log_info(logger, "Se ha iniciado conexion con el servidor");
+		log_info(logger, "Se ha iniciado conexion con el servidor mapa %s", nombreMapa);
 
 		if(responderHandshake(servidorMapa, IDENTRENADOR, IDMAPA)){
 				log_error(logger, "No se pudo responder handshake");
@@ -124,14 +86,14 @@ int main(int argc, char** argv){
 
 		enviarMisDatos(servidorMapa);//LE ENVIO MIS DATOS A ENTRENADOR
 
+		//HASTA ACA TOO TESTEADO
 
 		int j;
 		for(j=0; j < list_size(elemento->objetivos);j++){ //EMPIEZO A BUSCAR POKEMONES
 			char* puntero = list_get(elemento->objetivos,j);
 			char pkm = *puntero;
-			char* nombrePokemon = obtenerNombre(pkm);
 			t_metadataPokemon pokemon;
-			strcpy(pokemon.nombre,nombrePokemon);
+
 
 			int estado = 0;
 			t_list* pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS, LISTA CON STRUCTS METADATA POKEMON
@@ -149,6 +111,7 @@ int main(int argc, char** argv){
 								break;
 							}
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
+							pokemon.nombre = recibirNombrePkm(*pokenestProxima);
 							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
 						break;
@@ -202,19 +165,20 @@ int main(int argc, char** argv){
 				char* comando = string_new();
 				comando = crearComando(rutaPokemon,rutaDirBill);
 				system(comando);									//copio el archivo pkm en mi directorio Bill
-				}
+				*/
+				//}
 
-		free(pokenestProxima);
+		//free(pokenestProxima);
 
-		}
-		//solicitarYCopiarMedallaMapa(nombreMapa, servidorMapa);
-		config_destroy(metadataMapa);
-		free(elemento);
-		desconectarseDe(servidorMapa);
-		}
+		//}
+
+		//config_destroy(metadataMapa);
+		//free(elemento);
+		//desconectarseDe(servidorMapa);
+
 	//SE CONVIRTIO EN MAESTRO POKEMON, NOTIFICAR POR PANTALLA, INFORMAR TIEMPO TOTAL,
 	//CUANTO TIEMPO PASO BLOQUEADO EN LAS POKENESTS, EN CUANTOS DEADBLOCKS ESTUVO INVOLUCRADO
-	//Y CUANTAS VECES MURIO
+	//printf("Cantidad de muertes: %d", entrenador.reintentos);
 	//free(rutaMetadata); ??VA*/
 
 

@@ -25,7 +25,6 @@ void enviarPath(const char *path, int socketDestino) {
 static int f_getattr(const char *path, struct stat *stbuf) {
 	/*se llama a esta funcion cuando el sistema trata de obtener los atributos de un archivo*/
 
-	int resultado = 0;
 	t_privilegiosArchivo privilegios;
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
@@ -36,22 +35,31 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
 	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
 
-	if (privilegios.esDir) {
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
-	} else if(privilegios.esDir == 0){
-		stbuf->st_mode = S_IFREG | 0777;
-		stbuf->st_nlink = 1;
-		stbuf->st_size = privilegios.tamanio;
-	}else {
-		resultado = -ENOENT;
-	}
-
 	printf("Atributos recibidos para: %s\n",path);
 	printf("Dir: %d   Tam: %d\n",privilegios.esDir,privilegios.tamanio);
 
-	//Agregar caso fallo
-	return resultado;
+	if (privilegios.esDir == 1)
+	{
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		stbuf->st_size = privilegios.tamanio;
+		return 0;
+	}
+	else
+	{
+		if(privilegios.esDir == 0)
+		{
+			stbuf->st_mode = S_IFREG | 0777;
+			stbuf->st_nlink = 1;
+			stbuf->st_size = privilegios.tamanio;
+			return 0;
+		}
+		else
+		{
+		printf("ENOENT: %d\n",-ENOENT);
+		return -ENOENT;
+		}
+	}
 }
 
 static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t offset, struct fuse_file_info *fi)
@@ -105,12 +113,19 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
-	cadenaARecibir = malloc(cantidadBytesARecibir);
+	if(cantidadBytesARecibir == -1)
+	{
+		return -1;
+	}else
+	{
+		cadenaARecibir = malloc(cantidadBytesARecibir);
 
-	recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
-	memcpy(buf, cadenaARecibir + offset, size);
+		recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
+		memcpy(buf, cadenaARecibir + offset, size);
 
-	return size;
+		return size;
+	}
+
 }
 
 static int f_write(const void *buffer, const char *path, size_t size,off_t offset, struct fuse_file_info *fi)
@@ -123,31 +138,25 @@ static int f_write(const void *buffer, const char *path, size_t size,off_t offse
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
-	if(!res)
+	if(res)
 		return size;
 	else
 		return -1;
 }
 
-static int f_crearCarpeta(const char *nombreFichero, mode_t modo) {
-	int res;
+static int f_crearCarpeta(const char *path, mode_t modo) {
 
 	enviarHeader(S_POKEDEX_CLIENTE, crearCarpeta);
-	void *buffer = malloc(sizeof(const char*));
-	memcpy(buffer, &nombreFichero, sizeof(const char*));
-	send(S_POKEDEX_CLIENTE, buffer, sizeof(buffer), 0);
-	free(buffer);
-	recibirTodo(S_POKEDEX_CLIENTE,&res,sizeof(int));//resultado de la operacion
-	if (res){
-		return 0;
-	}else{
-		return -1;
-	}
+	enviarPath(path,S_POKEDEX_CLIENTE);
 
+	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	return res;
 }
 
 static int f_unlink(const char *path) {
 	int res;
+
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	printf("Archivo que se quiere eliminar. Path: %s\n",path);
@@ -190,10 +199,28 @@ static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 	return 0;
 }
 
-static int f_removerDirectorio(const char *path) {
+static int f_removerDirectorio(const char *path,  mode_t modo) {
 	enviarHeader(S_POKEDEX_CLIENTE, removerDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	return 0;
+}
+
+static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
+	int res;
+
+	enviarHeader(S_POKEDEX_CLIENTE, crearFichero);
+	enviarPath(path, S_POKEDEX_CLIENTE);
+
+	res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	if(res)
+	{
+		return 0;
+	}else
+	{
+		return -1;
+	}
+
 }
 
 static struct fuse_operations ejemplo_oper = {
@@ -207,6 +234,7 @@ static struct fuse_operations ejemplo_oper = {
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
+		.mknod = f_crearArchivo,
 };
 
 int main(int argc, char *argv[])
