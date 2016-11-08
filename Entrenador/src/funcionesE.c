@@ -121,51 +121,22 @@ char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
 }
 
 
-int existeArchivo(char* path){
-	FILE* archivo = fopen(path,"r");
-
-	if(archivo){
-		fclose(archivo);
-		return 1;
-	}
-	else
-		return 0;
-}
-
-char* obtenerNumero(int decenas, int unidades){
+char* obtenerNumero(int numero){
 
 	char* nro = string_new();
-	string_append(&nro,"0");
-	string_append(&nro,string_itoa(decenas));
-	string_append(&nro,string_itoa(unidades));
-
-	return nro;
-}
-
-char* generarPathDelPokemon(char* nombreMapa, char* nombrePokenest){
-
-	int decenas = 0;
-	int unidades = 1;
-
-	char* nro = obtenerNumero(decenas, unidades);
-
-	char* path = string_new();
-	path = armarRutaPokemon(nombreMapa, nombrePokenest, nro);
-
-	while(!existeArchivo(path)){
-
-		if(unidades == 9){
-			unidades = 0;
-			decenas++;
+	if(numero < 10){
+		string_append(&nro,"00");
+		string_append(&nro,string_itoa(numero));
+	}
+	else
+		if(numero < 100){
+			string_append(&nro,"0");
+			string_append(&nro,string_itoa(numero));
 		}
 		else
-			unidades++;
+			string_append(&nro,string_itoa(numero));
 
-		nro = obtenerNumero(decenas,unidades);
-
-		path = armarRutaPokemon(nombreMapa,nombrePokenest,nro);
-	}
-	return path;
+	return nro;
 }
 
 char* crearRutaDirBill(char* ruta){
@@ -210,18 +181,9 @@ for(;;){
 }
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemon){
-	enviarHeader(socketDestino,datosPokenest);
+	send(socketDestino,&pokemon,sizeof(char),0);
 }
-/*void solicitarYCopiarMedallaMapa(char* nombreMapa, int socketDestino){
-	enviarHeader(servidorMapa, finalizoMapa);
-	for(;;){
-			if(recibirHeader(socketDestino) == autorizacionMedalla){
-				copiarMedalla(nombreMapa);
-				break;
-			}
-	}
- }
-*/
+
 void copiarMedalla(char* nombreMapa){
 	char* rutaOrigen = string_new();
 	string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
@@ -234,7 +196,7 @@ void copiarMedalla(char* nombreMapa){
 	char* rutaDestino = string_new();
 	string_append(&rutaDestino,"mnt/pokedex/Entrenadores/");
 	string_append(&rutaDestino, entrenador.nombre);
-	string_append(&rutaDestino, "medallas");
+	string_append(&rutaDestino, "/medallas");
 
 	char* comando = crearComando(rutaOrigen,rutaDestino);
 	system(comando);
@@ -308,18 +270,56 @@ void enviarCantidadDeMovsAPokenest(int socketDestino,t_metadataPokenest pokenest
 	send(socketDestino,buffer,sizeof(int),0);
 	free(buffer);
 }*/
-void victimaDeDeadlock(int servidorMapa){
-	/*En este caso, el Entrenador mostrará por pantalla el motivo de su muerte,
-	 *  borrará todos los archivos en su Directorio de Bill,
-	 *   se desconectará del Mapa y este le expropiará todos los Pokémons que había capturado*/
-	printf("Entrenador salio perdedor de la batalla y por eso morira, perdera todos sus pokemons atrapados en el mapa y"
-			"se desconectara del mismo/n");
-	desconectarseDe(servidorMapa);//TODO TERMINAR FUNCION
-}
-char* obtenerNombre(char identificador){
-	char* nombrePokemon;
-	return nombrePokemon;//TODO TERMINAR FUNCION
-}
+
+
 void enviarPokemon(int servidor, char pokemon){
 	send(servidor, &pokemon, sizeof(char),0);
+}
+
+void recibirNombrePkm(int socketServer, char nombrePkm[18]){
+
+	void* buffer = malloc(18);
+	if(!recibirTodo(socketServer,buffer, 18))
+		memcpy(&nombrePkm,buffer,18);
+
+}
+
+void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
+
+	int i;
+	t_metadataPokemon pokemonMasFuerte;
+	for(i=0;i<list_size(pokemonesAtrapados);i++){
+		t_metadataPokemon* variable = malloc(sizeof(t_metadataPokemon));
+		variable =list_get(pokemonesAtrapados,i);
+		if(i == 0)
+			pokemonMasFuerte = *variable;
+		else
+			if(variable->nivel > pokemonMasFuerte.nivel)
+				pokemonMasFuerte = *variable;
+		free(variable);
+	}
+	enviarHeader(servidorMapa, mejorPokemon);
+	void* buffer = malloc(sizeof(t_metadataPokemon));
+	memcpy(buffer,&pokemonMasFuerte,sizeof(t_metadataPokemon));
+	send(servidorMapa,buffer,sizeof(t_metadataPokemon),0);
+	free(buffer);
+	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
+			pokemonMasFuerte.nombre, pokemonMasFuerte.nivel);
+
+}
+
+void removerMedallas(char* entrenador){
+	char* comando = string_new();
+	string_append(&comando,"rm mnt/pokedex/Entrenadores");
+	string_append(&comando,entrenador);
+	string_append(&comando,"/medallas/*");
+	system(comando);
+}
+
+void removerPokemones(char* entrenador){
+	char* comando = string_new();
+	string_append(&comando,"rm mnt/pokedex/Entrenadores");
+	string_append(&comando,entrenador);
+	string_append(&comando,"Directorio' 'de' 'Bill/*");
+	system(comando);
 }

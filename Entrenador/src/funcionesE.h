@@ -50,10 +50,11 @@ t_log* loger;
 int servidorMapa;
 t_metadataEntrenador entrenador;
 t_ubicacion ubicacionEntrenador;
-
+int cantidadDeadlocks;
+int volverAEmpezar;
+int muertes;
 
 //FUNCIONES
-
 void senialRecibirVida();
 void senialQuitarVida();
 t_list* asignarHojaDeViajeYObjetivos(t_config*);
@@ -72,16 +73,18 @@ void recibirYAsignarCoordPokenest(int,t_metadataPokenest);
 void solicitarAtraparPkm(char, int);
 void solicitarMovimiento(int, t_metadataPokenest);
 void desconectarseDe(int socketServer);
-//void solicitarYCopiarMedallaMapa(char*, int);
-void hastaQueNoReciba(int header, int socketOrigen);
 char* generarPathDelPokemon(char* nombreMapa, char* nombrePokenest);
-int existeArchivo(char* path);
-char* obtenerNumero(int decenas, int unidades);
+char* obtenerNumero(int numero);
 void enviarMisDatos(int socketDestino);
 void reestablecerDatos();
 void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa);
-void victimaDeDeadlock(int servidorMapa);
 char* obtenerNombre(char identificador);
 void enviarPokemon(int servidor, char pokemon);
+void recibirNombrePkm(int socketServer, char nombrePkm[18]);
+void removerMedallas(char* entrenador);
+void removerPokemones(char* entrenador);
+void copiarMedalla(char* nombreMapa);
+void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa);
+void hastaQueNoReciba(int header, int socketOrigen);
 
 #endif /* FUNCIONESE_H_ */
