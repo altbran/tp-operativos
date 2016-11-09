@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>			 //recargar el FS con dos nuevos dir, y volver a probar fuse
+#include <stdlib.h>			 //
 #include <stdbool.h>         //
 #include <time.h>
 #include <commons/string.h>
@@ -63,7 +63,7 @@ int getAtr(char* path,char* mapa,int* tamanio);
 void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 int crearDirectorio(char* path,char* mapa);
-void crearArchivo(char* path,char* mapa);
+int crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
 void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
@@ -82,27 +82,23 @@ int main(void) {
 
 	logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));  //creo el archivo de log
 
-	int PUERTO_POKEDEX_SERVIDOR = 9000; //getenv("PUERTO_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
 	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
 
 	int i;
 	int socketNuevo;
-//	int paquete;
 	int listener;   //socket listener
 	int fdmax;     //file descriptor maximo
 	fd_set bolsaDeSockets;
 	fd_set bolsaAuxiliar;
 	char* archivoMapeado;
 
-	archivoMapeado = getenv("PUERTO_POKEDEX_SERVIDOR");        //la uso temporalmente, para evitar aumentar el heap
-	PUERTO_POKEDEX_SERVIDOR = atoi(archivoMapeado);
-
 	log_info(logger, "PUERTO_POKEDEX_SERVIDOR = %d",PUERTO_POKEDEX_SERVIDOR);
 	log_info(logger, "IP_POKEDEX_SERVIDOR = %s",IP_POKEDEX_SERVIDOR);
 
 
-	archivo = fopen("fileSystem.dat","rb+");
+	archivo = fopen("/home/utnso/tp-2016-2c-A-cara-de-rope/challenge.bin","rb+");
 	fdmax = fileno(archivo);      //uso temporariamente el fdmax para almacenar el fd de mi FS
 
 	leerEstructurasAdministrativas(archivo);   //me guardo las est.adm en una struct porque va a ser mas comodo leerlas desde ahi
@@ -268,8 +264,10 @@ void atenderConexion(int socket, char* mapa)
 			case contenidoArchivo:
 				recibirTodo(socket,path,50);
 				archivo = leerArchivo(path,mapa,&tamanio);
+
 				enviarHeader(socket,tamanio);
 				send(socket,archivo,tamanio,0);
+
 				log_info(logger,"Se envio el archivo %s",path);
 				free(archivo);
 				break;
@@ -292,16 +290,17 @@ void atenderConexion(int socket, char* mapa)
 
 			case crearFichero:
 				recibirTodo(socket,path,50);
-				crearArchivo(path,mapa);
+				resultado = crearArchivo(path,mapa);
+				enviarHeader(socket,resultado);
+				log_info(logger,"Resultado de la creacion de '%s': %d",resultado);
 				break;
-
 
 			case escribirEnFichero:
 				recibirTodo(socket,path,50);
 				resultado = recibirHeader(socket);    //uso 'resultado', para no crear una variable nueva y desperdiciar 4 bytes
 				tamanio = recibirHeader(socket);
 
-				void* ficheroEnviado = malloc(tamanio);
+				void* ficheroEnviado = malloc(tamanio);  //escribir archivo fixme
 				recv(socket,ficheroEnviado,tamanio,0);
 
 				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
@@ -464,6 +463,8 @@ void leerDirectorio(char* path, int socket)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				enviarHeader(socket,0);
+				free(nombreArchivo);
 				break;
 			}
 			else
@@ -473,30 +474,33 @@ void leerDirectorio(char* path, int socket)
 		}
 			//aca tenemos el offset del directorio a contar
 
-		i = 0;
-		while(i < 2048)		//primera ronda, cuenta los archivos que tiene que mandar
+		if(i != 2048)
 		{
-			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
-				contador++;
-			i++;
-		}
-		enviarHeader(socket,contador);
-
-		i = 0;
-		while(i < 2048)
-		{
-			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+			i = 0;
+			while(i < 2048)		//primera ronda, cuenta los archivos que tiene que mandar
 			{
-				nombreArchivo = malloc(18);
-				strcpy(nombreArchivo,(char*)estructuraAdministrativa.tablaArchivos[i].nombre);
-				send(socket,nombreArchivo,18,0);
-
-				log_info(logger,"Nombre enviado: %s",nombreArchivo);
-				free(nombreArchivo);
+				if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+					contador++;
+				i++;
 			}
-			i++;
+			enviarHeader(socket,contador);
+
+			i = 0;
+			while(i < 2048)
+			{
+				if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
+				{
+					nombreArchivo = malloc(18);
+					strcpy(nombreArchivo,(char*)estructuraAdministrativa.tablaArchivos[i].nombre);
+					send(socket,nombreArchivo,18,0);
+
+					log_info(logger,"Nombre enviado: %s",nombreArchivo);
+					free(nombreArchivo);
+				}
+				i++;
+			}
+		log_info(logger,"PATH: '%s' leido correctamente",path);
 		}
-	log_info(logger,"PATH: '%s' leido correctamente",path);
 	free(copiaPath);
 	}
 }
@@ -560,6 +564,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 					for(j = 0;j < 64;j++)
 					{
 						nombreArchivo[contadorGlobal] = mapa[posicionDelMapa];
+						posicionDelMapa++;
 						contadorGlobal++;
 					}
 				}
@@ -568,6 +573,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 					for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
 					{
 						nombreArchivo[contadorGlobal] = mapa[posicionDelMapa];
+						posicionDelMapa++;
 						contadorGlobal++;
 					}
 				}
@@ -801,29 +807,60 @@ int crearDirectorio(char* path,char* mapa)
 	return -1;
 }
 
-void crearArchivo(char* path,char* mapa)
+int crearArchivo(char* path,char* mapa)
 {
 	int i = 0;
-	int offset = 0;  //con esta recorro el bitmap
+	int offset = 0xFFFF;  //con esta recorro el bitmap
 	char* nombreEfectivo = malloc(18);
-	char* pathAuxiliar = malloc(50);
+	char* copiaPath = malloc(50);
+	char* nombreArchivo;
 
-	strcpy(pathAuxiliar,path);
-	sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
+	strcpy(copiaPath,path);
+	sacarNombre(copiaPath,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
 
-	if(comprobarPathValido(pathAuxiliar))  //si el path es correcto
+	if(comprobarPathValido(copiaPath))  //si el path es correcto
 	{
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				return -1;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+		}					//aca tengo el offset del bloque padre, en offset
+
+		i = 0;
 		while((i < 2048) && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			i++;
 
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
+		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
+			return -1;
+		}
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\1'; //es un archivo
 			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;  //el offset, es el del bloque padre encontrado mas arriba
 
 					//ahora le asigno un bloque libre
+			offset = 0;
 			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
 				offset++;
 			bitarray_set_bit(estructuraAdministrativa.punteroBitmap,offset); //y actualizo el bitmap
@@ -838,26 +875,18 @@ void crearArchivo(char* path,char* mapa)
 					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
 			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el archivo vacio no pesa nada
-			if(strlen(pathAuxiliar))
-			{
-				sacarNombre(pathAuxiliar,nombreEfectivo); //reutilizo la variable 'nombreEfectivo', total no se vuelve a usar
-				offset = 0;
-				while(strcmp((char*)estructuraAdministrativa.tablaArchivos[offset].nombre,nombreEfectivo)) //ahora debo saber el offset del bloque padre
-					offset++;
-				estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset; //una vez que encontre el offset del bloque padre, guardo
-			}
-			else
-				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF; //si el path está vacio, entonces esta en el raiz
 
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
 			free(nombreEfectivo);
-			free(pathAuxiliar);
+			free(copiaPath);
 
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo creado. Nombre '%s'",path);
+			return 1;
 		}
 	}
+	return -1;
 }
 
 int borrarArchivo(char* path,char* mapa)

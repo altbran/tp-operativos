@@ -32,8 +32,8 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 
 	printf("Path enviado. getattr: %s\n",path);
 
-	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.esDir,sizeof(int));
-	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);//recibirTodo(S_POKEDEX_CLIENTE,&privilegios.tamanio,sizeof(uint32_t));
+	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);
+	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);
 
 	printf("Atributos recibidos para: %s\n",path);
 	printf("Dir: %d   Tam: %d\n",privilegios.esDir,privilegios.tamanio);
@@ -42,7 +42,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 	{
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
-		stbuf->st_size = privilegios.tamanio;
+		stbuf->st_size = 0;
 		return 0;
 	}
 	else
@@ -106,7 +106,7 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 static int f_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	/*Se llama a esta funcion cuando el sistema trata de leer un pedazo de data de un archivo*/
-	char* cadenaARecibir;
+	void* cadenaARecibir;
 	int cantidadBytesARecibir;
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoArchivo);
@@ -206,14 +206,17 @@ static int f_removerDirectorio(const char *path,  mode_t modo) {
 }
 
 static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
+
 	int res;
 
 	enviarHeader(S_POKEDEX_CLIENTE, crearFichero);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
+	printf("Se quiere crear un archivo. Path: %s",path);
+
 	res = recibirHeader(S_POKEDEX_CLIENTE);
 
-	if(res)
+	if(res == 1)
 	{
 		return 0;
 	}else
@@ -234,7 +237,7 @@ static struct fuse_operations ejemplo_oper = {
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
-		.mknod = f_crearArchivo,
+		.create = f_crearArchivo,
 };
 
 int main(int argc, char *argv[])
