@@ -11,8 +11,10 @@
 #include <src/sockets.h>
 #include <src/protocolo.h>
 #include <src/structs.h>
+#include <pthread.h>
 
 int S_POKEDEX_CLIENTE;
+pthread_mutex_t mutex;
 
 void enviarPath(const char *path, int socketDestino) {
 
@@ -26,6 +28,8 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 	/*se llama a esta funcion cuando el sistema trata de obtener los atributos de un archivo*/
 
 	t_privilegiosArchivo privilegios;
+
+	pthread_mutex_lock(&mutex);
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -43,6 +47,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		stbuf->st_size = 0;
+		pthread_mutex_unlock(&mutex);
 		return 0;
 	}
 	else
@@ -52,13 +57,17 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 			stbuf->st_mode = S_IFREG | 0777;
 			stbuf->st_nlink = 1;
 			stbuf->st_size = privilegios.tamanio;
+			pthread_mutex_unlock(&mutex);
 			return 0;
 		}
 		else
 		{
 		printf("ENOENT: %d\n",-ENOENT);
+		pthread_mutex_unlock(&mutex);
 		return -ENOENT;
 		}
+
+		return 0;		//este está para que no hinche las bolas
 	}
 }
 
@@ -67,6 +76,8 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 	char* cadenaARecibir;
 	int header;
 	int i = 0;
+
+	pthread_mutex_lock(&mutex);
 
 	enviarHeader(S_POKEDEX_CLIENTE, contenidoDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -95,10 +106,12 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 		}
 
 		free(cadenaARecibir);
+		pthread_mutex_unlock(&mutex);
 		return 0;
 	}
 	else
 	{
+		pthread_mutex_unlock(&mutex);
 		return -ENOENT;
 	}
 }
@@ -120,7 +133,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	{
 		cadenaARecibir = malloc(cantidadBytesARecibir);
 
-		recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);/*recibo bytes*/
+		recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);
 		memcpy(buf, cadenaARecibir + offset, size);
 
 		return size;
@@ -128,10 +141,12 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 
 }
 
-static int f_write(const void *buffer, const char *path, size_t size,off_t offset, struct fuse_file_info *fi)
+static int f_write(const char *path, const void *buffer, size_t size,off_t offset, struct fuse_file_info *fi)
 {
 	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
+
 	enviarPath(path, S_POKEDEX_CLIENTE);
+	enviarHeader(S_POKEDEX_CLIENTE,offset);
 	enviarHeader(S_POKEDEX_CLIENTE,size);
 
 	send(S_POKEDEX_CLIENTE, buffer, size, 0);

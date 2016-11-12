@@ -64,7 +64,6 @@ int main(int argc, char** argv){
 		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
 
 		if(crearSocket(&servidorMapa)){
-		printf("no se pudo crear socket cliente");
 		log_error(logger, "No se pudo crear socket cliente");
 		return 1;
 		}
@@ -93,9 +92,9 @@ int main(int argc, char** argv){
 			char* puntero = list_get(elemento->objetivos,j);
 			char pkm = *puntero;
 			t_metadataPokemon pokemon;
-			strcpy(pokemon.nombre,"");		// no se por que, pero para que no reciba basura tengo que poner esto
-			char resultado;					//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
-			int estado = 0; 				//representa el estado en q se encuentra de la captura de un pokemon el entrenador
+			strcpy(pokemon.nombre,"");	// no se por que, pero para que no reciba basura tengo que poner esto
+			char resultado;				//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
+			int estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pkm;
 			int numeroPkm;
@@ -105,13 +104,6 @@ int main(int argc, char** argv){
 				switch (estado){
 						case 0:
 							solicitarUbicacionPokenest(servidorMapa, pkm);	//solicito la ubicacion de la pokenest
-							if(recibirHeader(servidorMapa) == notificarDeadlock){	//verifico que no entre en deadlock x si otro
-								cantidadDeadlocks ++;
-								log_info(logger, "Entrenador entra en Deadlock");	//entrenador tiene el pkm q necesito y viceversa
-								enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa); //envio mi pokemon mas fuerte para la batalla
-								estado = 3;		//paso al estado deadlock
-								break;
-							}
 							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);	//recibo y asigno las coordenadas de la pkn
 							recibirNombrePkm(servidorMapa,pokemon.nombre);			//recibo y asigno el nombre del pokemon
 							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);	//le envio la distancia al mapa hasta la pokenest
@@ -120,35 +112,38 @@ int main(int argc, char** argv){
 
 						case 1:
 							solicitarMovimiento(servidorMapa,*pokenestProxima);//le pido al mapa permiso para moverme
-							hastaQueNoReciba(movimientoAceptado, servidorMapa);// bucle infinito,
+							if(recibirHeader(servidorMapa) == movimientoAceptado){
 							if(llegoAPokenest(*pokenestProxima)){
 								estado = 2;
 								log_info(logger, "Entrenador alcanza pokenest de %s", pokemon.nombre);
+							}
 							}
 						break;
 
 						case 2://en este estado solicito atrapar pokemon y chequeo si entro en estado deadlock
 
 							solicitarAtraparPkm(pkm,servidorMapa);
-
-							if(recibirHeader(servidorMapa) == notificarDeadlock){
+							switch (recibirHeader(servidorMapa)){
+							case notificarDeadlock:
 								cantidadDeadlocks++;
 								log_info(logger, "Entrenador entra en Deadlock");
 								enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
 								estado = 3;
 								break;
+
+							case pokemonesDisponibles:
+								recibirTodo(servidorMapa,&numeroPkm,sizeof(int)); //recibo del server el numero de mi pokemon
+								log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon.nombre);
+								estado = 4;
+								break;
 							}
 
-							hastaQueNoReciba(pokemonesDisponibles, servidorMapa);
-							recibirTodo(servidorMapa,&numeroPkm,sizeof(int)); //recibo del server el numero de mi pokemon
-							log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon.nombre);
-							estado = 4;
 							break;
 
 						case 3://estado deadlock, abarca el caso perdedor y ganador
 							if(recibirHeader(servidorMapa) == entrenadorGanador){ 			//caso en que sali ganador del deadlock
 								log_info(logger, "Entrenador sale vencedor del Deadlock");
-								estado = 4;
+								estado = 2;
 							}
 							else
 								if(recibirHeader(servidorMapa) == entrenadorPerdedor){		// caso en que sali perdedor del deadlock

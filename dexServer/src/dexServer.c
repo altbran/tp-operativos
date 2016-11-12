@@ -77,6 +77,7 @@ int cerradoArchivo(char* path,int socket);
 t_log* logger;
 t_estructuraAdministrativa estructuraAdministrativa;
 int aperturado[2048] = {0};
+pthread_mutex_t mutex;
 
 int main(void) {
 
@@ -98,7 +99,7 @@ int main(void) {
 	log_info(logger, "IP_POKEDEX_SERVIDOR = %s",IP_POKEDEX_SERVIDOR);
 
 
-	archivo = fopen("/home/utnso/tp-2016-2c-A-cara-de-rope/challenge.bin","rb+");
+	archivo = fopen("fileSystem.dat","rb+");
 	fdmax = fileno(archivo);      //uso temporariamente el fdmax para almacenar el fd de mi FS
 
 	leerEstructurasAdministrativas(archivo);   //me guardo las est.adm en una struct porque va a ser mas comodo leerlas desde ahi
@@ -273,6 +274,7 @@ void atenderConexion(int socket, char* mapa)
 				break;
 
 			case privilegiosArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = getAtr(path,mapa,&tamanio);
@@ -280,32 +282,36 @@ void atenderConexion(int socket, char* mapa)
 
 				enviarHeader(socket,resultado);
 				enviarHeader(socket,tamanio);
+
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case contenidoDirectorio:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case crearFichero:
 				recibirTodo(socket,path,50);
 				resultado = crearArchivo(path,mapa);
 				enviarHeader(socket,resultado);
-				log_info(logger,"Resultado de la creacion de '%s': %d",resultado);
+				log_info(logger,"Resultado de la creacion de '%s': %d",path,resultado);
 				break;
 
 			case escribirEnFichero:
 				recibirTodo(socket,path,50);
-				resultado = recibirHeader(socket);    //uso 'resultado', para no crear una variable nueva y desperdiciar 4 bytes
+				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
 
-				void* ficheroEnviado = malloc(tamanio);  //escribir archivo fixme
+				void* ficheroEnviado = malloc(tamanio);  //escribir archivo fixme   me esta llegando un path
 				recv(socket,ficheroEnviado,tamanio,0);
 
 				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
 				enviarHeader(socket,resultado);
-				log_info(logger,"Resultado de la escritura de '%s': %d",resultado);
+				log_info(logger,"Resultado de la escritura de '%s': %d",path,resultado);
 				free(ficheroEnviado);
 				break;
 
@@ -472,7 +478,7 @@ void leerDirectorio(char* path, int socket)
 
 			free(nombreArchivo);
 		}
-			//aca tenemos el offset del directorio a contar
+			//aca tenemos el offset del directorio a listar
 
 		if(i != 2048)
 		{
@@ -1132,18 +1138,18 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	}
 }
 
-int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket) //todo usar mknod
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket)	//fijarse, me esta llegando el buffer en el path
 {
 	int i;
 	int j;
-	int otroContador = 0;
+	int otroContador;
+	int contadorBloques = 1;
 	int offset = 0xFFFF;
-	int contadorGlobal = 0;
+	int posicionMapa;
 	int bloqueSiguienteEnTabla;
 	int bloqueInicioDatos;
 	char* copiaPath = malloc(50);
 	char* viejoNombre;
-	char* bloqueAGuardar;
 
 	strcpy(copiaPath,path);
 
@@ -1161,7 +1167,6 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 						break;
 				i++;
 			}
-
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
@@ -1188,53 +1193,66 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			}
 			else
 			{
-				i = tam / BLOCK_SIZE;
-				if(tam % BLOCK_SIZE)
-					i++;               //aca tengo la cantidad de bloques que tengo que guardar
-
 				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
 				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
 
-				while(otroContador < i)
+				i = 0;
+				otroContador = 0;
+				while (i < off)
 				{
-					bloqueAGuardar = malloc(BLOCK_SIZE);
-
-					for(j = 0;(j < BLOCK_SIZE) && (contadorGlobal < tam); j++)   //grabo un bloque, para meterlo al mapeado
+					i++;
+					otroContador++;
+					if(otroContador == 63)
 					{
-						bloqueAGuardar[j] = fichero[contadorGlobal];
-						contadorGlobal++;
+						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+						contadorBloques++;
+						otroContador = 0;
+					}
+				}
+							//hasta aca tengo, el bloque donde va a escribir, y el offset inicial, guardado en 'otroContador'
+				i = 0;
+
+				posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;  //me paro en el bloque...
+				posicionMapa += otroContador; 	//..y en el offset
+
+				while(i < tam)	//ahora tengo que escribir el tamaño que me indican
+				{
+					if(otroContador == 63)		//este contador me va a indicar los cambios de bloque
+					{
+						if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF)
+						{
+							j = 0;
+							while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+								j++;
+							   //donde para j, es el offset del bloque libre
+							bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
+							   //aca ya reserve el bloque
+							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
+								//finalmente, le aseigno el nuevo bloque libre de datos
+
+							bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+									//con esto obtengo el bloque siguiente para guardar datos
+							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
+									//y finalmente, con esta mierda, le doy un cierre al puto archivo
+						}
+						else
+							bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+
+						contadorBloques++;
+						posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;
+						otroContador = 0;
 					}
 
-					for(j = 0;j < BLOCK_SIZE; j++)  //guardo en el mapa, el bloque de datos
-					{
-						mapa[(bloqueInicioDatos + bloqueSiguienteEnTabla)*BLOCK_SIZE + j] = bloqueAGuardar[j];
-					}
-
-					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF && (i - otroContador > 1))
-					{
-						j = 0;
-						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
-							j++;
-						   //donde para j, es el offset del bloque libre
-						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
-						   //aca ya reserve el bloque
-						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
-							//finalmente, le aseigno el nuevo bloque libre de datos
-					}
-					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-							//con esto obtengo el bloque siguiente para guardar datos
-					estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
-							//y finalmente, con esta mierda, le doy un cierre al puto archivo
-
-					free(bloqueAGuardar);
+					mapa[posicionMapa] = fichero[i];
+					i++;
+					posicionMapa++;
 					otroContador++;
 				}
-
-				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tam;
+				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = contadorBloques * 64;
 				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
 
 				guardarEstructuraEn(mapa);
-				log_info(logger,"Archivo correctamente guardado.");
+				log_info(logger,"Archivo correctamente guardado. Path: %s",path);
 				free(copiaPath);
 				return 0;
 			}

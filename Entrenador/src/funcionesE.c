@@ -181,6 +181,7 @@ for(;;){
 }
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemon){
+	enviarHeader(socketDestino, datosPokenest);
 	send(socketDestino,&pokemon,sizeof(char),0);
 }
 
@@ -226,12 +227,6 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	free(buffer);
 }
 
-void hastaQueNoReciba(int header, int socketOrigen){
-	for(;;){
-			if(recibirHeader(socketOrigen) == header) //hasta que no me de el OK no me muevo
-			break;
-		}
-}
 
 void enviarMisDatos(int socketDestino){
 
@@ -239,7 +234,7 @@ void enviarMisDatos(int socketDestino){
 	void* buffer = malloc(tamanio);
 	int cursor = 0;
 
-	memcpy(buffer,&entrenador.nombre ,18);
+	memcpy(buffer,&entrenador.nombre ,sizeof(char[18]));
 	cursor += 18;
 	memcpy(buffer+cursor,&entrenador.simbolo ,sizeof(char));
 	cursor += sizeof(char);
@@ -257,19 +252,15 @@ void reestablecerDatos(){
 	ubicacionEntrenador.coordenadasY = 0;
 	ubicacionEntrenador.ultimoMov = 'y';
 }
+
 void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa){
-	enviarHeader(serverMapa, entrenadorListo);
-	int movs = cantidadDeMovimientosAPokenest(pokenest);
-	send(serverMapa, &movs, sizeof(int), 0);
+
+	int* movs =malloc(sizeof(int));
+	*movs = cantidadDeMovimientosAPokenest(pokenest);
+	send(serverMapa, movs, sizeof(int), 0);
+	free(movs);
+
 }
-/*
-void enviarCantidadDeMovsAPokenest(int socketDestino,t_metadataPokenest pokenest){
-	int movs = cantidadDeMovimientosAPokenest(pokenest);
-	void *buffer = malloc(sizeof(int));
-	memcpy(buffer,&movs,sizeof(int));
-	send(socketDestino,buffer,sizeof(int),0);
-	free(buffer);
-}*/
 
 
 void enviarPokemon(int servidor, char pokemon){
@@ -279,8 +270,14 @@ void enviarPokemon(int servidor, char pokemon){
 void recibirNombrePkm(int socketServer, char nombrePkm[18]){
 
 	void* buffer = malloc(18);
+
 	if(!recibirTodo(socketServer,buffer, 18))
 		memcpy(&nombrePkm,buffer,18);
+
+	else
+		printf("error al copiar nombre");
+
+	free(buffer);
 
 }
 
