@@ -74,18 +74,19 @@ void atraparPokemon() {
 						pokemon->socketEntrenador = entrenador->socket;
 						restarRecursoDisponible(devolverIndicePokenest(entrenador->identificadorPokemon));
 						restarPokemon(&entrenador->identificadorPokemon);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),devolverIndicePokenest(entrenador->identificadorPokemon));
+						sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),
+								devolverIndicePokenest(entrenador->identificadorPokemon));
 						queue_push(listos, &entrenador->socket);
 						sem_post(&contadorEntrenadoresListos);
-						log_info(logger,"Pasa a listo el entrenador del socket: ",entrenador->socket);
+						log_info(logger, "Pasa a listo el entrenador del socket: ", entrenador->socket);
 
 						//en caso de terminar el mapa devolver todos los recursos
 					} else if (header == finalizoMapa) {
 						desconectadoOFinalizado(entrenador->socket);
-						log_info(logger,"Termino el mapa el entrenador del socket: ",entrenador->socket);
+						log_info(logger, "Termino el mapa el entrenador del socket: ", entrenador->socket);
 					} else {
 						//problema en el header, asumo que se desconecto
-						log_error(logger,"Se desconecto el entrenador del socket: ",entrenador->socket);
+						log_error(logger, "Se desconecto el entrenador del socket: ", entrenador->socket);
 						desconectadoOFinalizado(entrenador->socket);
 					}
 					pthread_mutex_unlock(&mutexDeadlock);
@@ -100,31 +101,51 @@ void atraparPokemon() {
 		}
 	}
 }
+int hayEntrenadorSinDistancia(int * indice) {
+	int i;
+	for (i = 0; i < list_size(Entrenadores); i++) {
+		t_datosEntrenador * entrenador = list_get(Entrenadores, i);
+		if (entrenador->distanciaAPokenest == 0) {
+			*indice = i;
+			return 1;
+			break;
+		}
+	}
+	return 0;
+}
 
 int * entrenadorMasCercano(int * movimientos) {
 	int i;
 	int menor = 100;
-	int indice;
+	int * indice = malloc(sizeof(int));
 	int * socketMasCercano;
-	for (i = 0; i < list_size(Entrenadores); i++) {
-		t_datosEntrenador * entrenador = list_get(Entrenadores, i);
-		if (entrenador->distanciaAPokenest < menor) {
-			menor = entrenador->distanciaAPokenest;
-			indice = i;
+	if (hayEntrenadorSinDistancia(indice)) {
+		t_datosEntrenador * entrenador = list_get(Entrenadores, *indice);
+		free(indice);
+		return &entrenador->socket;
+		*movimientos = 1;
+	} else {
+		for (i = 0; i < list_size(Entrenadores); i++) {
+			t_datosEntrenador * entrenador = list_get(Entrenadores, i);
+			if (entrenador->distanciaAPokenest < menor) {
+				menor = entrenador->distanciaAPokenest;
+				*indice = i;
+			}
 		}
-	}
-	*movimientos = menor;
-	t_datosEntrenador * entrenador = list_get(Entrenadores, indice);
-	for (i = 0; i < queue_size(listos); i++) {
-		int * sockete = queue_pop(listos);
-		if (*sockete == entrenador->socket) {
-			socketMasCercano = sockete;
-			break;
-		} else {
-			queue_push(listos, sockete);
+		*movimientos = menor;
+		t_datosEntrenador * entrenador = list_get(Entrenadores, *indice);
+		for (i = 0; i < queue_size(listos); i++) {
+			int * sockete = queue_pop(listos);
+			if (*sockete == entrenador->socket) {
+				socketMasCercano = sockete;
+				break;
+			} else {
+				queue_push(listos, sockete);
+			}
 		}
+		free(indice);
+		return socketMasCercano;
 	}
-	return socketMasCercano;
 }
 
 void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
@@ -190,9 +211,10 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 			//error al enviar, supongo que se desconecto
 			desconectadoOFinalizado(*turno);
 		} else {
-			log_info(logger,"Quedo bloqueado el entrenador del socket: ",*turno);
+			log_info(logger, "Quedo bloqueado el entrenador del socket: ", *turno);
 			queue_push(bloqueados, &entrenadorBloqueado);
-			sumarPedidosMatriz(devolverIndiceEntrenador(*turno),devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
+			sumarPedidosMatriz(devolverIndiceEntrenador(*turno),
+					devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
 			*i = total;
 			*quedoBloqueado = 1;
 			sem_post(&contadorEntrenadoresBloqueados);

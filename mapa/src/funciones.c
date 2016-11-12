@@ -13,7 +13,7 @@ void iniciarPlanificador() {
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	if (strcmp(&configuracion->algoritmo,"RR")) {
+	if (configuracion->algoritmo =='R') {
 		pthread_create(&planificador, &attr, (void*) roundRobin, NULL);
 		log_info(logger, "Arranque el hilo planificador en Round Robin");
 	} else {
@@ -31,6 +31,7 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 	i += recibirTodo(socketOrigen, &entrenador->posicionX, sizeof(uint32_t));
 	i += recibirTodo(socketOrigen, &entrenador->posicionY, sizeof(uint32_t));
 
+	entrenador->distanciaAPokenest = 0;
 	entrenador->socket = socketOrigen;
 	//cargarEntrenador(*entrenador);
 	//dibujar(nombreMapa);
@@ -120,6 +121,7 @@ void cargarRecursos() {
 				pokenest->posicionY = atoi(*(tokens + 1));
 				int * cantidad = malloc(sizeof(int));
 				int * cantidadDisponibles = malloc(sizeof(int));
+				strcpy(pokenest->nombre,ent->d_name);
 				*cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
 				pokenest->cantidad = *cantidad;
 				int i;
@@ -242,6 +244,8 @@ int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {
 	cursorMemoria += sizeof(uint32_t);
 	memcpy(buffer + cursorMemoria, &pokenest->posicionY, sizeof(uint32_t));
 	cursorMemoria += sizeof(uint32_t);
+	memcpy(buffer + cursorMemoria, &pokenest->nombre, sizeof(char[18]));
+	cursorMemoria += sizeof(char[18]);
 
 	int i = enviarTodo(socketDestino, buffer, cursorMemoria);
 	//send(socketDestino, buffer, cursorMemoria, 0); //hay que serializar algo acá?

@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 	//inicializo semaforos
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&mutexDeadlock, NULL);
-	sem_init(&contadorEntrenadoresBloqueados,0,0);
-	sem_init(&contadorEntrenadoresListos,0,0);
+	sem_init(&contadorEntrenadoresBloqueados, 0, 0);
+	sem_init(&contadorEntrenadoresListos, 0, 0);
 
 	//inicio colas y listas
 	listos = queue_create();
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
 	//inicializo hilos
 	iniciarPlanificador();
-	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
+	//pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
 	log_info(logger, "Arranque hilo atrapador");
 
@@ -126,39 +126,14 @@ int main(int argc, char **argv) {
 							break;
 						} else {
 							list_add(Entrenadores, &entrenador);
-
-							//envio la posicion de la pokenest
-							char identificador;
-							if (recibirTodo(*socketNuevo, &identificador, sizeof(char))) {
-								log_error(logger, "error al recibir identificador pokenest, socket %d", *socketNuevo);
-								desconectadoOFinalizado(*socketNuevo);
-							} else {
-								t_metadataPokenest * pokenest = devolverPokenest(&identificador);
-								if (enviarCoordPokenest(*socketNuevo, pokenest)) {
-									log_error(logger, "error al coordenadas pokenest");
-									desconectadoOFinalizado(*socketNuevo);
-								} else {
-									if (recibirHeader(*socketNuevo) == entrenadorListo) { //me fijo cuando el entrenador esta listo para agregarlo a la lista de listos
-										if (recibirTodo(*socketNuevo, &entrenador->distanciaAPokenest, sizeof(int))) {
-											log_error(logger, "error al recibir distancia a la pokenest");
-											desconectadoOFinalizado(*socketNuevo);
-										} else {
-											queue_push(listos, &socketNuevo);
-											agregarEntrenadorEnMatrices();
-											dibujar(nombreMapa);
-											log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
-											sem_post(&contadorEntrenadoresListos);
-										}
-									} else {
-										log_error(logger, "error en el listo al conectar entrenador, socket %d", *socketNuevo);
-										desconectadoOFinalizado(*socketNuevo);
-									}
-								}
-							}
-
+							queue_push(listos, &socketNuevo);
+							agregarEntrenadorEnMatrices();
+							dibujar(nombreMapa);
+							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
+							sem_post(&contadorEntrenadoresListos);
 						}
-
 						break;
+
 					default:
 						close(nuevaConexion);
 						log_error(logger, "Error en el handshake. Conexion inesperada", texto);
