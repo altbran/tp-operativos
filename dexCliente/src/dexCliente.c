@@ -209,10 +209,13 @@ static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 	return res;
 }
 
-static int f_removerDirectorio(const char *path,  mode_t modo) {
+static int f_removerDirectorio(const char *path, mode_t modo) {
 	enviarHeader(S_POKEDEX_CLIENTE, removerDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
-	return 0;
+
+	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	return res;
 }
 
 static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {

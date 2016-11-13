@@ -31,6 +31,9 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	removerDirectorio = 16,
 	cerrarArchivo = 18,
 	crearFichero = 25,
+	renombrarCosas = 26,
+	truncarArchivo = 27,
+
 	//no se confundan, no repitan los numeros!!
 
 };

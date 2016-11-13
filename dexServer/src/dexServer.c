@@ -65,7 +65,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 int crearDirectorio(char* path,char* mapa);
 int crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
-void borrarDirectorioVacio(char* path,char* mapa);
+int borrarDirectorioVacio(char* path,char* mapa);
 int renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
 int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket);
 int aperturaArchivo(char* path,char* mapa,int socket);
@@ -343,6 +343,12 @@ void atenderConexion(int socket, char* mapa)
 				resultado = renombrar(path,(char*)archivo,mapa);
 				enviarHeader(socket,resultado);
 				free(archivo);
+				break;
+
+			case removerDirectorio:
+				recibirTodo(socket,path,50);
+				resultado = borrarDirectorioVacio(path,mapa);
+				enviarHeader(socket,resultado);
 				break;
 
 			default:
@@ -932,7 +938,7 @@ int borrarArchivo(char* path,char* mapa)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				return -1;;
+				return -1;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -977,57 +983,82 @@ int borrarArchivo(char* path,char* mapa)
 	return -1;
 }
 
-void borrarDirectorioVacio(char* path,char* mapa)
+int borrarDirectorioVacio(char* path,char* mapa)
 {
 	int i = 0;
-	int offset = 0;
+	int offset = 0xFFFF;
 	int bloqueInicioDatos;
-	char* nombreEfectivo = malloc(18);
-	char* pathAuxiliar = malloc(50);
+	char* nombreArchivo = malloc(18);
+	char* copiaPath = malloc(50);
 
-	strcpy(pathAuxiliar,path);
+	strcpy(copiaPath,path);
 	if(comprobarPathValido(path))  //si el path es correcto
 	{
-		sacarNombre(pathAuxiliar,nombreEfectivo);   //ahora tengo el nombre del directorio a borrar
-
-		while((i < 2048) && strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo))
-			i++;
-
-		if(i == 2048)   //si llego a 2048, es porque no lo encontro
-			log_error(logger,"El directorio '%s' a eliminar no existe",path);
-		else
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
 		{
-					//ahora tengo que saber si está vacio, es decir, que no esté de bloque padre de nadie
-			while((offset < 2048) && estructuraAdministrativa.tablaArchivos[offset].bloquePadre != i)
-				offset++;
-
-			if(offset != 2048)   //si no llego a 2048, es porque tiene archivos adentro, osea, no lo puedo borrar
-				log_error(logger,"El directorio '%s' tiene archivos adentro. No puede ser eliminado.",path);
-			else
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
 			{
-						//una vez comprobado que estén las cosas bien, paso a eliminarlo
-				estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
-				strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
-				estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF;
-				estructuraAdministrativa.tablaArchivos[i].fecha = 0;
-
-						//ahora le tengo que borrar el bloque ocupado (es un directorio, por ende tiene uno solo
-				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
-				offset = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
-				bitarray_clean_bit(estructuraAdministrativa.punteroBitmap,(offset + bloqueInicioDatos)); //limpio el bit
-
-					//una vez que limpie el bitmap, termino de acondicionar la estructura de ese archivo eliminado
-				estructuraAdministrativa.tablaArchivos[i].bloqueInicial = 0;
-				estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0;
-
-				free(nombreEfectivo);
-				free(pathAuxiliar);
-
-				guardarEstructuraEn(mapa);
-				log_info(logger,"Directorio eliminado. Nombre '%s'",path);
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
 			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				return -1;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
 		}
+				//aca tengo unequivocamente al archivo solicitado
+
+		if(estructuraAdministrativa.tablaArchivos[offset].estado != '\2')	//si no es un directorio, avisa
+		{
+			log_error(logger,"El path no corresponde a un directorio. Path: %s",path);
+			return -1;
+		}
+
+		i = 0;	//tengo que recorrer la tabla y ver si esta vacio..
+		while(i < 2048)
+		{
+			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)		//si algo tiene de padre, a este directorio..
+			{
+				log_error(logger,"Se esta queriendo eliminar un directorio que no esta vacio. Path: %s",path);
+				return -1;
+			}
+			i++;
+		}
+
+		i = offset;		//copie codigo, por eso hago esto
+
+		estructuraAdministrativa.tablaArchivos[i].estado = '\0'; //lo borra
+		strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,"");
+		estructuraAdministrativa.tablaArchivos[i].bloquePadre = 0xFFFF;
+		estructuraAdministrativa.tablaArchivos[i].fecha = 0;
+
+				//ahora le tengo que borrar el bloque ocupado (es un directorio, por ende tiene uno solo
+		bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+		offset = estructuraAdministrativa.tablaArchivos[i].bloqueInicial;
+		bitarray_clean_bit(estructuraAdministrativa.punteroBitmap,(offset + bloqueInicioDatos)); //limpio el bit
+
+			//una vez que limpie el bitmap, termino de acondicionar la estructura de ese archivo eliminado
+		estructuraAdministrativa.tablaArchivos[i].bloqueInicial = 0;
+		estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0;
+
+		free(copiaPath);
+		guardarEstructuraEn(mapa);
+		log_info(logger,"Directorio eliminado. Nombre '%s'",path);
+
+		return 0;
 	}
+	return -1;
 }
 
 bool comprobarPathValido(char* path)
