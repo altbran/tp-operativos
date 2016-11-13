@@ -199,19 +199,14 @@ static int f_close(const char *path, struct fuse_file_info *fi) {
 
 static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 {
-	t_cambioDeDirectorios estructura;
-	estructura.pathAntiguo = pathAntiguo;
-	estructura.pathNuevo = pathNuevo;
-	int cursorMemoria = 0;
+	enviarHeader(S_POKEDEX_CLIENTE,renombrarCosas);
 
-	void *buffer = malloc(sizeof(const char*) + sizeof(const char*)); //path viejo + path nuevo
-	memcpy(buffer, &estructura.pathAntiguo, sizeof(const char*));
-	cursorMemoria += sizeof(const char*);
-	memcpy(buffer + cursorMemoria, &estructura.pathNuevo, sizeof(const char*));
-	send(S_POKEDEX_CLIENTE, buffer, sizeof(buffer), 0);
-	free(buffer);
+	enviarPath(pathAntiguo,S_POKEDEX_CLIENTE);
+	enviarPath(pathNuevo,S_POKEDEX_CLIENTE);
 
-	return 0;
+	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	return res;
 }
 
 static int f_removerDirectorio(const char *path,  mode_t modo) {
@@ -241,6 +236,13 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 
 }
 
+static int f_truncate (const char* path,off_t size)
+{
+	enviarHeader(S_POKEDEX_CLIENTE,truncarArchivo);
+
+	return 0;
+}
+
 static struct fuse_operations ejemplo_oper = {
 		.readdir = f_readdir,
 		.getattr = f_getattr,
@@ -250,9 +252,10 @@ static struct fuse_operations ejemplo_oper = {
 		.unlink = f_unlink,
 		.mkdir = f_crearCarpeta,
 		.open = f_open,
-		.rmdir = f_removerDirectorio,
+		.rmdir = f_removerDirectorio, //todo
 		.release = f_close,
 		.create = f_crearArchivo,
+		.truncate = f_truncate, //todo
 };
 
 int main(int argc, char *argv[])

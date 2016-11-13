@@ -66,7 +66,7 @@ int crearDirectorio(char* path,char* mapa);
 int crearArchivo(char* path,char* mapa);
 int borrarArchivo(char* path,char* mapa);
 void borrarDirectorioVacio(char* path,char* mapa);
-void renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
+int renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
 int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket);
 int aperturaArchivo(char* path,char* mapa,int socket);
 int cerradoArchivo(char* path,int socket);
@@ -306,7 +306,7 @@ void atenderConexion(int socket, char* mapa)
 				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
 
-				void* ficheroEnviado = malloc(tamanio);  //escribir archivo fixme   me esta llegando un path
+				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
 				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
@@ -333,6 +333,16 @@ void atenderConexion(int socket, char* mapa)
 				resultado = crearDirectorio(path,mapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
+				break;
+
+			case renombrarCosas:
+				recibirTodo(socket,path,50);
+				archivo = malloc(50);
+				recibirTodo(socket,archivo,50);   //uso archivo, como el 'nuevo path'
+
+				resultado = renombrar(path,(char*)archivo,mapa);
+				enviarHeader(socket,resultado);
+				free(archivo);
 				break;
 
 			default:
@@ -880,7 +890,7 @@ int crearArchivo(char* path,char* mapa)
 			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset;
 					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
-			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 0; //el archivo vacio no pesa nada
+			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 64; //el archivo vacio no pesa nada
 
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
@@ -1070,7 +1080,7 @@ bool comprobarPathValido(char* path)
 	return true;
 }
 
-void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
+int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 {
 	int offset;
 	int i;
@@ -1088,6 +1098,7 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	if(strcmp(copiaPathOriginal,copiaPathNuevo))
 	{
 		log_error(logger,"Se está intentando cambiar dos nombres a la vez. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
+		return -1;
 	}
 	else
 	{
@@ -1114,7 +1125,7 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",pathOriginal);
-				break;
+				return -1;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -1134,7 +1145,9 @@ void renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 			free(copiaPathOriginal);
 			free(copiaPathNuevo);
 			free(nuevoNombre);
+			return 0;
 		}
+		return 0;
 	}
 }
 
@@ -1248,7 +1261,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 					posicionMapa++;
 					otroContador++;
 				}
-				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = contadorBloques * 64;
+				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = off + tam;
 				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
 
 				guardarEstructuraEn(mapa);
