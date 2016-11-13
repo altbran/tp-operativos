@@ -1381,7 +1381,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo correctamente guardado. Path: %s",path);
 			free(copiaPath);
-			return 0;
+			return 1;
 		}
 	}
 	return -1;
