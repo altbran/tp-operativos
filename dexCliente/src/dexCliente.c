@@ -225,8 +225,6 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 	enviarHeader(S_POKEDEX_CLIENTE, crearFichero);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
-	printf("Se quiere crear un archivo. Path: %s",path);
-
 	res = recibirHeader(S_POKEDEX_CLIENTE);
 
 	if(res == 1)
@@ -242,8 +240,12 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 static int f_truncate (const char* path,off_t size)
 {
 	enviarHeader(S_POKEDEX_CLIENTE,truncarArchivo);
+	enviarPath(path,S_POKEDEX_CLIENTE);
+	enviarHeader(S_POKEDEX_CLIENTE,size);
 
-	return 0;
+	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	return res;
 }
 
 static struct fuse_operations ejemplo_oper = {
@@ -255,7 +257,7 @@ static struct fuse_operations ejemplo_oper = {
 		.unlink = f_unlink,
 		.mkdir = f_crearCarpeta,
 		.open = f_open,
-		.rmdir = f_removerDirectorio, //todo
+		.rmdir = f_removerDirectorio,
 		.release = f_close,
 		.create = f_crearArchivo,
 		.truncate = f_truncate, //todo

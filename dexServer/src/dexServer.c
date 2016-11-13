@@ -68,8 +68,9 @@ int borrarArchivo(char* path,char* mapa);
 int borrarDirectorioVacio(char* path,char* mapa);
 int renombrar(char* pathOriginal, char* pathNuevo, char* mapa);
 int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket);
-int aperturaArchivo(char* path,char* mapa,int socket);
+int aperturaArchivo(char* path,int socket);
 int cerradoArchivo(char* path,int socket);
+int truncar(char* path,int tamanio,char* mapa,int socket);
 
 
 //Variables globales
@@ -258,7 +259,7 @@ void atenderConexion(int socket, char* mapa)
 		{
 			case abrirArchivo:
 				recibirTodo(socket,path,50);
-				resultado = aperturaArchivo(path,mapa,socket);
+				resultado = aperturaArchivo(path,socket);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -348,6 +349,14 @@ void atenderConexion(int socket, char* mapa)
 			case removerDirectorio:
 				recibirTodo(socket,path,50);
 				resultado = borrarDirectorioVacio(path,mapa);
+				enviarHeader(socket,resultado);
+				break;
+
+			case truncarArchivo:
+				recibirTodo(socket,path,50);
+				tamanio = recibirHeader(socket);
+
+				resultado = truncar(path,tamanio,mapa,socket);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -451,6 +460,84 @@ int getAtr(char* path,char* mapa,int* tamanio)
 	}
 	*tamanio = 0;
 	free(copiaPath);
+	return -1;
+}
+
+int truncar(char* path,int tamanio,char* mapa,int socket)
+{
+	int i = 0;
+	int offset = 0xFFFF;
+	char* copiaPath = malloc(50);
+	char* nombreArchivo;
+	char* archivo;
+	char* archivoTruncado;
+
+	strcpy(copiaPath,path);
+
+	if(comprobarPathValido(copiaPath))  //si el path es correcto
+	{
+		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
+		{
+			nombreArchivo = malloc(18);
+			recorrerDesdeIzquierda(copiaPath,nombreArchivo);
+			i = 0;
+			while(i < 2048)
+			{
+				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+						break;
+				i++;
+			}
+
+			if(i == 2048) //si llego al final es porque no encontró nada
+			{
+				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				return -1;
+			}
+			else
+				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
+
+			free(nombreArchivo);
+		}					//aca tengo el offset del bloque padre, en offset
+
+		if(estructuraAdministrativa.tablaArchivos[offset].estado != '\1')
+		{
+			log_error(logger,"No se puede truncar, no es un archivo");
+			return -1;
+		}
+
+		archivo = malloc(estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo);
+			//me conviene levantar el archivo, y guardar solo lo que necesito
+		archivo = leerArchivo(path,mapa,&i);
+		cerradoArchivo(path,socket);
+		borrarArchivo(path,mapa);
+
+		archivoTruncado = malloc(tamanio);
+
+		i = 0;
+		while(i < tamanio)			//copio los 'tamanio' bytes del viejo archivo al nuevo
+		{
+			archivoTruncado[i] = archivo[i];
+			i++;
+		}
+
+		crearArchivo(path,mapa);
+		aperturaArchivo(path,1);
+		escribirArchivo(path,archivoTruncado,0,tamanio,mapa,1);
+		cerradoArchivo(path,1);
+
+		i = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
+		estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = tamanio; //actualizo el tamaño
+		estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();	//tiempo de ultima modificacion
+
+		guardarEstructuraEn(mapa);
+		free(archivo);
+		free(archivoTruncado);
+		free(copiaPath);
+
+		log_info(logger,"Archivo: '%s' truncado de %d bytes, a %d bytes",path,i,tamanio);
+		return 0;
+	}
 	return -1;
 }
 
@@ -896,7 +983,7 @@ int crearArchivo(char* path,char* mapa)
 			estructuraAdministrativa.tablaArchivos[i].bloqueInicial = offset;
 					//por ultimo, guardo el offset de la tablaAsig en donde esta su primer bloque
 
-			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 64; //el archivo vacio no pesa nada
+			estructuraAdministrativa.tablaArchivos[i].tamanioArchivo = 64;
 
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
@@ -1182,7 +1269,7 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	}
 }
 
-int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket)	//fijarse, me esta llegando el buffer en el path
+int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int socket)
 {
 	int i;
 	int j;
@@ -1223,89 +1310,81 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			free(viejoNombre);
 		}
 							//aca tengo el offset de la tabla, o '2048' si es error
-		if(aperturado[offset] != socket)   //si no tiene este archivo abierto, o si está abierto y no es de el, no puede escribir
+		if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
 		{
-			log_error(logger,"No tiene permiso para escribir este archivo. Path: '%s'",path);
+			log_error(logger,"No se puede escribir un directorio");
 			return -1;
 		}
 		else
 		{
-			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
-			{
-				log_error(logger,"No se puede escribir un directorio");
-				return -1;
-			}
-			else
-			{
-				bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
-				bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
+			bloqueInicioDatos = estructuraAdministrativa.header.tamanioFS - estructuraAdministrativa.header.tamanioDatos;
+			bloqueSiguienteEnTabla = estructuraAdministrativa.tablaArchivos[offset].bloqueInicial;
 
-				i = 0;
-				otroContador = 0;
-				while (i < off)
+			i = 0;
+			otroContador = 0;
+			while (i < off)
+			{
+				i++;
+				otroContador++;
+				if(otroContador == 63)
 				{
-					i++;
-					otroContador++;
-					if(otroContador == 63)
+					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+					contadorBloques++;
+					otroContador = 0;
+				}
+			}
+						//hasta aca tengo, el bloque donde va a escribir, y el offset inicial, guardado en 'otroContador'
+			i = 0;
+
+			posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;  //me paro en el bloque...
+			posicionMapa += otroContador; 	//..y en el offset
+
+			while(i < tam)	//ahora tengo que escribir el tamaño que me indican
+			{
+				if(otroContador == 63)		//este contador me va a indicar los cambios de bloque
+				{
+					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF)
 					{
+						j = 0;
+						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+							j++;
+						   //donde para j, es el offset del bloque libre
+						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
+						   //aca ya reserve el bloque
+						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
+							//finalmente, le aseigno el nuevo bloque libre de datos
+
 						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-						contadorBloques++;
-						otroContador = 0;
+								//con esto obtengo el bloque siguiente para guardar datos
+						estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
+								//y finalmente, con esta mierda, le doy un cierre al puto archivo
 					}
+					else
+						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
+
+					contadorBloques++;
+					posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;
+					otroContador = 0;
 				}
-							//hasta aca tengo, el bloque donde va a escribir, y el offset inicial, guardado en 'otroContador'
-				i = 0;
 
-				posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;  //me paro en el bloque...
-				posicionMapa += otroContador; 	//..y en el offset
-
-				while(i < tam)	//ahora tengo que escribir el tamaño que me indican
-				{
-					if(otroContador == 63)		//este contador me va a indicar los cambios de bloque
-					{
-						if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF)
-						{
-							j = 0;
-							while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
-								j++;
-							   //donde para j, es el offset del bloque libre
-							bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
-							   //aca ya reserve el bloque
-							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = j - bloqueInicioDatos;
-								//finalmente, le aseigno el nuevo bloque libre de datos
-
-							bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-									//con esto obtengo el bloque siguiente para guardar datos
-							estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] = 0xFFFFFFFF;
-									//y finalmente, con esta mierda, le doy un cierre al puto archivo
-						}
-						else
-							bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-
-						contadorBloques++;
-						posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;
-						otroContador = 0;
-					}
-
-					mapa[posicionMapa] = fichero[i];
-					i++;
-					posicionMapa++;
-					otroContador++;
-				}
-				estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = off + tam;
-				estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
-
-				guardarEstructuraEn(mapa);
-				log_info(logger,"Archivo correctamente guardado. Path: %s",path);
-				free(copiaPath);
-				return 0;
+				mapa[posicionMapa] = fichero[i];
+				i++;
+				posicionMapa++;
+				otroContador++;
 			}
+			estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo = off + tam;
+			estructuraAdministrativa.tablaArchivos[offset].fecha = pedirFecha();
+
+			guardarEstructuraEn(mapa);
+			log_info(logger,"Archivo correctamente guardado. Path: %s",path);
+			free(copiaPath);
+			return 0;
 		}
 	}
 	return -1;
 }
 
-int aperturaArchivo(char* path,char* mapa, int socket)
+int aperturaArchivo(char* path,int socket)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
