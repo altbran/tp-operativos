@@ -255,10 +255,11 @@ void atenderConexion(int socket, char* mapa)
 
 		path = malloc(50);
 
-		switch(operacion)  //magia potagia TODO
+		switch(operacion)
 		{
 			case abrirArchivo:
 				recibirTodo(socket,path,50);
+
 				resultado = aperturaArchivo(path,socket);
 				enviarHeader(socket,resultado);
 				break;
@@ -297,6 +298,7 @@ void atenderConexion(int socket, char* mapa)
 
 			case crearFichero:
 				recibirTodo(socket,path,50);
+
 				resultado = crearArchivo(path,mapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la creacion de '%s': %d",path,resultado);
@@ -318,6 +320,7 @@ void atenderConexion(int socket, char* mapa)
 
 			case eliminarArchivo:
 				recibirTodo(socket,path,50);
+
 				resultado = borrarArchivo(path,mapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del borrado de '%s': %d",path,resultado);
@@ -325,12 +328,14 @@ void atenderConexion(int socket, char* mapa)
 
 			case cerrarArchivo:
 				recibirTodo(socket,path,50);
+
 				resultado = cerradoArchivo(path,socket);
 				enviarHeader(socket,resultado);
 				break;
 
 			case crearCarpeta:
 				recibirTodo(socket,path,50);
+
 				resultado = crearDirectorio(path,mapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
@@ -348,6 +353,7 @@ void atenderConexion(int socket, char* mapa)
 
 			case removerDirectorio:
 				recibirTodo(socket,path,50);
+
 				resultado = borrarDirectorioVacio(path,mapa);
 				enviarHeader(socket,resultado);
 				break;
@@ -1115,7 +1121,7 @@ int borrarDirectorioVacio(char* path,char* mapa)
 		i = 0;	//tengo que recorrer la tabla y ver si esta vacio..
 		while(i < 2048)
 		{
-			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)		//si algo tiene de padre, a este directorio..
+			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			{
 				log_error(logger,"Se esta queriendo eliminar un directorio que no esta vacio. Path: %s",path);
 				return -1;
@@ -1274,7 +1280,6 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 	int i;
 	int j;
 	int otroContador;
-	int contadorBloques = 1;
 	int offset = 0xFFFF;
 	int posicionMapa;
 	int bloqueSiguienteEnTabla;
@@ -1324,14 +1329,13 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			otroContador = 0;
 			while (i < off)
 			{
-				i++;
-				otroContador++;
-				if(otroContador == 63)
+				if(otroContador == 64)
 				{
 					bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
-					contadorBloques++;
 					otroContador = 0;
 				}
+				i++;
+				otroContador++;
 			}
 						//hasta aca tengo, el bloque donde va a escribir, y el offset inicial, guardado en 'otroContador'
 			i = 0;
@@ -1341,7 +1345,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 
 			while(i < tam)	//ahora tengo que escribir el tamaño que me indican
 			{
-				if(otroContador == 63)		//este contador me va a indicar los cambios de bloque
+				if(otroContador == 64)		//este contador me va a indicar los cambios de bloque
 				{
 					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF)
 					{
@@ -1362,7 +1366,6 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 					else
 						bloqueSiguienteEnTabla = estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla];
 
-					contadorBloques++;
 					posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;
 					otroContador = 0;
 				}

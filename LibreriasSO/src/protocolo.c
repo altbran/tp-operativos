@@ -9,7 +9,7 @@ int recibirHeader(int socketOrigen) {
 	int header;
 	int bytesRecibidos;
 	if ((bytesRecibidos = recv(socketOrigen, &header, sizeof(int), 0)) <= 0) {
-		return bytesRecibidos;
+		return 0;
 	} else {
 		return header;
 	}

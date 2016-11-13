@@ -260,7 +260,7 @@ static struct fuse_operations ejemplo_oper = {
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
 		.create = f_crearArchivo,
-		.truncate = f_truncate, //todo
+		.truncate = f_truncate,
 };
 
 int main(int argc, char *argv[])
