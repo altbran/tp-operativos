@@ -67,22 +67,35 @@ t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
 	int c=0;
 	while(arrayHojaDeViaje[c]!= NULL)
 		c++;
+
 	log_info(logger,"Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: %d", c);
+
 	int i,j;
-	t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa));
-	for(i=0; arrayHojaDeViaje[i]!= NULL; i++){ //recorro todos los mapas en la hoja de viaje
-		t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa)); //reservo memoria para objetivosxmapa
-		objetivosPorMapa->mapa = arrayHojaDeViaje[i]; //le asigno el nombre del mapa q este leyendo
-		objetivosPorMapa->objetivos = list_create(); //creo la lista con sus objetivos
-		char* metadataObjetivo = string_new(); //aca se va aguardar lo q tendra q leer del archivo config
+
+	//recorro todos los mapas en la hoja de viaje
+	for(i=0; arrayHojaDeViaje[i]!= NULL; i++){
+
+		t_objetivosPorMapa* objetivosPorMapa = malloc(sizeof(t_objetivosPorMapa));
+		objetivosPorMapa->mapa = arrayHojaDeViaje[i];
+		objetivosPorMapa->objetivos = list_create();
+
+		char* metadataObjetivo = string_new();
 		string_append_with_format(&metadataObjetivo, "obj[%s]", objetivosPorMapa->mapa);
-		char** objetivos = config_get_array_value(metadata, metadataObjetivo); //leo del config los objetivos del mapa
+		char** objetivos = config_get_array_value(metadata, metadataObjetivo);
+
 		for(j=0; objetivos[j]!= NULL; j++){
-			if(j>0)if(string_starts_with(objetivos[j], objetivos[j-1])) return NULL; //logica para que no pida  dos veces seguidas el mismo pkm
+			// dos veces seguidas el mismo pkm
+			if(j>0)
+				if(string_starts_with(objetivos[j], objetivos[j-1]))
+					return NULL;
+
 			log_info(logger, "Para el mapa %d, %s, el objetivo numero %d es %s", i+1 , objetivosPorMapa ->mapa, j+1, objetivos[j]);//para tal mapa,cuales son sus objetivos
 			list_add(objetivosPorMapa->objetivos, objetivos[j]);
 			}			//agrego el objetivo leido al atributo de la struct objetivosPorMapa
+
 			list_add(hojaDeViaje, objetivosPorMapa);//agrego el ObjetivosPorMapa a la lista hoja de viaje
+
+		free(objetivosPorMapa);
 	}
 	return hojaDeViaje;
 	}
@@ -148,7 +161,7 @@ char* crearRutaDirBill(char* ruta){
 	return rutaDirBill;
 }
 
-char* crearComando(char* rutaOrigen,char* rutaDestino){
+char* copiarArchivo(char* rutaOrigen,char* rutaDestino){
 char* comando = string_new();
 string_append(&comando,"cp ");
 string_append(&comando, rutaOrigen);
@@ -188,6 +201,7 @@ void solicitarUbicacionPokenest(int socketDestino,char pokemon){
 }
 
 void copiarMedalla(char* nombreMapa){
+
 	char* rutaOrigen = string_new();
 	string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
 	string_append(&rutaOrigen, nombreMapa);
@@ -201,7 +215,7 @@ void copiarMedalla(char* nombreMapa){
 	string_append(&rutaDestino, entrenador.nombre);
 	string_append(&rutaDestino, "/medallas");
 
-	char* comando = crearComando(rutaOrigen,rutaDestino);
+	char* comando = copiarArchivo(rutaOrigen,rutaDestino);
 	system(comando);
 }
 
@@ -272,6 +286,7 @@ void enviarPokemon(int servidor, char pokemon){
 void recibirNombrePkm(int socketServer, char nombrePkm[18]){
 
 	void* buffer = malloc(18);
+	nombrePkm[18] = '\0';
 
 	if(!recibirTodo(socketServer,buffer, 18))
 		memcpy(&nombrePkm,buffer,18);
@@ -318,4 +333,207 @@ void removerPokemones(char* entrenador){
 	string_append(&comando,entrenador);
 	string_append(&comando,"Directorio' 'de' 'Bill/*");
 	system(comando);
+}
+
+char* diferenciaDeTiempo(char* tiempoDeInicio, char* tiempoFinal){
+
+	//paso a entero los diferentes tiempos
+
+	int milisegundosI = atoi(string_substring(tiempoDeInicio, 9, 3));
+	int segundosI = atoi(string_substring(tiempoDeInicio,6,2));
+	int minutosI = atoi(string_substring(tiempoDeInicio,3,2));
+	int horaI = atoi(string_substring(tiempoDeInicio,0,2));
+
+	int milisegundosF = atoi(string_substring(tiempoFinal, 9, 3));
+	int segundosF = atoi(string_substring(tiempoFinal,6,2));
+	int minutosF = atoi(string_substring(tiempoFinal,3,2));
+	int horaF = atoi(string_substring(tiempoFinal,0,2));
+
+	//declaro los valores que adquirira el nuevo tiempo
+	int milisegundosD;
+	int segundosD;
+	int minutosD;
+	int horaD;
+
+	//declaro las diferentes partes del nuevo tiempo
+	char* mSegundosDif= string_new();
+	char* segundosDif= string_new();
+	char* minutosDif= string_new();
+	char* horaDif= string_new();
+	char* tiempoDeDiferencia = string_new();
+
+
+	//calcular diferencia de tiempo
+
+	milisegundosD = milisegundosF - milisegundosI;
+
+	if(milisegundosD < 0){
+		milisegundosD = (1000 + milisegundosF) - milisegundosI;
+		segundosF--;
+	}
+
+	segundosD = segundosF - segundosI;
+
+	if(segundosD < 0){
+		segundosD = (60 + segundosF) - segundosI;
+		minutosF--;
+	}
+
+	minutosD = minutosF - minutosI;
+
+	if(minutosD < 0){
+		minutosD = (60+minutosF) - minutosI;
+		horaF--;
+	}
+
+	horaD = horaF - horaI;
+
+	if(milisegundosD < 10){
+		string_append(&mSegundosDif,"00");
+		string_append(&mSegundosDif,string_itoa(milisegundosD));
+	}
+	else
+		if(milisegundosD < 100){
+		string_append(&mSegundosDif,"0");
+		string_append(&mSegundosDif, string_itoa(milisegundosD));
+		}
+		else
+			mSegundosDif = string_itoa(milisegundosD);
+
+	if(segundosD < 10){
+		string_append(&segundosDif,"0");
+		string_append(&segundosDif, string_itoa(segundosD));
+	}
+	else
+		segundosDif = string_itoa(segundosD);
+
+	if(minutosD < 10){
+			string_append(&minutosDif,"0");
+			string_append(&minutosDif,string_itoa(minutosD));
+		}
+		else
+			if(minutosD == 0)
+			minutosDif = "00";
+			else
+				minutosDif = string_itoa(minutosD);
+
+	if(horaD < 10){
+		string_append(&horaDif, "0");
+		string_append(&horaDif, string_itoa(horaD))	;
+	}
+	else
+		horaDif = string_itoa(horaD);
+
+
+	//concateno las diferentes partes del tiempo
+	string_append(&tiempoDeDiferencia,horaDif);
+	string_append(&tiempoDeDiferencia,":");
+	string_append(&tiempoDeDiferencia,minutosDif);
+	string_append(&tiempoDeDiferencia,":");
+	string_append(&tiempoDeDiferencia,segundosDif);
+	string_append(&tiempoDeDiferencia,":");
+	string_append(&tiempoDeDiferencia,mSegundosDif);
+
+	return tiempoDeDiferencia;
+
+}
+
+void sumarTiempos(char** tiempo, char* tiempoASumar){
+
+
+
+	int milisegundos = atoi(string_substring(*tiempo,9, 3));
+	int segundos = atoi(string_substring(*tiempo,6, 2));
+	int minutos = atoi(string_substring(*tiempo,3, 2));
+	int hora = atoi(string_substring(*tiempo,0,2));
+
+
+	int horaAS = atoi(string_substring(tiempoASumar,0,2));
+	int minutosAS = atoi(string_substring(tiempoASumar,3, 2));
+	int segundosAS = atoi(string_substring(tiempoASumar, 6, 2));
+	int milisegundosAS = atoi(string_substring(tiempoASumar, 9, 3));
+
+
+	char* mSegundosDif= string_new();
+	char* segundosDif= string_new();
+	char* minutosDif= string_new();
+	char* horaDif= string_new();
+	char* tiempoDeDiferencia = string_new();
+
+
+	*tiempo = string_new();
+
+
+
+	milisegundos += milisegundosAS;
+
+	if(milisegundos >= 1000){
+		milisegundos = milisegundos - 1000;
+		segundos++;
+	}
+
+
+	segundos += segundosAS;
+	if(milisegundos >= 60){
+			milisegundos = milisegundos - 60;
+			minutos++;
+	}
+
+	minutos += minutosAS;
+	if(minutos > 60){
+		minutos = minutos - 60;
+		hora++;
+	}
+
+	hora+= horaAS;
+	if(hora >= 24){
+		hora = hora - 24;
+	}
+
+
+	if(milisegundos < 10){
+			string_append(&mSegundosDif,"00");
+			string_append(&mSegundosDif,string_itoa(milisegundos));
+		}
+		else
+			if(milisegundos < 100){
+			string_append(&mSegundosDif,"0");
+			string_append(&mSegundosDif, string_itoa(milisegundos));
+			}
+			else
+				mSegundosDif = string_itoa(milisegundos);
+
+		if(segundos < 10){
+			string_append(&segundosDif,"0");
+			string_append(&segundosDif, string_itoa(segundos));
+		}
+		else
+			segundosDif = string_itoa(segundos);
+
+		if(minutos < 10){
+				string_append(&minutosDif,"0");
+				string_append(&minutosDif,string_itoa(minutos));
+			}
+			else
+				if(minutos == 0)
+				minutosDif = "00";
+				else
+					minutosDif = string_itoa(minutos);
+
+		if(hora < 10){
+			string_append(&horaDif, "0");
+			string_append(&horaDif, string_itoa(hora))	;
+		}
+		else
+			horaDif = string_itoa(hora);
+
+
+	string_append(&(*tiempo),horaDif);
+	string_append(&(*tiempo),":");
+	string_append(&(*tiempo),minutosDif);
+	string_append(&(*tiempo),":");
+	string_append(&(*tiempo),segundosDif);
+	string_append(&(*tiempo),":");
+	string_append(&(*tiempo),mSegundosDif);
+
 }

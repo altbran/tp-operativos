@@ -3,22 +3,30 @@
 
 int main(int argc, char** argv){
 
+	//creo e inicio la ruta del metadata entrenador y la ruta de bill
 	char* rutaMetadata = string_new();
+	char* rutaDirBill= string_new();
+	char* ruta = string_new();
 
 	if(argc != 3){
 
 	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
+	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/Directorio' 'de' 'Bill");
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
 	}
 	else{
 
-		strcpy(rutaMetadata, argv[2]);
-		char* nombreEntrenador = string_new();
+		string_append(&rutaMetadata, argv[2]);
+		string_append(&rutaMetadata,"/Entrenadores/");
 		string_append(&rutaMetadata, argv[1]);
-		string_append(&rutaMetadata, nombreEntrenador);
+		string_append(&ruta, rutaMetadata);
+
 		string_append(&rutaMetadata, "/MetadataEntrenador.txt");
+		string_append(&rutaDirBill, ruta);
+		string_append(&rutaDirBill, "/Directorio' 'de' 'Bill");
+
 
 	}
 
@@ -40,12 +48,15 @@ int main(int argc, char** argv){
 	signal(SIGUSR1,senialRecibirVida);
 	signal(SIGTERM,senialQuitarVida);
 
-
-	//char* tiempoDeInicio = temporal_get_string_time();
+	//momento de inicio
+	tiempoDeInicio = temporal_get_string_time();
+	tiempoBloqueo = "00:00:00:000";
 
 	int i;
 	for(i=0;i < list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 
+
+		volverAEmpezar = 5;
 		int murio;
 		t_list* pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS en este mapa, LISTA CON STRUCTS METADATA POKEMON
 		t_objetivosPorMapa* elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
@@ -107,57 +118,74 @@ int main(int argc, char** argv){
 
 
 		int j;
-		for(j=0; j < list_size(elemento->objetivos);j++){ 		//EMPIEZO A BUSCAR POKEMONES
+
+		//EMPIEZO A BUSCAR POKEMONES
+		for(j=0; j < list_size(elemento->objetivos);j++){
+
 			char* puntero = list_get(elemento->objetivos,j);
 			char pkm = *puntero;
-			t_metadataPokemon pokemon;
-			strcpy(pokemon.nombre,"");	// no se por que, pero para que no reciba basura tengo que poner esto
-			char resultado;				//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
-			int estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
+			t_metadataPokemon* pokemon = malloc(sizeof(t_metadataPokemon));
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pkm;
-			int numeroPkm;
 
-			//dependiendo del estado, solicito empezar a jugar, moverme o atrapar un pokemon
+			int* numeroPkm = malloc(sizeof(int));
+
+			char resultado;				//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
+			int estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
+
+			char* tiempoSolicitoAtraparPkm;
+			char* tiempoAtrapePkm;
+
 			while (estado != 4){
 				switch (estado){
+
+		//solicito la ubicacion de la pokenest, guardo la ubicacion pknest y el nombre del pkm y envio la cantidad de movs a pokenest
 						case 0:
-							solicitarUbicacionPokenest(servidorMapa, pkm);	//solicito la ubicacion de la pokenest
-							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);	//recibo y asigno las coordenadas de la pkn
-							recibirNombrePkm(servidorMapa,pokemon.nombre);			//recibo y asigno el nombre del pokemon
-							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);	//le envio la distancia al mapa hasta la pokenest
+
+							solicitarUbicacionPokenest(servidorMapa, pkm);
+							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
+							recibirNombrePkm(servidorMapa,pokemon->nombre);
+							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
+
 						break;
 
+						//le pido al mapa permiso para moverme y chequeo si llegue a la pokenest
 						case 1:
-							solicitarMovimiento(servidorMapa,*pokenestProxima);//le pido al mapa permiso para moverme
+
+							solicitarMovimiento(servidorMapa,*pokenestProxima);
 							if(recibirHeader(servidorMapa) == movimientoAceptado){
-							if(llegoAPokenest(*pokenestProxima)){
-								estado = 2;
-								log_info(logger, "Entrenador alcanza pokenest de %s", pokemon.nombre);
+								if(llegoAPokenest(*pokenestProxima)){
+									estado = 2;
+									log_info(logger, "Entrenador alcanza pokenest de %s", pokemon->nombre);
+								}
 							}
-							}
+
 						break;
 
 						case 2://en este estado solicito atrapar pokemon y chequeo si entro en estado deadlock
 
 							solicitarAtraparPkm(pkm,servidorMapa);
+							tiempoSolicitoAtraparPkm = temporal_get_string_time();
+
 							switch (recibirHeader(servidorMapa)){
 
-												case notificarDeadlock:
+										case notificarDeadlock:
 
-													cantidadDeadlocks++;
-													log_info(logger, "Entrenador entra en Deadlock");
-													enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
-													estado = 3;
-													break;
+											cantidadDeadlocks++;
+											log_info(logger, "Entrenador entra en Deadlock");
+											enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
+											estado = 3;
+											break;
 
-												case pokemonesDisponibles:
+										case pokemonesDisponibles:
 
-													recibirTodo(servidorMapa,&numeroPkm,sizeof(int)); //recibo del server el numero de mi pokemon
-													log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon.nombre);
-													estado = 4;
-													break;
+											recibirTodo(servidorMapa,numeroPkm,sizeof(int));
+											tiempoAtrapePkm = temporal_get_string_time();
+											sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
+											log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
+											estado = 4;
+											break;
 							}
 
 							break;
@@ -165,7 +193,7 @@ int main(int argc, char** argv){
 						case 3://estado deadlock, abarca el caso perdedor y ganador
 
 							if(recibirHeader(servidorMapa) == entrenadorGanador){
-								log_info(logger, "Entrenador sale vencedor del Deadlock");
+								log_info(logger, "Entrenador sale vencedor de la batalla");
 								estado = 2;
 							}
 							else
@@ -173,26 +201,28 @@ int main(int argc, char** argv){
 
 									printf("Entrenador salio perdedor de la batalla y por eso morira, perdera todos sus pokemons atrapados en el mapa y"
 												"se desconectara del mismo/n");
-									log_info(logger, "Entrenador sale perdedor del Deadlock");
+
+									log_info(logger, "Entrenador sale perdedor de la batalla");
+
 									murio = 1;
 									muertes++;
 
 									// si no le quedan vidas al entrenador, tiene la opcion de volver a empezar
 									if(entrenador.vidas <= 0){
 
-										printf("Vidas insuficientes.\nCantidad de reintentos realizados: %d\n "
+										printf("Vidas insuficientes.\nCantidad de reintentos: %d\n "
 												"Desea volver a jugar? Ingrese 's' para si, 'n' para no",entrenador.reintentos);
 
 										scanf("%c", &resultado);
 
-										//si elijo la opcion "si" se suma un reintento y vuelvo a empezar
+										//opcion si
 										if(resultado == 's')
 											volverAEmpezar = 1;
-
-
-										//si elijo que no, me desconecto y termino de jugar
-										if (resultado == 'n')
-											volverAEmpezar = 0;
+										else{
+											//opcion no
+											if (resultado == 'n')
+												volverAEmpezar = 0;
+										}
 
 										break;
 									}
@@ -200,63 +230,94 @@ int main(int argc, char** argv){
 									entrenador.vidas --;
 									list_clean(pokemonesAtrapados);
 									j = 0;//empieza a leer los objs desde 0
-									i--;//gracias a esto vuelve a conectarse al mismo mapa
-
+									i--;//vuelve a conectarse al mismo mapa
+									//todo borrar pokemones atrapados en este mapa
 									desconectarseDe(servidorMapa);
 								}
 							break;
 							}
-			}
+			}//termina while estado
 
-			if(murio)//si se murio es xq no pudo capturar el pokemon, por eso no realizara los pasos q siguen
+
+			//primero chequeo si se murio
+			if(murio)
 				break;
 
-			char* numeroPokemon = obtenerNumero(numeroPkm);
+			//creo la ruta del metadata pkm
+			char* numeroPokemon = obtenerNumero(*numeroPkm);
 			char* rutaPokemon = string_new();
-			rutaPokemon =  armarRutaPokemon(nombreMapa,pokemon.nombre, numeroPokemon);
+			rutaPokemon =  armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon);
 
+			//creo el config para leerlo
 			t_config* metadataPokemon = config_create(rutaPokemon);
-			pokemon.nivel = config_get_int_value(metadataPokemon, "nivel");		//leo el nivel del pokemon
 
-			list_add(pokemonesAtrapados, &pokemon); //agrego el pkm a la lista de pokemones atrapados
+			//leo el nivel del pokemon
+			pokemon->nivel = config_get_int_value(metadataPokemon, "nivel");
 
-			char* rutaDirBill= string_new();
-			rutaDirBill = crearRutaDirBill(rutaMetadata);
+			//agrego el pkm a la lista de pokemones atrapados
+			list_add(pokemonesAtrapados, &pokemon);
 
+
+			//copio el archivo pkm en mi directorio Bill
 			char* comando = string_new();
-			comando = crearComando(rutaPokemon,rutaDirBill);
-			system(comando);									//copio el archivo pkm en mi directorio Bill
+			comando = copiarArchivo(rutaPokemon,rutaDirBill);
+			system(comando);
+
 
 			// AVISO QUE COPIE EL POKEMON
 			enviarHeader(servidorMapa,entrenadorListo);
 
 			free(pokenestProxima);
+			free(pokemon);
+			free(numeroPkm);
 
 		}//aca cierra el for de atrapar pokemones
 
-		if(volverAEmpezar == 0)
+
+
+		//switch de : a)volver a empezar la ruta de viaje  b)dejar de jugar  c)haber atrapado  pokemon
+
+		switch(volverAEmpezar){
+
+		case 0:
 			break;
-		else
-			if(volverAEmpezar == 1){
+
+		case 1:
 				i = -1; //gracias a esto empieza desde cero su ruta de viaje
 				entrenador.reintentos ++;
 				list_clean(pokemonesAtrapados);
 				removerMedallas(entrenador.nombre);
 				removerPokemones(entrenador.nombre);
-			}
+			break;
 
-		copiarMedalla(nombreMapa);
-		free(elemento);
-		enviarHeader(servidorMapa,finalizoMapa);
-		desconectarseDe(servidorMapa);
+		case 5:
+				copiarMedalla(nombreMapa);
+				free(elemento);
+				enviarHeader(servidorMapa,finalizoMapa);
+				desconectarseDe(servidorMapa);
+			break;
+
 	}
 
-	if(volverAEmpezar!=0){
+
+	if(!volverAEmpezar)
+		break;
+
+	}
+
+
+	if(volverAEmpezar){
+
+		tiempoFinal = temporal_get_string_time();
+
 		printf("Felicidades!! Te has convertido en Maestro Pokemon.\nDatos de la aventura:\n"
-				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d",
-				cantidadDeadlocks, muertes); //todo falta calcular el tiempo total que tardo en recorrer la hoja de viaje y el tiempo
-											//bloqueado
+				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura: %s\nTiempo"
+				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s",
+				cantidadDeadlocks, muertes, diferenciaDeTiempo(tiempoDeInicio,tiempoFinal),tiempoBloqueo);
+
 	}
+
+
 
 	return EXIT_SUCCESS;
 	}

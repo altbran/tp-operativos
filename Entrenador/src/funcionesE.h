@@ -53,6 +53,9 @@ t_ubicacion ubicacionEntrenador;
 int cantidadDeadlocks;
 int volverAEmpezar;
 int muertes;
+char* tiempoDeInicio;
+char* tiempoFinal;
+char* tiempoBloqueo;
 
 //FUNCIONES
 void senialRecibirVida();
@@ -67,7 +70,7 @@ void cargarDatos();
 int cantidadDeMovimientosAPokenest(t_metadataPokenest);
 char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro);
 char* crearRutaDirBill(char*);
-char* crearComando(char* ,char* );
+char* copiarArchivo(char* rutaOrigen,char* rutaDestino);
 void solicitarUbicacionPokenest(int,char);
 void recibirYAsignarCoordPokenest(int,t_metadataPokenest);
 void solicitarAtraparPkm(char, int);
@@ -85,6 +88,7 @@ void removerMedallas(char* entrenador);
 void removerPokemones(char* entrenador);
 void copiarMedalla(char* nombreMapa);
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa);
-void hastaQueNoReciba(int header, int socketOrigen);
+char* diferenciaDeTiempo(char* tiempoDeInicio, char* tiempoFinal);
+void sumarTiempos(char** tiempo, char* tiempoASumar);
 
 #endif /* FUNCIONESE_H_ */
