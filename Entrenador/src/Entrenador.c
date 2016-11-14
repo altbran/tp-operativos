@@ -3,41 +3,43 @@
 
 int main(int argc, char** argv){
 
-	/*if(argc != 3){
-		printf("Numero de parametros incorrectos\n");
-		log_error(logger,"Numero de parametros incorrectos\n",mensaje);
-		return 1;
-	}
-*/
-
 	char* rutaMetadata = string_new();
-	//strcpy(rutaMetadata, argv[2]);
-	//char* nombreEntrenador = string_new();
-	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
-	//string_append(&rutaMetadata, argv[1]);
-	//string_append(&rutaMetadata, nombreEntrenador);
-	//string_append(&rutaMetadata, "/MetadataEntrenador.txt");
+
+	if(argc != 3){
+
+	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
+	//	log_error(logger,"Numero de parametros incorrectos");
+	//	return 1;
+
+	}
+	else{
+
+		strcpy(rutaMetadata, argv[2]);
+		char* nombreEntrenador = string_new();
+		string_append(&rutaMetadata, argv[1]);
+		string_append(&rutaMetadata, nombreEntrenador);
+		string_append(&rutaMetadata, "/MetadataEntrenador.txt");
+
+	}
 
 
-	t_config* metaDataEntrenador;
-	metaDataEntrenador = config_create(rutaMetadata);
-
-
+	//creo el config y el log
+	t_config* metaDataEntrenador = config_create(rutaMetadata);
 	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
 
 
-
-	cargarDatos(metaDataEntrenador);//cargo metadata
-
-
+	//leo del config mis datos y lo destruyo
+	cargarDatos(metaDataEntrenador);
 	config_destroy(metaDataEntrenador);
+
 
 	log_info(logger,"Entrenador leera sus atributos de la ruta %s", rutaMetadata);
 
 
+	//seniales recibir y quitar vida
+	signal(SIGUSR1,senialRecibirVida);
+	signal(SIGTERM,senialQuitarVida);
 
-	//signal(SIGUSR1,senialRecibirVida);
-	//signal(SIGTERM,senialQuitarVida);
 
 	//char* tiempoDeInicio = temporal_get_string_time();
 
@@ -51,25 +53,41 @@ int main(int argc, char** argv){
 		char* nombreMapa = string_new();
 		nombreMapa = elemento->mapa;
 		log_info(logger, "Mapa a completar: %s", nombreMapa);
+
+		//creo la ruta del metadata mapa
 		char* rutaMetadataMapa = string_new();
 		string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
-		string_append(&rutaMetadataMapa,nombreMapa);			//CREO EL PATH DE METADATA MAPA
-		string_append(&rutaMetadataMapa,"/MetadataMapa.txt");
+		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
+		string_append(&rutaMetadataMapa,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
+		string_append(&rutaMetadataMapa,nombreMapa);
+		string_append(&rutaMetadataMapa,"/metadata");
 
 		log_info(logger, "ruta metadata del mapa: %s", rutaMetadataMapa);
-		reestablecerDatos(); //cargo posicion en (0;0) y ultimo movimiento = 'y' para que empiece moviendose horizontalmente
+
+		//cargo posicion en (0;0) y ultimo movimiento = 'y'
+		reestablecerDatos();
+
+
+		//creo el config del metadata mapa
 		t_config* metadataMapa = config_create(rutaMetadataMapa);
 
-		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "ip");
-		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "puerto");
 
-		if(crearSocket(&servidorMapa)){
-		log_error(logger, "No se pudo crear socket cliente");
-		return 1;
-		}
-		log_info(logger, "Socket mapa creado");
+		//leo los datos del mapa q me interesan
+		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "IP");
+		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "Puerto");
 
+
+		//elimino el config del metadata mapa
 		config_destroy(metadataMapa);
+
+
+		//me conecto con el mapa
+		if(crearSocket(&servidorMapa)){
+				log_error(logger, "No se pudo crear socket cliente");
+				return 1;
+				}
+				log_info(logger, "Socket mapa creado");
+
 
 		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
 				log_error(logger, "Fallo al conectarse al servidor.");
@@ -84,7 +102,8 @@ int main(int argc, char** argv){
 			log_info(logger, "Conexion establecida");
 
 
-		enviarMisDatos(servidorMapa);	//LE ENVIO MIS DATOS ENTRENADOR
+		//le paso mis datos
+		enviarMisDatos(servidorMapa);
 
 
 		int j;
@@ -124,43 +143,55 @@ int main(int argc, char** argv){
 
 							solicitarAtraparPkm(pkm,servidorMapa);
 							switch (recibirHeader(servidorMapa)){
-							case notificarDeadlock:
-								cantidadDeadlocks++;
-								log_info(logger, "Entrenador entra en Deadlock");
-								enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
-								estado = 3;
-								break;
 
-							case pokemonesDisponibles:
-								recibirTodo(servidorMapa,&numeroPkm,sizeof(int)); //recibo del server el numero de mi pokemon
-								log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon.nombre);
-								estado = 4;
-								break;
+												case notificarDeadlock:
+
+													cantidadDeadlocks++;
+													log_info(logger, "Entrenador entra en Deadlock");
+													enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
+													estado = 3;
+													break;
+
+												case pokemonesDisponibles:
+
+													recibirTodo(servidorMapa,&numeroPkm,sizeof(int)); //recibo del server el numero de mi pokemon
+													log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon.nombre);
+													estado = 4;
+													break;
 							}
 
 							break;
 
 						case 3://estado deadlock, abarca el caso perdedor y ganador
-							if(recibirHeader(servidorMapa) == entrenadorGanador){ 			//caso en que sali ganador del deadlock
+
+							if(recibirHeader(servidorMapa) == entrenadorGanador){
 								log_info(logger, "Entrenador sale vencedor del Deadlock");
 								estado = 2;
 							}
 							else
-								if(recibirHeader(servidorMapa) == entrenadorPerdedor){		// caso en que sali perdedor del deadlock
+								if(recibirHeader(servidorMapa) == entrenadorPerdedor){
+
 									printf("Entrenador salio perdedor de la batalla y por eso morira, perdera todos sus pokemons atrapados en el mapa y"
 												"se desconectara del mismo/n");
 									log_info(logger, "Entrenador sale perdedor del Deadlock");
 									murio = 1;
 									muertes++;
-									if(entrenador.vidas <= 0){	// si no le quedan vidas al entrenador, tiene la opcion de volver a empezar
+
+									// si no le quedan vidas al entrenador, tiene la opcion de volver a empezar
+									if(entrenador.vidas <= 0){
+
 										printf("Vidas insuficientes.\nCantidad de reintentos realizados: %d\n "
 												"Desea volver a jugar? Ingrese 's' para si, 'n' para no",entrenador.reintentos);
 
 										scanf("%c", &resultado);
-										if(resultado == 's') //si elijo la opcion "si" se suma un reintento y vuelvo a empezar
+
+										//si elijo la opcion "si" se suma un reintento y vuelvo a empezar
+										if(resultado == 's')
 											volverAEmpezar = 1;
 
-										if (resultado == 'n')//si elijo que no, me desconecto y termino de jugar
+
+										//si elijo que no, me desconecto y termino de jugar
+										if (resultado == 'n')
 											volverAEmpezar = 0;
 
 										break;

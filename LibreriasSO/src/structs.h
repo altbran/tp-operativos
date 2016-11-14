@@ -55,7 +55,7 @@ typedef struct{
 }t_metadataPokemon;
 
 typedef struct{
-	char* nombre;
+	char nombre[18];
 	char simbolo;
 	t_list* hojaDeViaje;
 	int vidas;

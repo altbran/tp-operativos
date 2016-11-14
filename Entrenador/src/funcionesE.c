@@ -92,7 +92,9 @@ int llegoAPokenest(t_metadataPokenest pokenest){
 }
 
 void cargarDatos(t_config* metaDataEntrenador){
-	entrenador.nombre  = config_get_string_value(metaDataEntrenador, "nombre");
+
+	strncpy(entrenador.nombre, config_get_string_value(metaDataEntrenador, "nombre"), sizeof(entrenador.nombre)- 1);
+	entrenador.nombre[17] = '\0';
 	log_info(logger,"Nombre: %s", entrenador.nombre);
 	char* simbolo = config_get_string_value(metaDataEntrenador, "simbolo");
 	entrenador.simbolo = simbolo[0];
@@ -230,12 +232,12 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 
 void enviarMisDatos(int socketDestino){
 
-	int tamanio = sizeof(int)+sizeof(int)+18+sizeof(char);
+	int tamanio = sizeof(int)+sizeof(int)+sizeof(char[18])+sizeof(char);
 	void* buffer = malloc(tamanio);
 	int cursor = 0;
 
 	memcpy(buffer,&entrenador.nombre ,sizeof(char[18]));
-	cursor += 18;
+	cursor += sizeof(char[18]);
 	memcpy(buffer+cursor,&entrenador.simbolo ,sizeof(char));
 	cursor += sizeof(char);
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasX,sizeof(int));
@@ -273,9 +275,6 @@ void recibirNombrePkm(int socketServer, char nombrePkm[18]){
 
 	if(!recibirTodo(socketServer,buffer, 18))
 		memcpy(&nombrePkm,buffer,18);
-
-	else
-		printf("error al copiar nombre");
 
 	free(buffer);
 
