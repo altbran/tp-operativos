@@ -21,7 +21,8 @@ int* entrenadoresEnDeadlock;
 int cantidadDeEntrenadoresEnDeadlock;
 int cantidadDeEntrenadores;
 int cantidadDePokemones;
-int hayDeadlock;
+bool hayDeadlock;
+bool batallaActivada;
 t_pkmn_factory* fabrica;
 t_pokemon* pokemonA;
 t_pokemon* pokemonB;
@@ -30,6 +31,7 @@ t_pokemon* pokemonD;
 t_pokemon* pokemonPerdedor;
 t_list * mejoresPokemones;
 
+void detectarDeadlock();
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest);
 void restarPedidosMatriz(int indiceEntrenador, int indicePokenest);
 void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest);
@@ -48,6 +50,8 @@ void resolverDeadlock();
 t_pokemon* batallaPokemon(t_pokemon* pkmnA,t_pokemon* pkmnB, int indiceA, int indiceB);
 void crearPokemones();
 void notificarDeadlockAEntrenador(int indice);
-void notificarResultadoBatalla(int indice, int gano);
+void notificarResultadoBatalla(int indice, bool gano);
+void resolverDeadlockAMiManera();
+int obtenerPrimerEntrenadorEnDeadlock();
 
 #endif /* DEADLOCK_H_ */
