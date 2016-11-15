@@ -13,8 +13,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "commons/log.h"
-//#include <curses.h>
-//#include <nivel.h>
 #include <src/sockets.h>
 #include <src/structs.h>
 #include <src/protocolo.h>
@@ -39,6 +37,13 @@ typedef struct{
 	char ultimoMov;
 }t_ubicacion;
 
+typedef struct{
+	int nivel;
+	char nombre[18];
+	char* mapa;
+	int numero;
+}t_pokemon;
+
 
 //VARIABLES
 uint32_t PUERTO_MAPA_SERVIDOR;
@@ -56,6 +61,7 @@ int muertes;
 char* tiempoDeInicio;
 char* tiempoFinal;
 char* tiempoBloqueo;
+char* nombreMapa;
 
 //FUNCIONES
 void senialRecibirVida();
@@ -90,5 +96,8 @@ void copiarMedalla(char* nombreMapa);
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa);
 char* diferenciaDeTiempo(char* tiempoDeInicio, char* tiempoFinal);
 void sumarTiempos(char** tiempo, char* tiempoASumar);
+void eliminarArchivosPokemones(t_list* lista, char* ruta);
+bool filtrarMapa(t_pokemon* pokemon);
+bool distintoMapa(t_pokemon* pokemon);
 
 #endif /* FUNCIONESE_H_ */

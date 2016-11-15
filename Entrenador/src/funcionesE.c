@@ -298,9 +298,9 @@ void recibirNombrePkm(int socketServer, char nombrePkm[18]){
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
 	int i;
-	t_metadataPokemon pokemonMasFuerte;
+	t_pokemon pokemonMasFuerte;
 	for(i=0;i<list_size(pokemonesAtrapados);i++){
-		t_metadataPokemon* variable = malloc(sizeof(t_metadataPokemon));
+		t_pokemon* variable = malloc(sizeof(t_pokemon));
 		variable =list_get(pokemonesAtrapados,i);
 		if(i == 0)
 			pokemonMasFuerte = *variable;
@@ -309,11 +309,17 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 				pokemonMasFuerte = *variable;
 		free(variable);
 	}
+	t_metadataPokemon* pkm = malloc(sizeof(t_metadataPokemon));
+	pkm->nivel = pokemonMasFuerte.nivel;
+	strcpy(pkm->nombre,pokemonMasFuerte.nombre);
+
 	enviarHeader(servidorMapa, mejorPokemon);
 	void* buffer = malloc(sizeof(t_metadataPokemon));
-	memcpy(buffer,&pokemonMasFuerte,sizeof(t_metadataPokemon));
+	memcpy(buffer,pkm,sizeof(t_metadataPokemon));
 	send(servidorMapa,buffer,sizeof(t_metadataPokemon),0);
 	free(buffer);
+	free(pkm);
+
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
 			pokemonMasFuerte.nombre, pokemonMasFuerte.nivel);
 
@@ -458,7 +464,6 @@ void sumarTiempos(char** tiempo, char* tiempoASumar){
 	char* segundosDif= string_new();
 	char* minutosDif= string_new();
 	char* horaDif= string_new();
-	char* tiempoDeDiferencia = string_new();
 
 
 	*tiempo = string_new();
@@ -536,4 +541,41 @@ void sumarTiempos(char** tiempo, char* tiempoASumar){
 	string_append(&(*tiempo),":");
 	string_append(&(*tiempo),mSegundosDif);
 
+}
+
+void eliminarArchivosPokemones(t_list* lista, char* ruta){
+
+	int i;
+	for(i=0;i<list_size(lista);i++){
+		t_pokemon* pers = malloc(sizeof(t_pokemon));
+		pers = list_get(lista,i);
+		char* rutta = string_new();
+		char* nro = obtenerNumero(pers->numero);
+
+		string_append(&rutta,ruta);
+		string_append(&rutta, "/");
+		string_append(&rutta,pers->nombre);
+		string_append(&rutta,"/");
+		string_append(&rutta,pers->nombre);
+		string_append(&rutta,nro);
+		string_append(&rutta,".jpg");
+
+		char* comando = string_new();
+		string_append(&comando, "rm ");
+		string_append(&comando, rutta);
+
+		system(comando);
+		free(pers);
+	}
+}
+
+bool filtrarMapa(t_pokemon* pokemon){
+
+	return string_equals_ignore_case(pokemon->mapa, nombreMapa);
+
+}
+
+bool distintoMapa(t_pokemon* pokemon){
+
+	return !string_equals_ignore_case(pokemon->mapa, nombreMapa);
 }

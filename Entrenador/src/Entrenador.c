@@ -3,10 +3,11 @@
 
 int main(int argc, char** argv){
 
-	//creo e inicio la ruta del metadata entrenador y la ruta de bill
+	//creo e inicio rutas
 	char* rutaMetadata = string_new();
 	char* rutaDirBill= string_new();
 	char* ruta = string_new();
+
 
 	if(argc != 3){
 
@@ -61,7 +62,7 @@ int main(int argc, char** argv){
 		t_list* pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS en este mapa, LISTA CON STRUCTS METADATA POKEMON
 		t_objetivosPorMapa* elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
-		char* nombreMapa = string_new();
+		nombreMapa = string_new();
 		nombreMapa = elemento->mapa;
 		log_info(logger, "Mapa a completar: %s", nombreMapa);
 
@@ -124,11 +125,10 @@ int main(int argc, char** argv){
 
 			char* puntero = list_get(elemento->objetivos,j);
 			char pkm = *puntero;
-			t_metadataPokemon* pokemon = malloc(sizeof(t_metadataPokemon));
+			t_pokemon* pokemon = malloc(sizeof(t_metadataPokemon));
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
 			pokenestProxima->identificador = pkm;
-
-			int* numeroPkm = malloc(sizeof(int));
+			pokemon->mapa = nombreMapa;
 
 			char resultado;				//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
 			int estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
@@ -180,7 +180,7 @@ int main(int argc, char** argv){
 
 										case pokemonesDisponibles:
 
-											recibirTodo(servidorMapa,numeroPkm,sizeof(int));
+											recibirTodo(servidorMapa,&pokemon->numero,sizeof(int));
 											tiempoAtrapePkm = temporal_get_string_time();
 											sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
 											log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
@@ -231,7 +231,13 @@ int main(int argc, char** argv){
 									list_clean(pokemonesAtrapados);
 									j = 0;//empieza a leer los objs desde 0
 									i--;//vuelve a conectarse al mismo mapa
-									//todo borrar pokemones atrapados en este mapa
+
+									//elimino los archivos de los pokemones copiados de este mapa y  los borro de la lista de atrapados
+									eliminarArchivosPokemones(list_filter(pokemonesAtrapados,(void*) filtrarMapa), ruta);
+									pokemonesAtrapados = list_filter(pokemonesAtrapados,(void*) distintoMapa);
+
+									//fixme CHEQUEAR
+
 									desconectarseDe(servidorMapa);
 								}
 							break;
@@ -244,7 +250,7 @@ int main(int argc, char** argv){
 				break;
 
 			//creo la ruta del metadata pkm
-			char* numeroPokemon = obtenerNumero(*numeroPkm);
+			char* numeroPokemon = obtenerNumero(pokemon->numero);
 			char* rutaPokemon = string_new();
 			rutaPokemon =  armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon);
 
@@ -255,7 +261,7 @@ int main(int argc, char** argv){
 			pokemon->nivel = config_get_int_value(metadataPokemon, "nivel");
 
 			//agrego el pkm a la lista de pokemones atrapados
-			list_add(pokemonesAtrapados, &pokemon);
+			list_add(pokemonesAtrapados, pokemon);
 
 
 			//copio el archivo pkm en mi directorio Bill
@@ -269,7 +275,6 @@ int main(int argc, char** argv){
 
 			free(pokenestProxima);
 			free(pokemon);
-			free(numeroPkm);
 
 		}//aca cierra el for de atrapar pokemones
 
