@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
 	//inicializo hilos
 	iniciarPlanificador();
-	//pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
+	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
 	log_info(logger, "Arranque hilo atrapador");
 
@@ -126,9 +126,9 @@ int main(int argc, char **argv) {
 							break;
 						} else {
 							list_add(Entrenadores, &entrenador);
-							queue_push(listos, &socketNuevo);
+							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
-							dibujar(nombreMapa);
+							//dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}

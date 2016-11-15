@@ -29,7 +29,7 @@ void roundRobin() {
 		sem_wait(&contadorEntrenadoresListos);
 		if (!queue_is_empty(listos)) {
 			int * turno;
-			turno = queue_pop(listos);
+			turno = (int *) queue_pop(listos);
 			int quedoBloqueado = 0;
 			for (i = 0; i < configuracion->quantum; i++) {
 				pthread_mutex_lock(&mutex);
@@ -155,7 +155,7 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 	case datosPokenest:
 		;
 		char * identificadorPokenest = malloc(sizeof(char));
-		if (recibirTodo(*turno, &identificadorPokenest, sizeof(char))) {
+		if (recibirTodo(*turno, identificadorPokenest, sizeof(char))) {
 			//error al enviar, supongo que se desconecto
 			log_error(logger, "error al recibir identificador de pokenest");
 			desconectadoOFinalizado(*turno);
@@ -196,7 +196,7 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 		} else {
 			moverEntrenador(*devolverEntrenador(*turno));
 			enviarHeader(*turno, movimientoAceptado);
-			dibujar(nombreMapa);
+			//dibujar(nombreMapa);
 		}
 		free(posX);
 		free(posY);
