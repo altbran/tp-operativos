@@ -1,0 +1,139 @@
+[INFO] 20:00:22:605 ENTRENADOR/(4704:4704): Nombre: Ash
+[INFO] 20:00:22:605 ENTRENADOR/(4704:4704): Simbolo: @
+[INFO] 20:00:22:605 ENTRENADOR/(4704:4704): Vidas: 3
+[INFO] 20:00:22:605 ENTRENADOR/(4704:4704): Reintentos: 0
+[INFO] 20:00:22:606 ENTRENADOR/(4704:4704): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:00:22:606 ENTRENADOR/(4704:4704): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:00:23:360 ENTRENADOR/(4704:4704): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:00:23:360 ENTRENADOR/(4704:4704): Mapa a completar: Paleta
+[INFO] 20:00:23:360 ENTRENADOR/(4704:4704): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:00:23:361 ENTRENADOR/(4704:4704): Socket mapa creado
+[INFO] 20:00:23:547 ENTRENADOR/(4704:4704): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:00:23:549 ENTRENADOR/(4704:4704): Conexion establecida
+[WARNING] 20:00:23:550 ENTRENADOR/(4704:4704): CAdena pt: Ash
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Nombre: Ash
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Simbolo: @
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Vidas: 3
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Reintentos: 0
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:02:20:377 ENTRENADOR/(4774:4774): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:02:21:354 ENTRENADOR/(4774:4774): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:02:21:354 ENTRENADOR/(4774:4774): Mapa a completar: Paleta
+[INFO] 20:02:21:354 ENTRENADOR/(4774:4774): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:02:21:354 ENTRENADOR/(4774:4774): Socket mapa creado
+[INFO] 20:02:21:512 ENTRENADOR/(4774:4774): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:02:21:521 ENTRENADOR/(4774:4774): Conexion establecida
+[WARNING] 20:02:21:521 ENTRENADOR/(4774:4774): CAdena pt: Ash
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Nombre: Ash
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Simbolo: @
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Vidas: 3
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Reintentos: 0
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:03:52:296 ENTRENADOR/(4950:4950): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:03:52:837 ENTRENADOR/(4950:4950): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:03:52:837 ENTRENADOR/(4950:4950): Mapa a completar: Paleta
+[INFO] 20:03:52:837 ENTRENADOR/(4950:4950): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:03:52:837 ENTRENADOR/(4950:4950): Socket mapa creado
+[ERROR] 20:03:55:836 ENTRENADOR/(4950:4950): Fallo al conectarse al servidor.
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Nombre: Ash
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Simbolo: @
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Vidas: 3
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Reintentos: 0
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:04:30:290 ENTRENADOR/(5020:5020): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:04:30:880 ENTRENADOR/(5020:5020): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:04:30:881 ENTRENADOR/(5020:5020): Mapa a completar: Paleta
+[INFO] 20:04:30:881 ENTRENADOR/(5020:5020): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:04:30:881 ENTRENADOR/(5020:5020): Socket mapa creado
+[INFO] 20:04:30:950 ENTRENADOR/(5020:5020): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:04:30:953 ENTRENADOR/(5020:5020): Conexion establecida
+[WARNING] 20:04:30:953 ENTRENADOR/(5020:5020): CAdena pt: Ash
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Nombre: Ash
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Simbolo: @
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Vidas: 3
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Reintentos: 0
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:05:49:607 ENTRENADOR/(5093:5093): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:05:50:272 ENTRENADOR/(5093:5093): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:05:50:272 ENTRENADOR/(5093:5093): Mapa a completar: Paleta
+[INFO] 20:05:50:272 ENTRENADOR/(5093:5093): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:05:50:272 ENTRENADOR/(5093:5093): Socket mapa creado
+[INFO] 20:05:50:325 ENTRENADOR/(5093:5093): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:05:50:328 ENTRENADOR/(5093:5093): Conexion establecida
+[WARNING] 20:05:50:328 ENTRENADOR/(5093:5093): CAdena pt: Ash
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Nombre: Ash
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Simbolo: @
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Vidas: 3
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Reintentos: 0
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:06:52:465 ENTRENADOR/(5163:5163): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:06:53:193 ENTRENADOR/(5163:5163): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:06:53:193 ENTRENADOR/(5163:5163): Mapa a completar: Paleta
+[INFO] 20:06:53:193 ENTRENADOR/(5163:5163): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:06:53:193 ENTRENADOR/(5163:5163): Socket mapa creado
+[INFO] 20:06:54:308 ENTRENADOR/(5163:5163): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:06:54:311 ENTRENADOR/(5163:5163): Conexion establecida
+[WARNING] 20:06:54:311 ENTRENADOR/(5163:5163): CAdena pt: Ash
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Nombre: Ash
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Simbolo: @
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Vidas: 3
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Reintentos: 0
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:09:09:705 ENTRENADOR/(5230:5230): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:09:10:178 ENTRENADOR/(5230:5230): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:09:10:178 ENTRENADOR/(5230:5230): Mapa a completar: Paleta
+[INFO] 20:09:10:178 ENTRENADOR/(5230:5230): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:09:10:178 ENTRENADOR/(5230:5230): Socket mapa creado
+[INFO] 20:09:10:296 ENTRENADOR/(5230:5230): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:09:19:34 ENTRENADOR/(5230:5230): Conexion establecida
+[WARNING] 20:09:19:34 ENTRENADOR/(5230:5230): CAdena pt: Ash
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Nombre: Ash
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Simbolo: @
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Vidas: 3
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Reintentos: 0
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:13:16:813 ENTRENADOR/(5388:5388): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:13:17:233 ENTRENADOR/(5388:5388): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:13:17:233 ENTRENADOR/(5388:5388): Mapa a completar: Paleta
+[INFO] 20:13:17:233 ENTRENADOR/(5388:5388): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:13:17:233 ENTRENADOR/(5388:5388): Socket mapa creado
+[INFO] 20:13:17:334 ENTRENADOR/(5388:5388): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:13:17:337 ENTRENADOR/(5388:5388): Conexion establecida
+[WARNING] 20:13:17:337 ENTRENADOR/(5388:5388): CAdena pt: Ash
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Nombre: Ash
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Simbolo: @
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Vidas: 3
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Reintentos: 0
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:17:12:550 ENTRENADOR/(5457:5457): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:17:12:933 ENTRENADOR/(5457:5457): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:17:12:933 ENTRENADOR/(5457:5457): Mapa a completar: Paleta
+[INFO] 20:17:12:933 ENTRENADOR/(5457:5457): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:17:12:934 ENTRENADOR/(5457:5457): Socket mapa creado
+[INFO] 20:17:13:112 ENTRENADOR/(5457:5457): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:17:13:117 ENTRENADOR/(5457:5457): Conexion establecida
+[WARNING] 20:17:13:117 ENTRENADOR/(5457:5457): CAdena pt: Ash
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Nombre: Ash
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Simbolo: @
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Vidas: 3
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Reintentos: 0
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:18:42:227 ENTRENADOR/(5519:5519): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:18:42:993 ENTRENADOR/(5519:5519): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:18:42:993 ENTRENADOR/(5519:5519): Mapa a completar: Paleta
+[INFO] 20:18:42:993 ENTRENADOR/(5519:5519): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:18:42:993 ENTRENADOR/(5519:5519): Socket mapa creado
+[ERROR] 20:18:43:124 ENTRENADOR/(5519:5519): Fallo al conectarse al servidor.
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Nombre: Ash
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Simbolo: @
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Vidas: 3
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Reintentos: 0
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Cantidad de mapas a recorrer para convertirse en Maestro Pokemon: 1
+[INFO] 20:18:53:778 ENTRENADOR/(5567:5567): Para el mapa 1, Paleta, el objetivo numero 1 es P
+[INFO] 20:18:54:287 ENTRENADOR/(5567:5567): Entrenador leera sus atributos de la ruta /home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt
+[INFO] 20:18:54:287 ENTRENADOR/(5567:5567): Mapa a completar: Paleta
+[INFO] 20:18:54:287 ENTRENADOR/(5567:5567): ruta metadata del mapa: /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/metadata
+[INFO] 20:18:54:287 ENTRENADOR/(5567:5567): Socket mapa creado
+[INFO] 20:18:54:591 ENTRENADOR/(5567:5567): Se ha iniciado conexion con el servidor mapa Paleta
+[INFO] 20:18:54:595 ENTRENADOR/(5567:5567): Conexion establecida
+[WARNING] 20:18:54:595 ENTRENADOR/(5567:5567): CAdena pt: Ash
