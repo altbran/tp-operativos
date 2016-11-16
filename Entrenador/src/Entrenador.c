@@ -224,11 +224,12 @@ int main(int argc, char** argv){
 												volverAEmpezar = 0;
 										}
 
+										list_clean(pokemonesAtrapados);
 										break;
 									}
 
 									entrenador.vidas --;
-									list_clean(pokemonesAtrapados);
+
 									j = 0;//empieza a leer los objs desde 0
 									i--;//vuelve a conectarse al mismo mapa
 
@@ -237,7 +238,7 @@ int main(int argc, char** argv){
 									pokemonesAtrapados = list_filter(pokemonesAtrapados,(void*) distintoMapa);
 
 									//fixme CHEQUEAR
-
+									log_info(logger,"El Entrenador pierde una vida y se vuelve a conectar al mapa");
 									desconectarseDe(servidorMapa);
 								}
 							break;
@@ -285,14 +286,19 @@ int main(int argc, char** argv){
 		switch(volverAEmpezar){
 
 		case 0:
+			log_info(logger,"El Entrenador abandona el juego");
 			break;
 
 		case 1:
 				i = -1; //gracias a esto empieza desde cero su ruta de viaje
 				entrenador.reintentos ++;
+				t_config* config = config_create(rutaMetadata);
+				entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
+				config_destroy(config);
 				list_clean(pokemonesAtrapados);
 				removerMedallas(entrenador.nombre);
 				removerPokemones(entrenador.nombre);
+				log_info(logger,"El Entrenador vuelve a empezar el juego desde cero");
 			break;
 
 		case 5:
@@ -300,6 +306,7 @@ int main(int argc, char** argv){
 				free(elemento);
 				enviarHeader(servidorMapa,finalizoMapa);
 				desconectarseDe(servidorMapa);
+				log_info(logger,"El Entrenador finalizo el mapa %s",nombreMapa);
 			break;
 
 	}
@@ -319,6 +326,8 @@ int main(int argc, char** argv){
 				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura: %s\nTiempo"
 				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s",
 				cantidadDeadlocks, muertes, diferenciaDeTiempo(tiempoDeInicio,tiempoFinal),tiempoBloqueo);
+
+		log_info(logger,"El Entrenador se convirtio en Maestro Pokemon");
 
 	}
 
