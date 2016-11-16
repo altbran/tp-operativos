@@ -95,7 +95,6 @@ t_list* asignarHojaDeViajeYObjetivos(t_config* metadata){
 
 			list_add(hojaDeViaje, objetivosPorMapa);//agrego el ObjetivosPorMapa a la lista hoja de viaje
 
-		free(objetivosPorMapa);
 	}
 	return hojaDeViaje;
 	}
@@ -189,15 +188,15 @@ for(;;){
 
 	free(buffer);
 
-	enviarHeader(socketOrigen, entrenadorListo);
+
 
 	break;
 	}
 }
 }
-void solicitarUbicacionPokenest(int socketDestino,char pokemon){
+void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
 	enviarHeader(socketDestino, datosPokenest);
-	send(socketDestino,&pokemon,sizeof(char),0);
+	send(socketDestino,&pokemonRecibido,sizeof(char),0);
 }
 
 void copiarMedalla(char* nombreMapa){
@@ -259,6 +258,7 @@ void enviarMisDatos(int socketDestino){
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasY,sizeof(int));
 
 	send(socketDestino,buffer,tamanio,0);
+	log_warning(logger,"CAdena pt: %s",buffer);
 	free(buffer);
 
 }

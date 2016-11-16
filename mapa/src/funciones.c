@@ -133,9 +133,9 @@ void cargarRecursos() {
 					list_add(pokemones, &pokemon);
 				}
 				*cantidadDisponibles = *cantidad;
-				list_add(recursosTotales, &cantidad);
-				list_add(listaRecursosDisponibles, &cantidadDisponibles);
-				list_add(Pokenests, &pokenest);
+				list_add(recursosTotales, (void *)cantidad);
+				list_add(listaRecursosDisponibles, (void *) cantidadDisponibles);
+				list_add(Pokenests, (void *) pokenest);
 				//cargarPokenest(*pokenest);
 			}
 		}

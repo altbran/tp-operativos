@@ -12,7 +12,7 @@ int main(int argc, char** argv){
 	if(argc != 3){
 
 	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
-	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/Directorio' 'de' 'Bill");
+	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/Directorio' 'de' 'Bill");
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 
 		//creo la ruta del metadata mapa
 		char* rutaMetadataMapa = string_new();
-		string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
+		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		string_append(&rutaMetadataMapa,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);
@@ -101,7 +101,7 @@ int main(int argc, char** argv){
 				log_info(logger, "Socket mapa creado");
 
 
-		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
+		if(conectarA(servidorMapa, "192.168.0.27", 8000)){
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
 			}
@@ -123,7 +123,7 @@ int main(int argc, char** argv){
 		//EMPIEZO A BUSCAR POKEMONES
 		for(j=0; j < list_size(elemento->objetivos);j++){
 
-			char* puntero = list_get(elemento->objetivos,j);
+			char* puntero = (char*)list_get(elemento->objetivos,j);
 			char pkm = *puntero;
 			t_pokemon* pokemon = malloc(sizeof(t_metadataPokemon));
 			t_metadataPokenest* pokenestProxima = malloc(sizeof(t_metadataPokenest));
