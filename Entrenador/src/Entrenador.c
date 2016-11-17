@@ -101,7 +101,7 @@ int main(int argc, char** argv){
 				log_info(logger, "Socket mapa creado");
 
 
-		if(conectarA(servidorMapa, "192.168.0.27", 8000)){
+		if(conectarA(servidorMapa, "127.0.0.1", 8000)){
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
 			}
@@ -116,7 +116,6 @@ int main(int argc, char** argv){
 
 		//le paso mis datos
 		enviarMisDatos(servidorMapa);
-
 
 		int j;
 
@@ -143,8 +142,9 @@ int main(int argc, char** argv){
 						case 0:
 
 							solicitarUbicacionPokenest(servidorMapa, pkm);
-							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
-							recibirNombrePkm(servidorMapa,pokemon->nombre);
+							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima,pokemon->nombre);
+							log_info(logger,"nombre del pokemon: %s",pokemon->nombre);
+							//recibirNombrePkm(servidorMapa,pokemon->nombre);
 							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
 							estado = 1;
 

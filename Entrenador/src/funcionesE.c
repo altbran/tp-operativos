@@ -173,26 +173,34 @@ return comando;
 void desconectarseDe(int socketServer){
 	close(socketServer);
 }
-void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest){
-for(;;){
+void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest, char nombrePkm[18]){
+
 	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
 
-	void *buffer = malloc(sizeof(int) + sizeof(int));
-	recv(socketOrigen, buffer, sizeof(t_metadataPokenest), 0);
+		void *buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
+		nombrePkm[18] = '\0';
 
-	int cursorMemoria = 0;
-	memcpy(&pokenest.posicionX,buffer, sizeof(uint32_t));
+		if(!recibirTodo(socketOrigen,buffer,(sizeof(int) + sizeof(int)+sizeof(char[18])))){
 
-	cursorMemoria += sizeof(uint32_t);
-	memcpy(&pokenest.posicionY,buffer + cursorMemoria, sizeof(uint32_t));
+		int cursorMemoria = 0;
+		memcpy(&pokenest.posicionX,buffer, sizeof(int));
 
-	free(buffer);
+		log_info(logger,"posicion x: %d",pokenest.posicionX);
+
+		cursorMemoria += sizeof(int);
+		memcpy(&pokenest.posicionY,buffer + cursorMemoria, sizeof(int));
+
+		log_info(logger,"posicion y: %d",pokenest.posicionY);
+
+		cursorMemoria += sizeof(int);
+
+		memcpy(&nombrePkm,buffer + cursorMemoria, sizeof(char[18]));
 
 
-
-	break;
+		free(buffer);
+		}
 	}
-}
+
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
 	enviarHeader(socketDestino, datosPokenest);

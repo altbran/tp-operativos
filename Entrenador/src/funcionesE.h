@@ -78,7 +78,7 @@ char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro);
 char* crearRutaDirBill(char*);
 char* copiarArchivo(char* rutaOrigen,char* rutaDestino);
 void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido);
-void recibirYAsignarCoordPokenest(int,t_metadataPokenest);
+void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest, char nombrePkm[18]);
 void solicitarAtraparPkm(char, int);
 void solicitarMovimiento(int, t_metadataPokenest);
 void desconectarseDe(int socketServer);
