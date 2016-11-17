@@ -50,6 +50,11 @@ typedef struct{
 	int* tablaAsignaciones;
 }t_estructuraAdministrativa;
 
+typedef struct{
+	int elSocket;
+	char* elMapa;
+}parametrosHilo;
+
 //Prototipos
 
 void leerEstructurasAdministrativas(FILE* archivo);
@@ -58,7 +63,7 @@ void sacarNombre(char* path,char* nombre);
 bool comprobarPathValido(char* path);
 void recorrerDesdeIzquierda(char* path, char* nombre);
 void guardarEstructuraEn(char* mapa);
-void atenderConexion(int socket, char* mapa);
+void atenderConexion(void* arg);
 int getAtr(char* path,char* mapa,int* tamanio);
 void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
@@ -87,14 +92,17 @@ int main(void) {
 	int PUERTO_POKEDEX_SERVIDOR = atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
 	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
+	pthread_attr_t attr;
+	pthread_t thread;
 
 	int i;
+	int tamanioTotalFS;
 	int socketNuevo;
 	int listener;   //socket listener
 	int fdmax;     //file descriptor maximo
 	fd_set bolsaDeSockets;
 	fd_set bolsaAuxiliar;
-	char* archivoMapeado;
+	parametrosHilo *parametro = malloc(sizeof(parametrosHilo));
 
 	log_info(logger, "PUERTO_POKEDEX_SERVIDOR = %d",PUERTO_POKEDEX_SERVIDOR);
 	log_info(logger, "IP_POKEDEX_SERVIDOR = %s",IP_POKEDEX_SERVIDOR);
@@ -106,17 +114,17 @@ int main(void) {
 	leerEstructurasAdministrativas(archivo);   //me guardo las est.adm en una struct porque va a ser mas comodo leerlas desde ahi
 
 	fseek(archivo,0,SEEK_END);
-	i = ftell(archivo);        //uso i temporariamente para sacar la longitud en bytes del archivo
-	archivoMapeado = malloc(i); //le reservo i-bytes al archivo mapeado, es decir, 1M
-	if (fdmax == -1)
+	tamanioTotalFS = ftell(archivo);        //uso i temporariamente para sacar la longitud en bytes del archivo
+	parametro->elMapa = malloc(tamanioTotalFS); //le reservo i-bytes al archivo mapeado, es decir, 1M
+	if (fdmax == -1){
 		log_error(logger, "Error al obtener el 'file descriptor' del archivo");
-	archivoMapeado = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);
-	if (archivoMapeado == MAP_FAILED)
+		return 1;
+	}
+	parametro->elMapa = mmap(NULL, tamanioTotalFS, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);
+	if (parametro->elMapa == MAP_FAILED)
 		log_error(logger, "Error al mapear el File System en memoria");
 
 	log_info(logger, "Se mapeo correctamente el archivo en memoria");
-
-	//ademas, mapeo el FS
 
 
 	if (crearSocket(&listener)) {
@@ -131,34 +139,6 @@ int main(void) {
 
 	log_info(logger, "Se creo correctamente el socket servidor. Escuchando nuevas conexiones");
 
-	/*crearDirectorio("/Entrenadores",archivoMapeado);
-	crearDirectorio("/Mapas",archivoMapeado);
-	crearDirectorio("/Mapas/Paleta",archivoMapeado);
-	crearDirectorio("/Mapas/Paleta/Pokenests",archivoMapeado);*/
-
-	//crearArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
-	//crearArchivo("/pokedex/ruperto.dat",archivoMapeado);
-
-	/*char* pruebaMapaArchivo;
-	FILE* el = fopen("pikachu.dat","rb+");
-	fdmax = fileno(el);
-	fseek(el,0,SEEK_END);
-	i = ftell(el);
-	pruebaMapaArchivo = malloc(i);
-	pruebaMapaArchivo = mmap(NULL, i, PROT_READ | PROT_WRITE, MAP_SHARED, fdmax, 0);
-	escribirArchivo("/entrenador/juan/pikachu.dat",pruebaMapaArchivo,i,archivoMapeado);*/
-
-	//char* el = leerArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
-
-
-	//renombrar("/entrenador/juan/algo.dat","/entrenador/juan/esOtroAlgo.dat",archivoMapeado);
-
-	//borrarArchivo("/entrenador/juan/pikachu.dat",archivoMapeado);
-	//borrarDirectorioVacio("/entrenador/juan",archivoMapeado);
-
-	//comprobarPathValidoLectura("/pokedex");
-	//comprobarPathValidoLectura("/entrenador/pikachu.dat");
-	//comprobarPathValidoLectura("/pokedex/pikachu.dat");
 
 
 	struct sockaddr_in direccionCliente;
@@ -202,9 +182,17 @@ int main(void) {
 							break;
 
 						case IDPOKEDEXCLIENTE:
-							FD_SET(socketNuevo, &bolsaDeSockets);
-
 							log_info(logger, "Nuevo dexCliente conectado, socket= %d", socketNuevo);
+
+							pthread_attr_init(&attr);
+							pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+
+							parametro->elSocket = i;		//le guardo el socket
+
+							pthread_create(&thread,&attr,(void*)atenderConexion,(void*)parametro);
+
+							pthread_attr_destroy(&attr);
+
 							break;
 
 						default:
@@ -214,10 +202,8 @@ int main(void) {
 					}
 				} //-->if del listener
 				else
-				{  //aca mas adelante, voy a tener que crear hilos
-
-					//TODO hilos
-					atenderConexion(i,archivoMapeado);
+				{
+					;
 				}
 			}
 		} //for del select
@@ -232,22 +218,28 @@ int main(void) {
 	bitarray_destroy(estructuraAdministrativa.punteroBitmap);
 	free(estructuraAdministrativa.tablaAsignaciones);
 	free(estructuraAdministrativa.tablaArchivos);
-	free(archivoMapeado);
+	free(parametro->elMapa);
 
-	log_destroy(logger);
 	return 0;
 }
 
 
-void atenderConexion(int socket, char* mapa)
+void atenderConexion(void* arg)
 {
 	int operacion;
 	int resultado;
 	int tamanio;
+	int socket;
+
 	char* path;
 	void* archivo = NULL;
 
-	operacion = recibirHeader(socket);
+	parametrosHilo *param = (parametrosHilo*) arg;
+	socket = param->elSocket;
+
+	//operacion = recibirHeader(socket);
+	resultado = recv(socket,&operacion,4,0);
+	;
 
 	while(operacion != socketDesconectado)
 	{
@@ -266,7 +258,7 @@ void atenderConexion(int socket, char* mapa)
 
 			case contenidoArchivo:
 				recibirTodo(socket,path,50);
-				archivo = leerArchivo(path,mapa,&tamanio);
+				archivo = leerArchivo(path,param->elMapa,&tamanio);
 
 				enviarHeader(socket,tamanio);
 				send(socket,archivo,tamanio,0);
@@ -276,30 +268,32 @@ void atenderConexion(int socket, char* mapa)
 				break;
 
 			case privilegiosArchivo:
-				pthread_mutex_lock(&mutex);
+				//pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
-				resultado = getAtr(path,mapa,&tamanio);
+				log_info(logger,"maldito path getattr: %s",path);
+
+				resultado = getAtr(path,param->elMapa,&tamanio);
 				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,resultado,tamanio);
 
 				enviarHeader(socket,resultado);
 				enviarHeader(socket,tamanio);
 
-				pthread_mutex_unlock(&mutex);
+				//pthread_mutex_unlock(&mutex);
 				break;
 
 			case contenidoDirectorio:
-				pthread_mutex_lock(&mutex);
+				//pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
-				pthread_mutex_unlock(&mutex);
+				//pthread_mutex_unlock(&mutex);
 				break;
 
 			case crearFichero:
 				recibirTodo(socket,path,50);
 
-				resultado = crearArchivo(path,mapa);
+				resultado = crearArchivo(path,param->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la creacion de '%s': %d",path,resultado);
 				break;
@@ -312,7 +306,7 @@ void atenderConexion(int socket, char* mapa)
 				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
-				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,mapa,socket);
+				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,param->elMapa,socket);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la escritura de '%s': %d",path,resultado);
 				free(ficheroEnviado);
@@ -321,7 +315,7 @@ void atenderConexion(int socket, char* mapa)
 			case eliminarArchivo:
 				recibirTodo(socket,path,50);
 
-				resultado = borrarArchivo(path,mapa);
+				resultado = borrarArchivo(path,param->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del borrado de '%s': %d",path,resultado);
 				break;
@@ -336,7 +330,7 @@ void atenderConexion(int socket, char* mapa)
 			case crearCarpeta:
 				recibirTodo(socket,path,50);
 
-				resultado = crearDirectorio(path,mapa);
+				resultado = crearDirectorio(path,param->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
 				break;
@@ -346,7 +340,7 @@ void atenderConexion(int socket, char* mapa)
 				archivo = malloc(50);
 				recibirTodo(socket,archivo,50);   //uso archivo, como el 'nuevo path'
 
-				resultado = renombrar(path,(char*)archivo,mapa);
+				resultado = renombrar(path,(char*)archivo,param->elMapa);
 				enviarHeader(socket,resultado);
 				free(archivo);
 				break;
@@ -354,7 +348,7 @@ void atenderConexion(int socket, char* mapa)
 			case removerDirectorio:
 				recibirTodo(socket,path,50);
 
-				resultado = borrarDirectorioVacio(path,mapa);
+				resultado = borrarDirectorioVacio(path,param->elMapa);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -362,7 +356,7 @@ void atenderConexion(int socket, char* mapa)
 				recibirTodo(socket,path,50);
 				tamanio = recibirHeader(socket);
 
-				resultado = truncar(path,tamanio,mapa,socket);
+				resultado = truncar(path,tamanio,param->elMapa,socket);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -373,7 +367,7 @@ void atenderConexion(int socket, char* mapa)
 		free(path);
 		operacion = recibirHeader(socket);
 	}
-
+	pthread_exit(NULL);
 }
 
 void leerEstructurasAdministrativas(FILE* archivo)

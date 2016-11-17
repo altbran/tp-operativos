@@ -15,13 +15,17 @@
 
 int S_POKEDEX_CLIENTE;
 pthread_mutex_t mutex;
+pthread_mutex_t mutexGet;
 
 void enviarPath(const char *path, int socketDestino) {
+	pthread_mutex_lock(&mutex);
 
 	void *buffer = malloc(50);
 	memcpy(buffer, path,50);
 	send(socketDestino, buffer, 50, 0);
 	free(buffer);
+
+	pthread_mutex_unlock(&mutex);
 }
 
 static int f_getattr(const char *path, struct stat *stbuf) {
@@ -29,7 +33,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 
 	t_privilegiosArchivo privilegios;
 
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutexGet);
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -47,7 +51,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		stbuf->st_size = 0;
-		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutexGet);
 		return 0;
 	}
 	else
@@ -57,16 +61,16 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 			stbuf->st_mode = S_IFREG | 0777;
 			stbuf->st_nlink = 1;
 			stbuf->st_size = privilegios.tamanio;
-			pthread_mutex_unlock(&mutex);
+			pthread_mutex_unlock(&mutexGet);
 			return 0;
 		}
 		else
 		{
 		printf("ENOENT: %d\n",-ENOENT);
-		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutexGet);
 		return -ENOENT;
 		}
-
+		pthread_mutex_unlock(&mutexGet);
 		return 0;		//este está para que no hinche las bolas
 	}
 }
@@ -118,7 +122,7 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 
 static int f_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	/*Se llama a esta funcion cuando el sistema trata de leer un pedazo de data de un archivo*/
+	pthread_mutex_lock(&mutex);
 	void* cadenaARecibir;
 	int cantidadBytesARecibir;
 
@@ -128,6 +132,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
 	if(cantidadBytesARecibir == -1)
 	{
+		pthread_mutex_unlock(&mutex);
 		return -1;
 	}else
 	{
@@ -136,6 +141,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 		recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir);
 		memcpy(buf, cadenaARecibir + offset, size);
 
+		pthread_mutex_unlock(&mutex);
 		return size;
 	}
 
@@ -143,6 +149,8 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 
 static int f_write(const char *path, const void *buffer, size_t size,off_t offset, struct fuse_file_info *fi)
 {
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
 
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -153,6 +161,8 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
+	pthread_mutex_unlock(&mutex);
+
 	if(res)
 		return size;
 	else
@@ -161,15 +171,21 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 
 static int f_crearCarpeta(const char *path, mode_t modo) {
 
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE, crearCarpeta);
 	enviarPath(path,S_POKEDEX_CLIENTE);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
+	pthread_mutex_unlock(&mutex);
+
 	return res;
 }
 
 static int f_unlink(const char *path) {
+	pthread_mutex_lock(&mutex);
+
 	int res;
 
 	enviarHeader(S_POKEDEX_CLIENTE, eliminarArchivo);
@@ -179,26 +195,48 @@ static int f_unlink(const char *path) {
 
 	printf("Resultado de eliminar. Path: %s   Res %d\n",path,res);
 
+	pthread_mutex_unlock(&mutex);
+
 	return res;
 }
 
 static int f_open(const char *path, struct fuse_file_info *fi) {
 
+	pthread_mutex_lock(&mutex);
+
+	int res;
+
 	enviarHeader(S_POKEDEX_CLIENTE, abrirArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	printf("Archivo abierto. Path: %s\n",path);
-	return recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
+
+	res = recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
+
+	pthread_mutex_unlock(&mutex);
+
+	return res;
 }
 
 static int f_close(const char *path, struct fuse_file_info *fi) {
+	pthread_mutex_lock(&mutex);
+
+	int res;
+
 	enviarHeader(S_POKEDEX_CLIENTE, cerrarArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	printf("Archivo cerrado. Path: %s\n",path);
-	return recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
+
+	res = recibirHeader(S_POKEDEX_CLIENTE);    //0 OK, -1 NO OK
+
+	pthread_mutex_unlock(&mutex);
+
+	return res;
 }
 
 static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 {
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE,renombrarCosas);
 
 	enviarPath(pathAntiguo,S_POKEDEX_CLIENTE);
@@ -206,14 +244,20 @@ static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
+	pthread_mutex_unlock(&mutex);
+
 	return res;
 }
 
 static int f_removerDirectorio(const char *path, mode_t modo) {
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE, removerDirectorio);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	pthread_mutex_unlock(&mutex);
 
 	return res;
 }
@@ -222,10 +266,14 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 
 	int res;
 
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE, crearFichero);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	pthread_mutex_unlock(&mutex);
 
 	if(res == 1)
 	{
@@ -239,11 +287,15 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 
 static int f_truncate (const char* path,off_t size)
 {
+	pthread_mutex_lock(&mutex);
+
 	enviarHeader(S_POKEDEX_CLIENTE,truncarArchivo);
 	enviarPath(path,S_POKEDEX_CLIENTE);
 	enviarHeader(S_POKEDEX_CLIENTE,size);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
+
+	pthread_mutex_unlock(&mutex);
 
 	return res;
 }
