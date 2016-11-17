@@ -88,9 +88,10 @@ int main(int argc, char** argv){
 		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "IP");
 		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "Puerto");
 
+		log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
 
-		//elimino el config del metadata mapa
-		config_destroy(metadataMapa);
+
+
 
 
 		//me conecto con el mapa
@@ -101,7 +102,9 @@ int main(int argc, char** argv){
 				log_info(logger, "Socket mapa creado");
 
 
-		if(conectarA(servidorMapa, "127.0.0.1", 8000)){
+		log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
+		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
+				log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
 			}
@@ -113,6 +116,8 @@ int main(int argc, char** argv){
 			}
 			log_info(logger, "Conexion establecida");
 
+		//elimino el config del metadata mapa
+		config_destroy(metadataMapa);
 
 		//le paso mis datos
 		enviarMisDatos(servidorMapa);
