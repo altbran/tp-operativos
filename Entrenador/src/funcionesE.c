@@ -177,8 +177,9 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest,
 
 	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
 
-		void *buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
 		nombrePkm[18] = '\0';
+
+		void *buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
 
 		if(!recibirTodo(socketOrigen,buffer,(sizeof(int) + sizeof(int)+sizeof(char[18])))){
 
