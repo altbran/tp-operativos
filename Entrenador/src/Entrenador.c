@@ -89,9 +89,6 @@ int main(int argc, char** argv){
 		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "Puerto");
 
 
-		//elimino el config del metadata mapa
-		config_destroy(metadataMapa);
-
 
 		//me conecto con el mapa
 		if(crearSocket(&servidorMapa)){
@@ -101,7 +98,9 @@ int main(int argc, char** argv){
 				log_info(logger, "Socket mapa creado");
 
 
-		if(conectarA(servidorMapa, "192.168.0.27", 8000)){
+
+		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
+				log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
 				log_error(logger, "Fallo al conectarse al servidor.");
 				return 1;
 			}
@@ -111,12 +110,14 @@ int main(int argc, char** argv){
 				log_error(logger, "No se pudo responder handshake");
 				return 1;
 			}
-			log_info(logger, "Conexion establecida");
+		log_info(logger, "Conexion establecida");
 
+
+		//elimino el config del metadata mapa
+		config_destroy(metadataMapa);
 
 		//le paso mis datos
 		enviarMisDatos(servidorMapa);
-
 
 		int j;
 
@@ -143,9 +144,14 @@ int main(int argc, char** argv){
 						case 0:
 
 							solicitarUbicacionPokenest(servidorMapa, pkm);
-							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima);
-							recibirNombrePkm(servidorMapa,pokemon->nombre);
-							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
+							//pokemon->nombre[18] = '\0';
+							recibirYAsignarCoordPokenest(servidorMapa,pokenestProxima,pokemon->nombre);
+							log_info(logger,"nombre del pokemon: %s",pokemon->nombre);
+
+							log_info(logger,"posicion x: %d",pokenestProxima->posicionX);
+							log_info(logger,"posicion y: %d",pokenestProxima->posicionY);
+							//recibirNombrePkm(servidorMapa,pokemon->nombre);
+							enviarCantidadDeMovsAPokenest(pokenestProxima,servidorMapa);
 							estado = 1;
 
 						break;
@@ -224,11 +230,12 @@ int main(int argc, char** argv){
 												volverAEmpezar = 0;
 										}
 
+										list_clean(pokemonesAtrapados);
 										break;
 									}
 
 									entrenador.vidas --;
-									list_clean(pokemonesAtrapados);
+
 									j = 0;//empieza a leer los objs desde 0
 									i--;//vuelve a conectarse al mismo mapa
 
@@ -237,7 +244,7 @@ int main(int argc, char** argv){
 									pokemonesAtrapados = list_filter(pokemonesAtrapados,(void*) distintoMapa);
 
 									//fixme CHEQUEAR
-
+									log_info(logger,"El Entrenador pierde una vida y se vuelve a conectar al mapa");
 									desconectarseDe(servidorMapa);
 								}
 							break;
@@ -285,14 +292,19 @@ int main(int argc, char** argv){
 		switch(volverAEmpezar){
 
 		case 0:
+			log_info(logger,"El Entrenador abandona el juego");
 			break;
 
 		case 1:
 				i = -1; //gracias a esto empieza desde cero su ruta de viaje
 				entrenador.reintentos ++;
+				t_config* config = config_create(rutaMetadata);
+				entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
+				config_destroy(config);
 				list_clean(pokemonesAtrapados);
 				removerMedallas(entrenador.nombre);
 				removerPokemones(entrenador.nombre);
+				log_info(logger,"El Entrenador vuelve a empezar el juego desde cero");
 			break;
 
 		case 5:
@@ -300,6 +312,7 @@ int main(int argc, char** argv){
 				free(elemento);
 				enviarHeader(servidorMapa,finalizoMapa);
 				desconectarseDe(servidorMapa);
+				log_info(logger,"El Entrenador finalizo el mapa %s",nombreMapa);
 			break;
 
 	}
@@ -319,6 +332,8 @@ int main(int argc, char** argv){
 				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura: %s\nTiempo"
 				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s",
 				cantidadDeadlocks, muertes, diferenciaDeTiempo(tiempoDeInicio,tiempoFinal),tiempoBloqueo);
+
+		log_info(logger,"El Entrenador se convirtio en Maestro Pokemon");
 
 	}
 

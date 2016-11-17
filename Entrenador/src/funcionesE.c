@@ -51,11 +51,9 @@ void moverEntrenadorcoordY(t_metadataPokenest pokenest){
 		ubicacionEntrenador.coordenadasY--;
 }
 
-int cantidadDeMovimientosAPokenest(t_metadataPokenest pokenest){
+int cantidadDeMovimientosAPokenest(t_metadataPokenest* pokenest){
 	int counter = 0;
-	counter = abs(pokenest.posicionX - ubicacionEntrenador.coordenadasX)
-			+ abs(pokenest.posicionY - ubicacionEntrenador.coordenadasY);
-
+	counter = abs(pokenest->posicionX - ubicacionEntrenador.coordenadasX) + abs(pokenest->posicionY - ubicacionEntrenador.coordenadasY);
 	return counter;
 }
 
@@ -173,26 +171,29 @@ return comando;
 void desconectarseDe(int socketServer){
 	close(socketServer);
 }
-void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest pokenest){
-for(;;){
+void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest, char nombrePkm[18]){
+
 	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
 
-	void *buffer = malloc(sizeof(int) + sizeof(int));
-	recv(socketOrigen, buffer, sizeof(t_metadataPokenest), 0);
+		void *buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
 
-	int cursorMemoria = 0;
-	memcpy(&pokenest.posicionX,buffer, sizeof(uint32_t));
+		if(!recibirTodo(socketOrigen,buffer,(sizeof(int) + sizeof(int)+sizeof(char[18])))){
 
-	cursorMemoria += sizeof(uint32_t);
-	memcpy(&pokenest.posicionY,buffer + cursorMemoria, sizeof(uint32_t));
+		int cursorMemoria = 0;
+		memcpy(&pokenest->posicionX,buffer, sizeof(int));
 
-	free(buffer);
+		cursorMemoria += sizeof(int);
+		memcpy(&pokenest->posicionY,buffer + cursorMemoria, sizeof(int));
 
+		cursorMemoria += sizeof(int);
 
+		memcpy(nombrePkm,buffer + cursorMemoria, sizeof(char[18]));
 
-	break;
+		free(buffer);
+		}
+
 	}
-}
+
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
 	enviarHeader(socketDestino, datosPokenest);
@@ -226,17 +227,18 @@ void solicitarAtraparPkm(char pokemon, int servidorMapa){
 	free(buffer);
 }
 void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
-	void* buffer = malloc(sizeof(int)+sizeof(int)+sizeof(int));
+	void* buffer = malloc(sizeof(int)+sizeof(int));
 	int cursorMemoria = 0;
-	int header = posicionEntrenador;
+	enviarHeader(socketDestino, posicionEntrenador);
 
 	moverEntrenador(pokenest);
-	memcpy(buffer, &header, sizeof(int));
-	cursorMemoria += sizeof(int);
-	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasX, sizeof(int));
+
+	memcpy(buffer, &ubicacionEntrenador.coordenadasX, sizeof(int));
 	cursorMemoria += sizeof(int);
 	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasY, sizeof(int));
-	send(socketDestino,buffer,sizeof(int)+sizeof(int)+sizeof(int),0);
+	cursorMemoria += sizeof(int);
+	log_info(logger, "ubicacion  enviada: (%d,%d)", ubicacionEntrenador.coordenadasX, ubicacionEntrenador.coordenadasY);
+	send(socketDestino,buffer,cursorMemoria,0);
 	//hasta aca envio el header con las coordenadas del entrenador
 
 	free(buffer);
@@ -269,11 +271,12 @@ void reestablecerDatos(){
 	ubicacionEntrenador.ultimoMov = 'y';
 }
 
-void enviarCantidadDeMovsAPokenest(t_metadataPokenest pokenest, int serverMapa){
+void enviarCantidadDeMovsAPokenest(t_metadataPokenest* pokenest, int serverMapa){
 
 	int* movs =malloc(sizeof(int));
 	*movs = cantidadDeMovimientosAPokenest(pokenest);
 	send(serverMapa, movs, sizeof(int), 0);
+	log_info(logger,"cantidad de movs a la pokenest %d", *movs);
 	free(movs);
 
 }
