@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 							free(entrenador);
 							break;
 						} else {
-							list_add(Entrenadores, &entrenador);
+							list_add(Entrenadores, (void *) entrenador);
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
 							//dibujar(nombreMapa);
