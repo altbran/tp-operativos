@@ -233,11 +233,10 @@ int devolverIndicePokenest(char identificador) {
 
 int enviarCoordPokenest(int socketDestino, t_metadataPokenest * pokenest) {
 
-	void *buffer = malloc(sizeof(int) + sizeof(int)); //posx + posy
+	void *buffer = malloc(sizeof(int) + sizeof(int) + sizeof(char[18])); //posx + posy
 
 	//envio header
 	enviarHeader(socketDestino, enviarDatosPokenest);
-
 	//serializo contenido
 	int cursorMemoria = 0;
 	memcpy(buffer, &pokenest->posicionX, sizeof(uint32_t));
