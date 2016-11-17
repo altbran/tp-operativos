@@ -88,10 +88,6 @@ int main(int argc, char** argv){
 		IP_MAPA_SERVIDOR = config_get_string_value(metadataMapa, "IP");
 		PUERTO_MAPA_SERVIDOR = config_get_int_value(metadataMapa, "Puerto");
 
-		log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
-
-
-
 
 
 		//me conecto con el mapa
@@ -102,7 +98,7 @@ int main(int argc, char** argv){
 				log_info(logger, "Socket mapa creado");
 
 
-		log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
+
 		if(conectarA(servidorMapa, IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR)){
 				log_info(logger,"ip: %s puerto: %d",IP_MAPA_SERVIDOR, PUERTO_MAPA_SERVIDOR);
 				log_error(logger, "Fallo al conectarse al servidor.");
@@ -114,7 +110,8 @@ int main(int argc, char** argv){
 				log_error(logger, "No se pudo responder handshake");
 				return 1;
 			}
-			log_info(logger, "Conexion establecida");
+		log_info(logger, "Conexion establecida");
+
 
 		//elimino el config del metadata mapa
 		config_destroy(metadataMapa);
@@ -147,10 +144,14 @@ int main(int argc, char** argv){
 						case 0:
 
 							solicitarUbicacionPokenest(servidorMapa, pkm);
-							recibirYAsignarCoordPokenest(servidorMapa, *pokenestProxima,pokemon->nombre);
+							//pokemon->nombre[18] = '\0';
+							recibirYAsignarCoordPokenest(servidorMapa,pokenestProxima,pokemon->nombre);
 							log_info(logger,"nombre del pokemon: %s",pokemon->nombre);
+
+							log_info(logger,"posicion x: %d",pokenestProxima->posicionX);
+							log_info(logger,"posicion y: %d",pokenestProxima->posicionY);
 							//recibirNombrePkm(servidorMapa,pokemon->nombre);
-							enviarCantidadDeMovsAPokenest(*pokenestProxima,servidorMapa);
+							enviarCantidadDeMovsAPokenest(pokenestProxima,servidorMapa);
 							estado = 1;
 
 						break;
