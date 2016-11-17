@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>			 //
-#include <stdbool.h>         //
-#include <time.h>
+#include <stdlib.h>			 //fixme crearme funcion que guarda cadenas de 17 bytes
+#include <stdbool.h>         //fixme crearme funcion que levanta cadenas de 17 bytes
+#include <time.h>			//todo usarlas en todas las putas funciones
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <src/sockets.h>
@@ -89,8 +89,8 @@ int main(void) {
 
 	logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));  //creo el archivo de log
 
-	int PUERTO_POKEDEX_SERVIDOR = atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
-	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = 9000;//atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
+	char* IP_POKEDEX_SERVIDOR = "127.0.0.1";//getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
 	pthread_attr_t attr;
 	pthread_t thread;
@@ -182,12 +182,14 @@ int main(void) {
 							break;
 
 						case IDPOKEDEXCLIENTE:
+							FD_SET(socketNuevo,&bolsaDeSockets);
+
 							log_info(logger, "Nuevo dexCliente conectado, socket= %d", socketNuevo);
 
 							pthread_attr_init(&attr);
 							pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 
-							parametro->elSocket = i;		//le guardo el socket
+							parametro->elSocket = socketNuevo;		//le guardo el socket
 
 							pthread_create(&thread,&attr,(void*)atenderConexion,(void*)parametro);
 
@@ -203,6 +205,8 @@ int main(void) {
 				} //-->if del listener
 				else
 				{
+					//log_info(logger,"Turno del socket: %d",i);
+					//atenderConexion(i, archivoMapeado);
 					;
 				}
 			}
@@ -231,15 +235,13 @@ void atenderConexion(void* arg)
 	int tamanio;
 	int socket;
 
+	parametrosHilo* parametro = (parametrosHilo*) arg;
+	socket = parametro->elSocket;
+
 	char* path;
 	void* archivo = NULL;
 
-	parametrosHilo *param = (parametrosHilo*) arg;
-	socket = param->elSocket;
-
-	//operacion = recibirHeader(socket);
-	resultado = recv(socket,&operacion,4,0);
-	;
+	operacion = recibirHeader(socket);
 
 	while(operacion != socketDesconectado)
 	{
@@ -258,7 +260,7 @@ void atenderConexion(void* arg)
 
 			case contenidoArchivo:
 				recibirTodo(socket,path,50);
-				archivo = leerArchivo(path,param->elMapa,&tamanio);
+				archivo = leerArchivo(path,parametro->elMapa,&tamanio);
 
 				enviarHeader(socket,tamanio);
 				send(socket,archivo,tamanio,0);
@@ -268,32 +270,27 @@ void atenderConexion(void* arg)
 				break;
 
 			case privilegiosArchivo:
-				//pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
-				log_info(logger,"maldito path getattr: %s",path);
-
-				resultado = getAtr(path,param->elMapa,&tamanio);
+				resultado = getAtr(path,parametro->elMapa,&tamanio);
 				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,resultado,tamanio);
 
 				enviarHeader(socket,resultado);
 				enviarHeader(socket,tamanio);
 
-				//pthread_mutex_unlock(&mutex);
 				break;
 
 			case contenidoDirectorio:
-				//pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
+				log_info(logger,"path recibido readdir: %s",path);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
-				//pthread_mutex_unlock(&mutex);
 				break;
 
 			case crearFichero:
 				recibirTodo(socket,path,50);
 
-				resultado = crearArchivo(path,param->elMapa);
+				resultado = crearArchivo(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la creacion de '%s': %d",path,resultado);
 				break;
@@ -306,7 +303,7 @@ void atenderConexion(void* arg)
 				void* ficheroEnviado = malloc(tamanio);
 				recv(socket,ficheroEnviado,tamanio,0);
 
-				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,param->elMapa,socket);
+				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,parametro->elMapa,socket);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la escritura de '%s': %d",path,resultado);
 				free(ficheroEnviado);
@@ -315,7 +312,7 @@ void atenderConexion(void* arg)
 			case eliminarArchivo:
 				recibirTodo(socket,path,50);
 
-				resultado = borrarArchivo(path,param->elMapa);
+				resultado = borrarArchivo(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del borrado de '%s': %d",path,resultado);
 				break;
@@ -330,7 +327,7 @@ void atenderConexion(void* arg)
 			case crearCarpeta:
 				recibirTodo(socket,path,50);
 
-				resultado = crearDirectorio(path,param->elMapa);
+				resultado = crearDirectorio(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
 				break;
@@ -340,7 +337,7 @@ void atenderConexion(void* arg)
 				archivo = malloc(50);
 				recibirTodo(socket,archivo,50);   //uso archivo, como el 'nuevo path'
 
-				resultado = renombrar(path,(char*)archivo,param->elMapa);
+				resultado = renombrar(path,(char*)archivo,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				free(archivo);
 				break;
@@ -348,7 +345,7 @@ void atenderConexion(void* arg)
 			case removerDirectorio:
 				recibirTodo(socket,path,50);
 
-				resultado = borrarDirectorioVacio(path,param->elMapa);
+				resultado = borrarDirectorioVacio(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -356,7 +353,7 @@ void atenderConexion(void* arg)
 				recibirTodo(socket,path,50);
 				tamanio = recibirHeader(socket);
 
-				resultado = truncar(path,tamanio,param->elMapa,socket);
+				resultado = truncar(path,tamanio,parametro->elMapa,socket);
 				enviarHeader(socket,resultado);
 				break;
 
@@ -367,7 +364,6 @@ void atenderConexion(void* arg)
 		free(path);
 		operacion = recibirHeader(socket);
 	}
-	pthread_exit(NULL);
 }
 
 void leerEstructurasAdministrativas(FILE* archivo)
@@ -435,7 +431,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 				if(i == 2048) //si llego al final es porque no encontró nada
 				{
-					log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+					log_error(logger,"No se ha encontrado la entrada especificada. Path: '%s'",nombreArchivo);
 					*tamanio = 0;
 					free(nombreArchivo);
 					free(copiaPath);
@@ -845,6 +841,12 @@ int crearDirectorio(char* path,char* mapa)
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreDirectorio);   //ahora tengo el nombre que le quieren dar al directorio
 
+	if(strlen(nombreDirectorio) > 17)
+	{
+		log_error(logger,"El nombre que le quieren dar al directorio es demasiado largo. Nombre: %s",nombreDirectorio);
+		return -1;
+	}
+
 	log_info(logger,"path: %s, nombre: %s",copiaPath,nombreDirectorio);
 
 	if(comprobarPathValido(copiaPath))  //si el path es correcto
@@ -927,6 +929,12 @@ int crearArchivo(char* path,char* mapa)
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
 
+	if(strlen(nombreEfectivo) > 17)
+	{
+		log_error(logger,"El nombre que le quieren dar al archivo es demasiado largo. Nombre: %s",nombreEfectivo);
+		return -1;
+	}
+
 	if(comprobarPathValido(copiaPath))  //si el path es correcto
 	{
 		while(strlen(copiaPath))  //esto saca el offset del archivo, en la tabla
@@ -965,7 +973,7 @@ int crearArchivo(char* path,char* mapa)
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\1'; //es un archivo
-			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+			strncpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo,17);
 			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;  //el offset, es el del bloque padre encontrado mas arriba
 
 					//ahora le asigno un bloque libre
@@ -987,11 +995,11 @@ int crearArchivo(char* path,char* mapa)
 
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
+			log_info(logger,"Archivo creado. Nombre '%s'",nombreEfectivo);
 			free(nombreEfectivo);
 			free(copiaPath);
-
 			guardarEstructuraEn(mapa);
-			log_info(logger,"Archivo creado. Nombre '%s'",path);
+
 			return 1;
 		}
 	}
