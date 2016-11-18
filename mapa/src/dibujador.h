@@ -11,7 +11,7 @@ void dibujar(char* nombreMapa);
 void cargarPokenest(t_metadataPokenest pokenest);
 void cargarEntrenador(t_datosEntrenador entrenador);
 void moverEntrenador(t_datosEntrenador entrenador);
-void restarPokemon(char * identificador);
+void restarPokemon(char identificador);
 
 /*int posicionInicialX = 1;
 int posicionInicialY = 1;*/

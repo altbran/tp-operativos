@@ -33,8 +33,8 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 
 	entrenador->distanciaAPokenest = 0;
 	entrenador->socket = socketOrigen;
-	//cargarEntrenador(*entrenador);
-	//dibujar(nombreMapa);
+	cargarEntrenador(*entrenador);
+	dibujar(nombreMapa);
 	return i;
 }
 
@@ -130,13 +130,13 @@ void cargarRecursos() {
 					pokemon->socketEntrenador = -1;
 					pokemon->identificadorPokemon = pokenest->identificador;
 					pokemon->numeroPokemon = i;
-					list_add(pokemones, &pokemon);
+					list_add(pokemones, (void *)pokemon);
 				}
 				*cantidadDisponibles = *cantidad;
 				list_add(recursosTotales, (void *)cantidad);
 				list_add(listaRecursosDisponibles, (void *) cantidadDisponibles);
 				list_add(Pokenests, (void *) pokenest);
-				//cargarPokenest(*pokenest);
+				cargarPokenest(*pokenest);
 			}
 		}
 		closedir(dir);
@@ -167,7 +167,7 @@ int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemo
 	if (*((int*) list_get(listaRecursosDisponibles, indicePokenest)) >= 1) {
 		int i;
 		for (i = 0; i < list_size(pokemones); i++) {
-			t_duenioPokemon * pokemon = list_get(pokemones, i);
+			t_duenioPokemon * pokemon =(t_duenioPokemon *) list_get(pokemones, i);
 			if (pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1) {
 				*numeroPokemon = pokemon->numeroPokemon;
 				i = list_size(pokemones);

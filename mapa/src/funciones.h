@@ -49,6 +49,8 @@ pthread_t planificador;
 pthread_t deadlock;
 pthread_t atrapadorPokemon;
 t_list * pokemones;
+char * identificadorPokenest;
+char prueba;
 
 
 //funciones

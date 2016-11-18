@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
 	//cargo recursos de mapa
 	cargarMetadata();
-	//crearItems();
+	crearItems();
 	cargarRecursos();
 
 	//inicializo hilos
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 	 */
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	//dibujar(nombreMapa);
+	dibujar(nombreMapa);
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 							list_add(Entrenadores, (void *) entrenador);
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
-							//dibujar(nombreMapa);
+							dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
