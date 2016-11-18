@@ -9,7 +9,7 @@ void cargarEntrenador(t_datosEntrenador entrenador){
 	CrearPersonaje(items, entrenador.identificador, entrenador.posicionX, entrenador.posicionY);
 }
 
-void restarPokemon(char * identificador){
+void restarPokemon(char identificador){
 	restarRecurso(items,identificador);
 }
 

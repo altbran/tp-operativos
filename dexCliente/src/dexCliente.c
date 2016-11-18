@@ -15,17 +15,12 @@
 
 int S_POKEDEX_CLIENTE;
 pthread_mutex_t mutex;
-pthread_mutex_t mutexGet;
 
 void enviarPath(const char *path, int socketDestino) {
-	pthread_mutex_lock(&mutex);
-
 	void *buffer = malloc(50);
 	memcpy(buffer, path,50);
 	send(socketDestino, buffer, 50, 0);
 	free(buffer);
-
-	pthread_mutex_unlock(&mutex);
 }
 
 static int f_getattr(const char *path, struct stat *stbuf) {
@@ -33,7 +28,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 
 	t_privilegiosArchivo privilegios;
 
-	pthread_mutex_lock(&mutexGet);
+	pthread_mutex_lock(&mutex);
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -51,7 +46,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		stbuf->st_size = 0;
-		pthread_mutex_unlock(&mutexGet);
+		pthread_mutex_unlock(&mutex);
 		return 0;
 	}
 	else
@@ -61,16 +56,16 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 			stbuf->st_mode = S_IFREG | 0777;
 			stbuf->st_nlink = 1;
 			stbuf->st_size = privilegios.tamanio;
-			pthread_mutex_unlock(&mutexGet);
+			pthread_mutex_unlock(&mutex);
 			return 0;
 		}
 		else
 		{
 		printf("ENOENT: %d\n",-ENOENT);
-		pthread_mutex_unlock(&mutexGet);
+		pthread_mutex_unlock(&mutex);
 		return -ENOENT;
 		}
-		pthread_mutex_unlock(&mutexGet);
+		pthread_mutex_unlock(&mutex);
 		return 0;		//este está para que no hinche las bolas
 	}
 }
@@ -94,18 +89,18 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 		filler(buf, ".", NULL, 0);
 		filler(buf, "..", NULL, 0);
 
-		cadenaARecibir = malloc(18);
+		cadenaARecibir = malloc(17);
 
 		header = recibirHeader(S_POKEDEX_CLIENTE);
 
 		while(i < header)
 		{
-			recv(S_POKEDEX_CLIENTE, cadenaARecibir, 18,0);
+			recv(S_POKEDEX_CLIENTE, cadenaARecibir, 17,0);
 			printf("Readdir. Cadena recibida: %s\n",cadenaARecibir);
 
 			filler(buf, cadenaARecibir, NULL, 0);
 			free(cadenaARecibir);
-			cadenaARecibir = malloc(18);
+			cadenaARecibir = malloc(17);
 			i++;
 		}
 
@@ -317,9 +312,9 @@ static struct fuse_operations ejemplo_oper = {
 
 int main(int argc, char *argv[])
 {
-	char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
-	int PUERTO_POKEDEX_SERVIDOR = atoi(PUERTOSTR);
-	char *IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
+	//char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = 9000;//atoi(PUERTOSTR);
+	char *IP_POKEDEX_SERVIDOR = "127.0.0.1";//getenv("IP_POKEDEX_SERVIDOR");
 
 	//me conecto al proceso servidor
 	if (crearSocket(&S_POKEDEX_CLIENTE))
