@@ -5,14 +5,14 @@ int main(int argc, char** argv){
 
 	//creo e inicio rutas
 	char* rutaMetadata = string_new();
-	char* rutaDirBill= string_new();
+	rutaDirBill= string_new();
 	char* ruta = string_new();
 
 
 	if(argc != 3){
 
 	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Erik/MetadataEntrenador.txt");
-	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Erik/Directorio' 'de' 'Bill");
+	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Erik/Dir' 'de' 'Bill");
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
@@ -26,7 +26,7 @@ int main(int argc, char** argv){
 
 		string_append(&rutaMetadata, "/MetadataEntrenador.txt");
 		string_append(&rutaDirBill, ruta);
-		string_append(&rutaDirBill, "/Directorio' 'de' 'Bill");
+		string_append(&rutaDirBill, "/Dir' 'de' 'Bill");
 
 
 	}
@@ -189,9 +189,9 @@ int main(int argc, char** argv){
 										case pokemonesDisponibles:
 
 											recibirTodo(servidorMapa,&pokemon->numero,sizeof(int));
-											//tiempoAtrapePkm = temporal_get_string_time();
-											//sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
-											//log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
+											tiempoAtrapePkm = temporal_get_string_time();
+											sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
+											log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
 											estado = 4;
 											break;
 							}
@@ -255,14 +255,14 @@ int main(int argc, char** argv){
 
 
 			//primero chequeo si se murio
-		//	if(murio)
-			//	break;
+			if(murio)
+				break;
 
 			//creo la ruta del metadata pkm
 			numeroPokemon = obtenerNumero(pokemon->numero);
 
 			rutaPokemon = armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon);
-			//string_append(&rutaPokemon,armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon));
+			string_append(&rutaPokemon,armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon));
 
 			//creo el config para leerlo
 			metadataPokemon = config_create(rutaPokemon);
@@ -271,17 +271,20 @@ int main(int argc, char** argv){
 			pokemon->nivel = config_get_int_value(metadataPokemon, "nivel");
 
 			//agrego el pkm a la lista de pokemones atrapados
-/*			list_add(pokemonesAtrapados,(void*)pokemon);
+			list_add(pokemonesAtrapados,(void*)pokemon);
 
 
 			//copio el archivo pkm en mi directorio Bill
-			char* comando = string_new();
+			comando = string_new();
 			comando = copiarArchivo(rutaPokemon,rutaDirBill);
 			system(comando);
-*/
+
 
 			// AVISO QUE COPIE EL POKEMON
-			enviarHeader(servidorMapa,entrenadorListo);
+			if(j == (list_size(elemento->objetivos) - 1))
+				enviarHeader(servidorMapa, finalizoMapa);
+			else
+				enviarHeader(servidorMapa,entrenadorListo);
 
 
 
@@ -289,7 +292,7 @@ int main(int argc, char** argv){
 		//free(pokenestProxima);
 		//free(pokemon);
 
-
+		log_info(logger,"cantidad de pokemones atrapados: %d", list_size(pokemonesAtrapados));
 		//switch de : a)volver a empezar la ruta de viaje  b)dejar de jugar  c)haber atrapado  pokemon
 
 		switch(volverAEmpezar){
@@ -301,9 +304,9 @@ int main(int argc, char** argv){
 		case 1:
 				i = -1; //gracias a esto empieza desde cero su ruta de viaje
 				entrenador.reintentos ++;
-				t_config* config = config_create(rutaMetadata);
+				metaDataEntrenador = config_create(rutaMetadata);
 				entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
-				config_destroy(config);
+				config_destroy(metaDataEntrenador);
 				list_clean(pokemonesAtrapados);
 				removerMedallas(entrenador.nombre);
 				removerPokemones(entrenador.nombre);
@@ -313,7 +316,7 @@ int main(int argc, char** argv){
 		case 5:
 				copiarMedalla(nombreMapa);
 				free(elemento);
-				enviarHeader(servidorMapa,finalizoMapa);
+				//enviarHeader(servidorMapa,finalizoMapa);
 				desconectarseDe(servidorMapa);
 				log_info(logger,"El Entrenador finalizo el mapa %s",nombreMapa);
 			break;
@@ -333,7 +336,7 @@ int main(int argc, char** argv){
 
 		printf("Felicidades!! Te has convertido en Maestro Pokemon.\nDatos de la aventura:\n"
 				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura: %s\nTiempo"
-				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s",
+				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s\n",
 				cantidadDeadlocks, muertes, diferenciaDeTiempo(tiempoDeInicio,tiempoFinal),tiempoBloqueo);
 
 		log_info(logger,"El Entrenador se convirtio en Maestro Pokemon");
