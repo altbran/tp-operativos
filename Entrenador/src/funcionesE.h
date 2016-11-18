@@ -62,6 +62,22 @@ char* tiempoDeInicio;
 char* tiempoFinal;
 char* tiempoBloqueo;
 char* nombreMapa;
+int j;
+int estado;
+char* puntero;
+char pkm;
+t_pokemon* pokemon;
+t_metadataPokenest* pokenestProxima;
+char* comando;
+char* numeroPokemon;
+char* rutaPokemon;
+t_config* metadataMapa;
+int murio;
+char* rutaMetadataMapa;
+t_list* pokemonesAtrapados;
+t_objetivosPorMapa* elemento;
+t_config* metadataPokemon;
+
 
 //FUNCIONES
 void senialRecibirVida();
@@ -99,5 +115,7 @@ void sumarTiempos(char** tiempo, char* tiempoASumar);
 void eliminarArchivosPokemones(t_list* lista, char* ruta);
 bool filtrarMapa(t_pokemon* pokemon);
 bool distintoMapa(t_pokemon* pokemon);
+
+
 
 #endif /* FUNCIONESE_H_ */

@@ -119,17 +119,19 @@ void cargarDatos(t_config* metaDataEntrenador){
 
 
 char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
-	char* path = string_new();
+	/*char* path = "";
 	string_append(&path, "/mnt/pokedex/Mapas/");
+	string_append(&path, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
 	string_append(&path,nombreMapa);
 	string_append(&path,"/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,"/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,nro);
-	string_append(&path,".dat");
+	string_append(&path,".dat");*/
 
-	return path;
+	//return path;
+	return "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/Pokenests/Bulbasur/Bulbasur001.dat";
 }
 
 
@@ -138,7 +140,8 @@ char* obtenerNumero(int numero){
 	char* nro = string_new();
 	if(numero < 10){
 		string_append(&nro,"00");
-		string_append(&nro,string_itoa(numero));
+		//string_append(&nro,string_itoa(numero));
+		string_append(&nro,"1");
 	}
 	else
 		if(numero < 100){
