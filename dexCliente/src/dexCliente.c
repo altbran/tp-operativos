@@ -89,18 +89,18 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t o
 		filler(buf, ".", NULL, 0);
 		filler(buf, "..", NULL, 0);
 
-		cadenaARecibir = malloc(17);
+		cadenaARecibir = malloc(18);
 
 		header = recibirHeader(S_POKEDEX_CLIENTE);
 
 		while(i < header)
 		{
-			recv(S_POKEDEX_CLIENTE, cadenaARecibir, 17,0);
+			recv(S_POKEDEX_CLIENTE, cadenaARecibir, 18,0);
 			printf("Readdir. Cadena recibida: %s\n",cadenaARecibir);
 
 			filler(buf, cadenaARecibir, NULL, 0);
 			free(cadenaARecibir);
-			cadenaARecibir = malloc(17);
+			cadenaARecibir = malloc(18);
 			i++;
 		}
 
