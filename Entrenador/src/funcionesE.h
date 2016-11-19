@@ -77,7 +77,8 @@ char* rutaMetadataMapa;
 t_list* pokemonesAtrapados;
 t_objetivosPorMapa* elemento;
 t_config* metadataPokemon;
-
+char* comando;
+char* rutaDirBill;
 
 //FUNCIONES
 void senialRecibirVida();

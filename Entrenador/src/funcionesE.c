@@ -119,19 +119,20 @@ void cargarDatos(t_config* metaDataEntrenador){
 
 
 char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
-	/*char* path = "";
-	string_append(&path, "/mnt/pokedex/Mapas/");
+
+	char* path = string_new();
+	//string_append(&path, "/mnt/pokedex/Mapas/");
 	string_append(&path, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
 	string_append(&path,nombreMapa);
-	string_append(&path,"/");
+	string_append(&path,"/Pokenests/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,"/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,nro);
-	string_append(&path,".dat");*/
+	string_append(&path,".dat");
 
-	//return path;
-	return "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/Pokenests/Bulbasur/Bulbasur001.dat";
+	return path;
+	//return "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/Paleta/Pokenests/Bulbasur/Bulbasur001.dat";
 }
 
 
@@ -157,7 +158,7 @@ char* obtenerNumero(int numero){
 char* crearRutaDirBill(char* ruta){
 	char* rutaDirBill = string_new();
 	string_append(&rutaDirBill,ruta);
-	string_append(&rutaDirBill,"/Directorio' 'de' 'Bill/");
+	string_append(&rutaDirBill,"/Dir' 'de' 'Bill/");
 	return rutaDirBill;
 }
 
@@ -206,28 +207,29 @@ void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
 void copiarMedalla(char* nombreMapa){
 
 	char* rutaOrigen = string_new();
-	string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
+	//string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
+	string_append(&rutaOrigen,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
 	string_append(&rutaOrigen, nombreMapa);
-	string_append(&rutaOrigen, "/");
-	string_append(&rutaOrigen, "medalla-");
+	string_append(&rutaOrigen, "/medalla-");
 	string_append(&rutaOrigen, nombreMapa);
 	string_append(&rutaOrigen, ".jpg");
 
-	char* rutaDestino = string_new();
+/*	char* rutaDestino = string_new();
 	string_append(&rutaDestino,"mnt/pokedex/Entrenadores/");
 	string_append(&rutaDestino, entrenador.nombre);
-	string_append(&rutaDestino, "/medallas");
+	string_append(&rutaDestino, "/medallas");*/
 
-	char* comando = copiarArchivo(rutaOrigen,rutaDestino);
+	char* comando = copiarArchivo(rutaOrigen,rutaDirBill);
 	system(comando);
 }
 
-void solicitarAtraparPkm(char pokemon, int servidorMapa){
+void solicitarAtraparPkm(char pokemn, int servidorMapa){
 	enviarHeader(servidorMapa, capturarPokemon);
-	void *buffer = malloc(sizeof(char));
-	memcpy(buffer, &pokemon,sizeof(char));
-	send(servidorMapa, buffer, sizeof(char), 0);
-	free(buffer);
+	//void *buffer = malloc(sizeof(char));
+	//memcpy(buffer, &pokemn,sizeof(char));
+	//buffer
+	send(servidorMapa, &pokemn, sizeof(char), 0);
+	//free(buffer);
 }
 void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	void* buffer = malloc(sizeof(int)+sizeof(int));
@@ -240,7 +242,6 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	cursorMemoria += sizeof(int);
 	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasY, sizeof(int));
 	cursorMemoria += sizeof(int);
-	log_info(logger, "ubicacion  enviada: (%d,%d)", ubicacionEntrenador.coordenadasX, ubicacionEntrenador.coordenadasY);
 	send(socketDestino,buffer,cursorMemoria,0);
 	//hasta aca envio el header con las coordenadas del entrenador
 
@@ -263,7 +264,7 @@ void enviarMisDatos(int socketDestino){
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasY,sizeof(int));
 
 	send(socketDestino,buffer,tamanio,0);
-	log_warning(logger,"CAdena pt: %s",buffer);
+
 	free(buffer);
 
 }
@@ -343,7 +344,7 @@ void removerPokemones(char* entrenador){
 	char* comando = string_new();
 	string_append(&comando,"rm mnt/pokedex/Entrenadores");
 	string_append(&comando,entrenador);
-	string_append(&comando,"Directorio' 'de' 'Bill/*");
+	string_append(&comando,"Dir' 'de' 'Bill/*");
 	system(comando);
 }
 

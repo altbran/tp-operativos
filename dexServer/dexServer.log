@@ -1,0 +1,15 @@
+[INFO] 10:11:35:603 DEXSERVER/(5965:5965): PUERTO_POKEDEX_SERVIDOR = 9000
+[INFO] 10:11:35:603 DEXSERVER/(5965:5965): IP_POKEDEX_SERVIDOR = 127.0.0.1
+[INFO] 10:11:35:603 DEXSERVER/(5965:5965): Se mapeo correctamente el archivo en memoria
+[INFO] 10:11:35:604 DEXSERVER/(5965:5965): Se creo correctamente el socket servidor. Escuchando nuevas conexiones
+[INFO] 10:11:44:743 DEXSERVER/(5965:5965): Nuevo dexCliente conectado, socket= 6
+[INFO] 11:12:33:877 DEXSERVER/(6477:6477): PUERTO_POKEDEX_SERVIDOR = 9000
+[INFO] 11:12:33:877 DEXSERVER/(6477:6477): IP_POKEDEX_SERVIDOR = 127.0.0.1
+[INFO] 11:12:33:878 DEXSERVER/(6477:6477): Se mapeo correctamente el archivo en memoria
+[INFO] 11:12:33:878 DEXSERVER/(6477:6477): Se creo correctamente el socket servidor. Escuchando nuevas conexiones
+[INFO] 11:15:12:341 DEXSERVER/(6477:6477): Nuevo dexCliente conectado, socket= 6
+[INFO] 15:53:04:384 DEXSERVER/(2756:2756): PUERTO_POKEDEX_SERVIDOR = 9000
+[INFO] 15:53:04:425 DEXSERVER/(2756:2756): IP_POKEDEX_SERVIDOR = 127.0.0.1
+[INFO] 15:53:04:439 DEXSERVER/(2756:2756): Se mapeo correctamente el archivo en memoria
+[INFO] 15:53:04:439 DEXSERVER/(2756:2756): Se creo correctamente el socket servidor. Escuchando nuevas conexiones
+[INFO] 15:54:21:882 DEXSERVER/(2756:2756): Nuevo dexCliente conectado, socket= 6
