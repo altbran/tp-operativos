@@ -34,11 +34,12 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1754330653" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
 								<option id="gnu.c.link.option.libs.499864767" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="LibreriasSO"/>
-									<listOptionValue builtIn="false" value="pthread"/>
+									<listOptionValue builtIn="false" value="nivel-gui"/>
 									<listOptionValue builtIn="false" value="curses"/>
 									<listOptionValue builtIn="false" value="commons"/>
-									<listOptionValue builtIn="false" value="nivel-gui"/>
+									<listOptionValue builtIn="false" value="pkmn-battle"/>
+									<listOptionValue builtIn="false" value="LibreriasSO"/>
+									<listOptionValue builtIn="false" value="pthread"/>
 								</option>
 								<option id="gnu.c.link.option.paths.76018792" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LibreriasSO/Debug}&quot;"/>
