@@ -7,7 +7,9 @@ void srdf() {
 		if (!queue_is_empty(listos)) {
 			int * turno;
 			int * movimientos = malloc(sizeof(int));
-			turno = entrenadorMasCercano(&movimientos);
+			turno = entrenadorMasCercano(movimientos);
+			log_info(logger,"el turno es: %d", *turno);
+			log_info(logger,"movimientos es: %d", *movimientos);
 			int quedoBloqueado = 0;
 			for (i = 0; i < *movimientos; i++) {
 				pthread_mutex_lock(&mutex);
@@ -16,7 +18,7 @@ void srdf() {
 			}
 			free(movimientos);
 			if (!quedoBloqueado) {
-				queue_push(listos, &turno);
+				queue_push(listos, (void *) turno);
 				sem_post(&contadorEntrenadoresListos);
 			}
 		}
@@ -84,7 +86,7 @@ void atraparPokemon() {
 
 						//en caso de terminar el mapa devolver todos los recursos
 					} else if (header == finalizoMapa) {
-						desconectadoOFinalizado(entrenador->socket);
+						//desconectadoOFinalizado(entrenador->socket);
 						log_info(logger, "Termino el mapa el entrenador del socket: ", entrenador->socket);
 					} else {
 						//problema en el header, asumo que se desconecto
@@ -109,6 +111,7 @@ int hayEntrenadorSinDistancia(int * indice) {
 		t_datosEntrenador * entrenador = list_get(Entrenadores, i);
 		if (entrenador->distanciaAPokenest == 0) {
 			*indice = i;
+			log_error(logger,"el indice es: %d",*indice);
 			return 1;
 			break;
 		}
@@ -122,10 +125,11 @@ int * entrenadorMasCercano(int * movimientos) {
 	int * indice = malloc(sizeof(int));
 	int * socketMasCercano;
 	if (hayEntrenadorSinDistancia(indice)) {
-		t_datosEntrenador * entrenador = list_get(Entrenadores, *indice);
+		t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, *indice);
 		free(indice);
-		return &entrenador->socket;
+		log_info(logger,"el socket es: %d", entrenador->socket);
 		*movimientos = 1;
+		return &entrenador->socket;
 	} else {
 		for (i = 0; i < list_size(Entrenadores); i++) {
 			t_datosEntrenador * entrenador = list_get(Entrenadores, i);
@@ -211,7 +215,7 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 		}
 		free(posX);
 		free(posY);
-		sleep(1);
+		sleep(configuracion->retardo/1000);
 		break;
 
 	case capturarPokemon:
