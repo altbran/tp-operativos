@@ -31,7 +31,6 @@ int main(int argc, char** argv){
 
 	}
 
-
 	//creo el config y el log
 	t_config* metaDataEntrenador = config_create(rutaMetadata);
 	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
@@ -133,11 +132,9 @@ int main(int argc, char** argv){
 			pokenestProxima->identificador = pkm;
 			pokemon->mapa = nombreMapa;
 
-			char resultado;				//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
+							//resultado, en caso de no tener mas vidas y elejir entre seguir jugando o no
 			estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
 
-			char* tiempoSolicitoAtraparPkm;
-			char* tiempoAtrapePkm;
 
 			while (estado != 4){
 				switch (estado){
@@ -147,6 +144,7 @@ int main(int argc, char** argv){
 
 							solicitarUbicacionPokenest(servidorMapa, pkm);
 							//pokemon->nombre[18] = '\0';
+
 							recibirYAsignarCoordPokenest(servidorMapa,pokenestProxima,pokemon->nombre);
 							log_info(logger,"nombre del pokemon: %s",pokemon->nombre);
 
@@ -190,7 +188,8 @@ int main(int argc, char** argv){
 
 											recibirTodo(servidorMapa,&pokemon->numero,sizeof(int));
 											tiempoAtrapePkm = temporal_get_string_time();
-											sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
+											//sumarTiempos(&tiempoBloqueo, diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
+											log_warning(logger, "diferencia de tiempo que tardo en atrapar la pokenest: %s", diferenciaDeTiempo(tiempoSolicitoAtraparPkm, tiempoAtrapePkm));
 											log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
 											estado = 4;
 											break;
@@ -262,17 +261,18 @@ int main(int argc, char** argv){
 			numeroPokemon = obtenerNumero(pokemon->numero);
 
 			rutaPokemon = armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon);
-			string_append(&rutaPokemon,armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon));
+			//string_append(&rutaPokemon,armarRutaPokemon(nombreMapa,pokemon->nombre, numeroPokemon));
 
 			//creo el config para leerlo
 			metadataPokemon = config_create(rutaPokemon);
 
+			log_warning(logger,"pase por aqui:)");//fixme
+			log_info(logger,"metadata del pokemon: %s", rutaPokemon);
 			//leo el nivel del pokemon
 			pokemon->nivel = config_get_int_value(metadataPokemon, "nivel");
 
 			//agrego el pkm a la lista de pokemones atrapados
 			list_add(pokemonesAtrapados,(void*)pokemon);
-
 
 			//copio el archivo pkm en mi directorio Bill
 			comando = string_new();
@@ -335,8 +335,8 @@ int main(int argc, char** argv){
 		tiempoFinal = temporal_get_string_time();
 
 		printf("Felicidades!! Te has convertido en Maestro Pokemon.\nDatos de la aventura:\n"
-				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura: %s\nTiempo"
-				"total bloqueado en Pokenests(hh:mm:ss:mmmm): %s\n",
+				"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura(hh:mm:ss:mmmm): %s\nTiempo"
+				" total bloqueado en Pokenests(hh:mm:ss:mmmm): %s\n",
 				cantidadDeadlocks, muertes, diferenciaDeTiempo(tiempoDeInicio,tiempoFinal),tiempoBloqueo);
 
 		log_info(logger,"El Entrenador se convirtio en Maestro Pokemon");

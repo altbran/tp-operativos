@@ -79,6 +79,10 @@ t_objetivosPorMapa* elemento;
 t_config* metadataPokemon;
 char* comando;
 char* rutaDirBill;
+char resultado;
+char* tiempoSolicitoAtraparPkm;
+char* tiempoAtrapePkm;
+
 
 //FUNCIONES
 void senialRecibirVida();

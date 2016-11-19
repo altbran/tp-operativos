@@ -486,9 +486,9 @@ void sumarTiempos(char** tiempo, char* tiempoASumar){
 
 
 	segundos += segundosAS;
-	if(milisegundos >= 60){
-			milisegundos = milisegundos - 60;
-			minutos++;
+		if(segundos >= 60){
+				segundos = segundos - 60;
+				minutos++;
 	}
 
 	minutos += minutosAS;
