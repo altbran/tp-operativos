@@ -11,5 +11,7 @@
 void srdf();
 void roundRobin();
 void hiloPokenest(void * parametros);
+int entrenadorMasCercano(int * movimientos);
+void jugada(int miTurno, int * quedoBloqueado, int * i, int total);
 
 #endif /* PLANIFICADORES_H_ */

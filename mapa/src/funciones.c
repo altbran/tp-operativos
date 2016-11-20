@@ -146,11 +146,16 @@ void cargarRecursos() {
 				sem_init(contadorPendientesPokenest, 0, 0);
 				pokenest->semaforoPokenest = contadorPendientesPokenest;
 
+				//creo semaforo de pokemones disponibles en pokenest
+				sem_t * DisponiblesPokenest;
+				DisponiblesPokenest = malloc(sizeof(sem_t));
+				sem_init(DisponiblesPokenest, 0, *cantidadDisponibles);
+				pokenest->disponiblesPokenest = DisponiblesPokenest;
+
 				list_add(Pokenests, (void *) pokenest);
 				cargarPokenest(*pokenest);
 
 				//creo hilo para la pokenest
-
 				pthread_t nuevoHilo;
 				pthread_attr_t attr;
 				pthread_attr_init(&attr);
@@ -190,6 +195,7 @@ int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemo
 			t_duenioPokemon * pokemon =(t_duenioPokemon *) list_get(pokemones, i);
 			if (pokemon->identificadorPokemon == identificador && pokemon->socketEntrenador == -1) {
 				*numeroPokemon = pokemon->numeroPokemon;
+				*indice = i;
 				i = list_size(pokemones);
 			}
 		}
@@ -203,7 +209,10 @@ void desconectadoOFinalizado(int socketEntrenador) {
 	liberarRecursosEntrenador(devolverIndiceEntrenador(socketEntrenador));
 	reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
 	t_datosEntrenador * finalizado = list_remove(Entrenadores, devolverIndiceEntrenador(socketEntrenador));
+	eliminarEntrenador(finalizado->identificador);
+	close(socketEntrenador);
 	free(finalizado);
+	dibujar(nombreMapa);
 }
 
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
@@ -212,6 +221,9 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 		t_duenioPokemon * pokemon = (t_duenioPokemon *) list_get(pokemones, i);
 		if (pokemon->socketEntrenador == socketEntrenador) {
 			pokemon->socketEntrenador = -1;
+			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
+			sumarPokemon(pokemon->identificadorPokemon);
+			sem_post(pokenest->disponiblesPokenest);
 			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles, devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;
 		}

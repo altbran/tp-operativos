@@ -29,6 +29,7 @@ void roundRobin() {
 	int i;
 	while (1) {
 		sem_wait(&contadorEntrenadoresListos);
+		log_info(logger, "corre hilo planificador");
 		if (!queue_is_empty(listos)) {
 			int * turno;
 			turno = (int *) queue_pop(listos);
@@ -61,6 +62,8 @@ void hiloPokenest(void * parametros) {
 			int * indice = malloc(sizeof(int));
 
 			//me fijo si hay pokemones disponibles
+			sem_wait(pokenest->disponiblesPokenest);
+			log_info(logger, "corre hilo pokenest: %c",pokenest->identificador);
 			if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon, indice)) {
 				pthread_mutex_lock(&mutexDeadlock);
 				//aviso a entrenador que hay pokemones
@@ -87,13 +90,23 @@ void hiloPokenest(void * parametros) {
 						sem_post(&contadorEntrenadoresListos);
 						log_info(logger, "Pasa a listo el entrenador del socket: %d", *socketEntrenador);
 						dibujar(nombreMapa);
-						//en caso de terminar el mapa devolver todos los recursos
 					} else if (header == finalizoMapa) {
+						//atrapa el pokemon
+						t_duenioPokemon * pokemon =(t_duenioPokemon *) list_get(pokemones, *indice);
+						pokemon->socketEntrenador = *socketEntrenador;
+						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
+						restarPokemon(pokenest->identificador);
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
+
+						//devuelvo todos sus recursos
 						desconectadoOFinalizado(*socketEntrenador);
-						log_info(logger, "Termino el mapa el entrenador del socket: ", *socketEntrenador);
+						log_info(logger, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
+						dibujar(nombreMapa);
 					} else {
+
 						//problema en el header, asumo que se desconecto
 						log_error(logger, "Se desconecto el entrenador del socket: ", *socketEntrenador);
+						sem_post(pokenest->disponiblesPokenest);
 						desconectadoOFinalizado(*socketEntrenador);
 					}
 					pthread_mutex_unlock(&mutexDeadlock);
@@ -101,6 +114,7 @@ void hiloPokenest(void * parametros) {
 				}
 			} else {
 				queue_push(pokenest->colaPokenest,(void *) socketEntrenador);
+				sem_post(pokenest->disponiblesPokenest);
 				sem_post(pokenest->semaforoPokenest);
 			}
 			free(numeroPokemon);
@@ -161,77 +175,85 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 
 	log_info(logger, "pase por aqui turno antes de header: %d", miTurno);
 	int header = recibirHeader(miTurno);
+	if(header == 0){
+		log_error(logger, "error al recibir header");
+		*i = total;
+		*quedoBloqueado = 1;
+		desconectadoOFinalizado(miTurno);
+	}else{
+		switch (header) {
+			case datosPokenest:
+				;
+				char identificadorPokenest;
+				if (recibirTodo(miTurno, &identificadorPokenest, sizeof(char))) {
+					//error al enviar, supongo que se desconecto
+					log_error(logger, "error al recibir identificador de pokenest");
+					desconectadoOFinalizado(miTurno);
+				}
+				t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokenest);
+				if (enviarCoordPokenest(miTurno, pokenest)) {
+					log_error(logger, "error al enviar las coordenadas de la pokenest");
+					//error al enviar, supongo que se desconecto
+					desconectadoOFinalizado(miTurno);
+				}
+				t_datosEntrenador * entrenador = devolverEntrenador(miTurno);
+				if (recibirTodo(miTurno, &entrenador->distanciaAPokenest, sizeof(int))) {
+					log_error(logger, "error al recibir la distancia a la pokenest");
+					//error al enviar, supongo que se desconecto
+					desconectadoOFinalizado(miTurno);
+				}
+				log_error(logger, "mi pokenest : %c", identificadorPokenest);
+				*i = *i - 1;
+				break;
 
-	switch (header) {
-	case datosPokenest:
-		;
-		char identificadorPokenest;
-		if (recibirTodo(miTurno, &identificadorPokenest, sizeof(char))) {
-			//error al enviar, supongo que se desconecto
-			log_error(logger, "error al recibir identificador de pokenest");
-			desconectadoOFinalizado(miTurno);
-		}
-		t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokenest);
-		if (enviarCoordPokenest(miTurno, pokenest)) {
-			log_error(logger, "error al enviar las coordenadas de la pokenest");
-			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(miTurno);
-		}
-		t_datosEntrenador * entrenador = devolverEntrenador(miTurno);
-		if (recibirTodo(miTurno, &entrenador->distanciaAPokenest, sizeof(int))) {
-			log_error(logger, "error al recibir la distancia a la pokenest");
-			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(miTurno);
-		}
-		log_error(logger, "mi pokenest : %c", identificadorPokenest);
-		*i = *i - 1;
-		break;
+			case posicionEntrenador:
+				;
+				int * posX = malloc(sizeof(int));
+				int * posY = malloc(sizeof(int));
+				if (recibirTodo(miTurno, posX, sizeof(int))) {
+					log_error(logger, "error al recibir la posicion X");
+					//error al enviar, supongo que se desconecto
+					desconectadoOFinalizado(miTurno);
+				}
+				if (recibirTodo(miTurno, posY, sizeof(int))) {
+					log_error(logger, "error al recibir la posicion Y");
+					//error al enviar, supongo que se desconecto
+					desconectadoOFinalizado(miTurno);
+				}
+				if (movimientoValido(miTurno, *posX, *posY)) {
+					log_error(logger, "movimiento invalido");
+					enviarHeader(miTurno, movimientoInvalido);
+				} else {
+					moverEntrenador(*devolverEntrenador(miTurno));
+					enviarHeader(miTurno, movimientoAceptado);
+					dibujar(nombreMapa);
+				}
+				free(posX);
+				free(posY);
+				sleep(configuracion->retardo/1000);
+				break;
 
-	case posicionEntrenador:
-		;
-		int * posX = malloc(sizeof(int));
-		int * posY = malloc(sizeof(int));
-		if (recibirTodo(miTurno, posX, sizeof(int))) {
-			log_error(logger, "error al recibir la posicion X");
-			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(miTurno);
-		}
-		if (recibirTodo(miTurno, posY, sizeof(int))) {
-			log_error(logger, "error al recibir la posicion Y");
-			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(miTurno);
-		}
-		if (movimientoValido(miTurno, *posX, *posY)) {
-			log_error(logger, "movimiento invalido");
-			enviarHeader(miTurno, movimientoInvalido);
-		} else {
-			moverEntrenador(*devolverEntrenador(miTurno));
-			enviarHeader(miTurno, movimientoAceptado);
-			dibujar(nombreMapa);
-		}
-		free(posX);
-		free(posY);
-		sleep(configuracion->retardo/1000);
-		break;
-
-	case capturarPokemon:
-		;
-		char identificadorPokenest;
-		if (recibirTodo(miTurno, &identificadorPokenest, sizeof(char))) {
-			log_error(logger, "error al recibir el identificador de la pokenest");
-			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(miTurno);
-		} else {
-			log_info(logger, "Quedo bloqueado el entrenador del socket: ", miTurno);
-			t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokenest);
-			int * socketEntrenador = malloc(sizeof(int));
-			*socketEntrenador = miTurno;
-			queue_push(pokenest->colaPokenest, (void *) socketEntrenador);
-			sumarPedidosMatriz(devolverIndiceEntrenador(miTurno),devolverIndicePokenest(pokenest->identificador));
-			*i = total;
-			*quedoBloqueado = 1;
-			sem_post(pokenest->semaforoPokenest);
-		}
-		break;
+			case capturarPokemon:
+				;
+				char identificadorPokemon;
+				if (recibirTodo(miTurno, &identificadorPokemon, sizeof(char))) {
+					log_error(logger, "error al recibir el identificador de la pokenest");
+					//error al enviar, supongo que se desconecto
+					desconectadoOFinalizado(miTurno);
+				} else {
+					log_info(logger, "Quedo bloqueado el entrenador del socket: %d", miTurno);
+					t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokemon);
+					int * socketEntrenador = malloc(sizeof(int));
+					*socketEntrenador = miTurno;
+					queue_push(pokenest->colaPokenest, (void *) socketEntrenador);
+					sumarPedidosMatriz(devolverIndiceEntrenador(miTurno),devolverIndicePokenest(pokenest->identificador));
+					*i = total;
+					*quedoBloqueado = 1;
+					sem_post(pokenest->semaforoPokenest);
+				}
+				break;
+			}
 	}
+
+
 }

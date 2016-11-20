@@ -12,6 +12,8 @@ void cargarPokenest(t_metadataPokenest pokenest);
 void cargarEntrenador(t_datosEntrenador entrenador);
 void moverEntrenador(t_datosEntrenador entrenador);
 void restarPokemon(char identificador);
+void sumarPokemon(char identificador);
+void eliminarEntrenador(char identificador);
 
 /*int posicionInicialX = 1;
 int posicionInicialY = 1;*/

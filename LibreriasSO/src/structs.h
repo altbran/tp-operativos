@@ -51,6 +51,7 @@ typedef struct{
 	char nombre[18];
 	t_queue * colaPokenest;
 	sem_t * semaforoPokenest;
+	sem_t * disponiblesPokenest;
 }t_metadataPokenest;
 
 typedef struct{
