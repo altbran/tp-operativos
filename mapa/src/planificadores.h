@@ -10,8 +10,6 @@
 
 void srdf();
 void roundRobin();
-void atraparPokemon();
-int * entrenadorMasCercano();
-void jugada(int * turno, int * quedoBloqueado, int * i, int total);
+void hiloPokenest(void * parametros);
 
 #endif /* PLANIFICADORES_H_ */

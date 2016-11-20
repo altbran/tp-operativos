@@ -2,6 +2,8 @@
 #define LIBRERIAS_STRUCTS_H_
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <semaphore.h>
 //#include <parser/metadata_program.h>
 #include <stdint.h>
 
@@ -47,6 +49,8 @@ typedef struct{
 	int cantidad;
 	char identificador;
 	char nombre[18];
+	t_queue * colaPokenest;
+	sem_t * semaforoPokenest;
 }t_metadataPokenest;
 
 typedef struct{

@@ -5,15 +5,15 @@ void srdf() {
 	while (1) {
 		sem_wait(&contadorEntrenadoresListos);
 		if (!queue_is_empty(listos)) {
-			int * turno;
+			int * turno = malloc(sizeof(int));
 			int * movimientos = malloc(sizeof(int));
-			turno = entrenadorMasCercano(movimientos);
+			*turno = entrenadorMasCercano(movimientos);
 			log_info(logger,"el turno es: %d", *turno);
 			log_info(logger,"movimientos es: %d", *movimientos);
 			int quedoBloqueado = 0;
 			for (i = 0; i < *movimientos; i++) {
 				pthread_mutex_lock(&mutex);
-				jugada(turno, &quedoBloqueado, &i, *movimientos);
+				jugada(*turno, &quedoBloqueado, &i, *movimientos);
 				pthread_mutex_unlock(&mutex);
 			}
 			free(movimientos);
@@ -35,70 +35,73 @@ void roundRobin() {
 			int quedoBloqueado = 0;
 			for (i = 0; i < configuracion->quantum; i++) {
 				pthread_mutex_lock(&mutex);
-				jugada(turno, &quedoBloqueado, &i, configuracion->quantum);
+				jugada(*turno, &quedoBloqueado, &i, configuracion->quantum);
 				pthread_mutex_unlock(&mutex);
 			}
 			if (!quedoBloqueado) {
 				queue_push(listos, (void *) turno);
 				sem_post(&contadorEntrenadoresListos);
+			}else{
+				free(turno);
 			}
 		}
 	}
 }
 
-void atraparPokemon() {
+void hiloPokenest(void * parametros) {
+
+	//parametros de la pokenest
+	t_metadataPokenest * pokenest = (t_metadataPokenest *) parametros;
+
 	while (1) {
-		sem_wait(&contadorEntrenadoresBloqueados);
-		if (!queue_is_empty(bloqueados)) {
-			t_entrenadorBloqueado * entrenador = (t_entrenadorBloqueado*) queue_pop(bloqueados);
+		sem_wait(pokenest->semaforoPokenest);
+		if (!queue_is_empty(pokenest->colaPokenest)) {
+			int * socketEntrenador = (int *) queue_pop(pokenest->colaPokenest);
 			int * numeroPokemon = malloc(sizeof(int));
 			int * indice = malloc(sizeof(int));
 
 			//me fijo si hay pokemones disponibles
-			if (pokemonDisponible(devolverIndicePokenest(entrenador->identificadorPokemon), entrenador->identificadorPokemon,
-					numeroPokemon, indice)) {
-
+			if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon, indice)) {
 				pthread_mutex_lock(&mutexDeadlock);
 				//aviso a entrenador que hay pokemones
-				enviarHeader(entrenador->socket, pokemonesDisponibles);
-				if (enviarTodo(entrenador->socket, numeroPokemon, sizeof(int))) {
+				enviarHeader(*socketEntrenador, pokemonesDisponibles);
+				if (enviarTodo(*socketEntrenador, numeroPokemon, sizeof(int))) {
 					//error, se desconecto
-					desconectadoOFinalizado(entrenador->socket);
+					desconectadoOFinalizado(*socketEntrenador);
 				} else {
 
-					int header = recibirHeader(entrenador->socket);
+					int header = recibirHeader(*socketEntrenador);
 					log_info(logger, "el header es: %d",header);
 					//entrenador avisa que ya lo copio
 					if (header == entrenadorListo) {
-						log_info(logger, "entro vieja: %c",entrenador->identificadorPokemon);
+						log_info(logger, "atrapo el pokemon: %c",pokenest->identificador);
 						//hago cosas correspondientes a que lo atrapo
 						t_duenioPokemon * pokemon =(t_duenioPokemon *) list_get(pokemones, *indice);
-						pokemon->socketEntrenador = entrenador->socket;
-						restarRecursoDisponible(devolverIndicePokenest(entrenador->identificadorPokemon));
-						restarPokemon(entrenador->identificadorPokemon);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(entrenador->socket),devolverIndicePokenest(entrenador->identificadorPokemon));
+						pokemon->socketEntrenador = *socketEntrenador;
+						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
+						restarPokemon(pokenest->identificador);
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						int * elTurno = malloc(sizeof(int));
-						*elTurno = entrenador->socket;
+						*elTurno = *socketEntrenador;
 						queue_push(listos,(void *) elTurno);
 						sem_post(&contadorEntrenadoresListos);
-						log_info(logger, "Pasa a listo el entrenador del socket: %d", entrenador->socket);
+						log_info(logger, "Pasa a listo el entrenador del socket: %d", *socketEntrenador);
 						dibujar(nombreMapa);
-
 						//en caso de terminar el mapa devolver todos los recursos
 					} else if (header == finalizoMapa) {
-						//desconectadoOFinalizado(entrenador->socket);
-						log_info(logger, "Termino el mapa el entrenador del socket: ", entrenador->socket);
+						desconectadoOFinalizado(*socketEntrenador);
+						log_info(logger, "Termino el mapa el entrenador del socket: ", *socketEntrenador);
 					} else {
 						//problema en el header, asumo que se desconecto
-						log_error(logger, "Se desconecto el entrenador del socket: ", entrenador->socket);
-						desconectadoOFinalizado(entrenador->socket);
+						log_error(logger, "Se desconecto el entrenador del socket: ", *socketEntrenador);
+						desconectadoOFinalizado(*socketEntrenador);
 					}
 					pthread_mutex_unlock(&mutexDeadlock);
-					free(entrenador);
+					free(socketEntrenador);
 				}
 			} else {
-				queue_push(bloqueados,(void *) entrenador);
-				sem_post(&contadorEntrenadoresBloqueados);
+				queue_push(pokenest->colaPokenest,(void *) socketEntrenador);
+				sem_post(pokenest->semaforoPokenest);
 			}
 			free(numeroPokemon);
 			free(indice);
@@ -108,10 +111,10 @@ void atraparPokemon() {
 int hayEntrenadorSinDistancia(int * indice) {
 	int i;
 	for (i = 0; i < list_size(Entrenadores); i++) {
-		t_datosEntrenador * entrenador = list_get(Entrenadores, i);
+		t_datosEntrenador * entrenador = (t_datosEntrenador * ) list_get(Entrenadores, i);
 		if (entrenador->distanciaAPokenest == 0) {
 			*indice = i;
-			log_error(logger,"el indice es: %d",*indice);
+			log_error(logger,"el entrenador sin distancia es: %s",entrenador->nombre);
 			return 1;
 			break;
 		}
@@ -119,75 +122,68 @@ int hayEntrenadorSinDistancia(int * indice) {
 	return 0;
 }
 
-int * entrenadorMasCercano(int * movimientos) {
+int entrenadorMasCercano(int * movimientos) {
 	int i;
-	int menor = 100;
-	int * indice = malloc(sizeof(int));
-	int * socketMasCercano;
-	if (hayEntrenadorSinDistancia(indice)) {
-		t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, *indice);
-		free(indice);
+	int menor = 200;
+	int indice;
+	t_datosEntrenador * entrenadorADevolver;
+	//me fijo si hay uno sin distancia
+	if (hayEntrenadorSinDistancia(&indice)) {
+		t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, indice);
 		log_info(logger,"el socket es: %d", entrenador->socket);
 		*movimientos = 1;
-		return &entrenador->socket;
+		return entrenador->socket;
 	} else {
+		//busco el mas cercano
 		for (i = 0; i < list_size(Entrenadores); i++) {
-			t_datosEntrenador * entrenador = list_get(Entrenadores, i);
+			t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, i);
 			if (entrenador->distanciaAPokenest < menor) {
 				menor = entrenador->distanciaAPokenest;
-				*indice = i;
+				entrenadorADevolver = entrenador;
 			}
 		}
-		*movimientos = menor;
-		t_datosEntrenador * entrenador = list_get(Entrenadores, *indice);
+		//lo saco de la cola de listos
 		for (i = 0; i < queue_size(listos); i++) {
-			int * sockete = queue_pop(listos);
-			if (*sockete == entrenador->socket) {
-				socketMasCercano = sockete;
+			int * sockete = (int *) queue_pop(listos);
+			if (*sockete == entrenadorADevolver->socket) {
+				free(sockete);
 				break;
 			} else {
 				queue_push(listos,(void *) sockete);
 			}
 		}
-		free(indice);
-		return socketMasCercano;
+		*movimientos = entrenadorADevolver->distanciaAPokenest;
+		return entrenadorADevolver->socket;
 	}
 }
 
-void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
+void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 
-	int miTurno = *turno;
 	log_info(logger, "pase por aqui turno antes de header: %d", miTurno);
 	int header = recibirHeader(miTurno);
 
 	switch (header) {
 	case datosPokenest:
 		;
-		log_error(logger, "mi turno: %d", miTurno);
-		identificadorPokenest = malloc(sizeof(char));
-			if (recibirTodo(miTurno, &prueba, sizeof(char))) {
-				log_error(logger, "mi pokenest: %c", prueba);
-
-
+		char identificadorPokenest;
+		if (recibirTodo(miTurno, &identificadorPokenest, sizeof(char))) {
 			//error al enviar, supongo que se desconecto
 			log_error(logger, "error al recibir identificador de pokenest");
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		}
-		t_metadataPokenest * pokenest = devolverPokenest(&prueba);
+		t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokenest);
 		if (enviarCoordPokenest(miTurno, pokenest)) {
 			log_error(logger, "error al enviar las coordenadas de la pokenest");
 			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		}
 		t_datosEntrenador * entrenador = devolverEntrenador(miTurno);
 		if (recibirTodo(miTurno, &entrenador->distanciaAPokenest, sizeof(int))) {
 			log_error(logger, "error al recibir la distancia a la pokenest");
 			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		}
-		log_error(logger, "mi pokenest antes del free: %c", prueba);
-		free(identificadorPokenest);
-		log_error(logger, "mi pokenest despues del free: %c", prueba);
+		log_error(logger, "mi pokenest : %c", identificadorPokenest);
 		*i = *i - 1;
 		break;
 
@@ -195,22 +191,22 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 		;
 		int * posX = malloc(sizeof(int));
 		int * posY = malloc(sizeof(int));
-		if (recibirTodo(*turno, posX, sizeof(int))) {
+		if (recibirTodo(miTurno, posX, sizeof(int))) {
 			log_error(logger, "error al recibir la posicion X");
 			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		}
-		if (recibirTodo(*turno, posY, sizeof(int))) {
+		if (recibirTodo(miTurno, posY, sizeof(int))) {
 			log_error(logger, "error al recibir la posicion Y");
 			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		}
-		if (movimientoValido(*turno, *posX, *posY)) {
+		if (movimientoValido(miTurno, *posX, *posY)) {
 			log_error(logger, "movimiento invalido");
-			enviarHeader(*turno, movimientoInvalido);
+			enviarHeader(miTurno, movimientoInvalido);
 		} else {
-			moverEntrenador(*devolverEntrenador(*turno));
-			enviarHeader(*turno, movimientoAceptado);
+			moverEntrenador(*devolverEntrenador(miTurno));
+			enviarHeader(miTurno, movimientoAceptado);
 			dibujar(nombreMapa);
 		}
 		free(posX);
@@ -220,20 +216,21 @@ void jugada(int * turno, int * quedoBloqueado, int * i, int total) {
 
 	case capturarPokemon:
 		;
-		t_entrenadorBloqueado * entrenadorBloqueado = malloc(sizeof(t_entrenadorBloqueado));
-		entrenadorBloqueado->socket = miTurno;
-		if (recibirTodo(miTurno, &entrenadorBloqueado->identificadorPokemon, sizeof(char))) {
+		char identificadorPokenest;
+		if (recibirTodo(miTurno, &identificadorPokenest, sizeof(char))) {
 			log_error(logger, "error al recibir el identificador de la pokenest");
 			//error al enviar, supongo que se desconecto
-			desconectadoOFinalizado(*turno);
+			desconectadoOFinalizado(miTurno);
 		} else {
-			log_info(logger, "Quedo bloqueado el entrenador del socket: ", *turno);
-			queue_push(bloqueados, (void *) entrenadorBloqueado);
-			sumarPedidosMatriz(devolverIndiceEntrenador(miTurno),
-					devolverIndicePokenest(entrenadorBloqueado->identificadorPokemon));
+			log_info(logger, "Quedo bloqueado el entrenador del socket: ", miTurno);
+			t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokenest);
+			int * socketEntrenador = malloc(sizeof(int));
+			*socketEntrenador = miTurno;
+			queue_push(pokenest->colaPokenest, (void *) socketEntrenador);
+			sumarPedidosMatriz(devolverIndiceEntrenador(miTurno),devolverIndicePokenest(pokenest->identificador));
 			*i = total;
 			*quedoBloqueado = 1;
-			sem_post(&contadorEntrenadoresBloqueados);
+			sem_post(pokenest->semaforoPokenest);
 		}
 		break;
 	}

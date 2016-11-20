@@ -29,7 +29,6 @@
 t_log* logger;
 char *texto;
 char * nombreMapa;
-int clientePokeDex;
 int servidorMapa;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
@@ -42,15 +41,11 @@ char * ruta;
 t_list * Pokenests;
 t_list * Entrenadores;
 t_queue * listos;
-t_queue * bloqueados;
 t_list * recursosTotales;
 t_list * listaRecursosDisponibles;
 pthread_t planificador;
 pthread_t deadlock;
-pthread_t atrapadorPokemon;
 t_list * pokemones;
-char * identificadorPokenest;
-char prueba;
 
 
 //funciones
@@ -72,5 +67,6 @@ void restarRecursoDisponible(int indicePokenest);
 void iniciarPlanificador();
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador);
 void desconectadoOFinalizado(int socketEntrenador);
+
 
 #endif /* FUNCIONES_H_ */

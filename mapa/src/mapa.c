@@ -23,12 +23,11 @@ int main(int argc, char **argv) {
 	//inicializo semaforos
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&mutexDeadlock, NULL);
-	sem_init(&contadorEntrenadoresBloqueados, 0, 0);
+	sem_init(&contadorEntrenadoresBloqueados,-1, 0);
 	sem_init(&contadorEntrenadoresListos, 0, 0);
 
 	//inicio colas y listas
 	listos = queue_create();
-	bloqueados = queue_create();
 	Entrenadores = list_create();
 
 	//cargo recursos de mapa
@@ -38,9 +37,7 @@ int main(int argc, char **argv) {
 
 	//inicializo hilos
 	iniciarPlanificador();
-	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
-	pthread_create(&atrapadorPokemon, NULL, (void*) atraparPokemon, NULL); //todo falta semaforo tmb!!
-	log_info(logger, "Arranque hilo atrapador");
+	//todo arreglar bloqueados!! pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 
 	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
