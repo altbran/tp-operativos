@@ -10,12 +10,10 @@ int main(int argc, char **argv) {
 	//busco las configuraciones
 	if (argc != 3) {
 		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
-		log_info(logger, "La ruta es: ", ruta);
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = "Paleta";
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
-		log_info(logger, "La ruta es: ", ruta);
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = argv[1];
 	}
@@ -42,6 +40,7 @@ int main(int argc, char **argv) {
 	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
 
+
 	//creo socket servidor
 	if (crearSocket(&servidorMapa)) {
 		printf("Error creando socket");
@@ -66,16 +65,9 @@ int main(int argc, char **argv) {
 	FD_ZERO(&bolsaAuxiliar);
 
 	FD_SET(listener, &bolsaDeSockets);
-	//FD_SET(inotify, &bolsaDeSockets);
 
 	int fdmax;        // maximum file descriptor number
-	/*
-	 if (listener > inotify) {
-	 fdmax = listener;
-	 } else {
-	 fdmax = inotify;
-	 }
-	 */
+
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
 	dibujar(nombreMapa);

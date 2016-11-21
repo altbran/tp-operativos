@@ -1,8 +1,9 @@
 #include "funciones.h"
 
-void receptorSIG() {
+void receptorSIG(int sig) {
 	//todo
 	pthread_mutex_lock(&mutex);
+	log_info(logger, "llega al receptorSIG");
 	cargarMetadata();
 	pthread_cancel(planificador);
 	iniciarPlanificador();

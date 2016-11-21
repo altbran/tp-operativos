@@ -49,7 +49,7 @@ t_list * pokemones;
 
 
 //funciones
-void receptorSIG();
+void receptorSIG(int sig);
 void cargarMetadata();
 char* concat(int count, ...);
 void cargarRecursos();

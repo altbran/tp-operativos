@@ -97,11 +97,10 @@ void hiloPokenest(void * parametros) {
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
 						restarPokemon(pokenest->identificador);
 						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
-
+						dibujar(nombreMapa);
 						//devuelvo todos sus recursos
 						desconectadoOFinalizado(*socketEntrenador);
 						log_info(logger, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
-						dibujar(nombreMapa);
 					} else {
 
 						//problema en el header, asumo que se desconecto
