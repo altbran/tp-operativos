@@ -24,6 +24,7 @@
 #include <string.h>
 #include "commons/collections/list.h"
 #include "commons/temporal.h"
+#include <time.h>
 
 //STRUCTS
 typedef struct{
@@ -80,8 +81,10 @@ t_config* metadataPokemon;
 char* comando;
 char* rutaDirBill;
 char resultado;
-char* tiempoSolicitoAtraparPkm;
-char* tiempoAtrapePkm;
+time_t solicitoAtraparPkm;
+time_t atrapePkm;
+double diferencia;
+
 
 
 //FUNCIONES
@@ -91,7 +94,6 @@ t_list* asignarHojaDeViajeYObjetivos(t_config*);
 void moverEntrenador(t_metadataPokenest);
 void moverEntrenadorcoordX(t_metadataPokenest);
 void moverEntrenadorcoordY(t_metadataPokenest);
-
 int llegoAPokenest(t_metadataPokenest);
 void cargarDatos();
 int cantidadDeMovimientosAPokenest(t_metadataPokenest* pokenest);
@@ -110,7 +112,6 @@ void reestablecerDatos();
 void enviarCantidadDeMovsAPokenest(t_metadataPokenest* pokenest, int serverMapa);
 char* obtenerNombre(char identificador);
 void enviarPokemon(int servidor, char pokemon);
-void recibirNombrePkm(int socketServer, char nombrePkm[18]);
 void removerMedallas(char* entrenador);
 void removerPokemones(char* entrenador);
 void copiarMedalla(char* nombreMapa);
@@ -120,7 +121,7 @@ void sumarTiempos(char** tiempo, char* tiempoASumar);
 void eliminarArchivosPokemones(t_list* lista, char* ruta);
 bool filtrarMapa(t_pokemon* pokemon);
 bool distintoMapa(t_pokemon* pokemon);
-
+char* sumaT(char* t1, char* t2);
 
 
 #endif /* FUNCIONESE_H_ */

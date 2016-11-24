@@ -179,21 +179,21 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest
 
 	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
 
-		void *buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
+		void* buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
 
 		if(!recibirTodo(socketOrigen,buffer,(sizeof(int) + sizeof(int)+sizeof(char[18])))){
 
-		int cursorMemoria = 0;
-		memcpy(&pokenest->posicionX,buffer, sizeof(int));
+			int cursorMemoria = 0;
+			memcpy(&pokenest->posicionX,buffer, sizeof(int));
 
-		cursorMemoria += sizeof(int);
-		memcpy(&pokenest->posicionY,buffer + cursorMemoria, sizeof(int));
+			cursorMemoria += sizeof(int);
+			memcpy(&pokenest->posicionY,buffer + cursorMemoria, sizeof(int));
 
-		cursorMemoria += sizeof(int);
+			cursorMemoria += sizeof(int);
 
-		memcpy(nombrePkm,buffer + cursorMemoria, sizeof(char[18]));
+			memcpy(nombrePkm,buffer + cursorMemoria, sizeof(char[18]));
 
-		free(buffer);
+			free(buffer);
 		}
 
 	}
@@ -290,17 +290,6 @@ void enviarPokemon(int servidor, char pokemon){
 	send(servidor, &pokemon, sizeof(char),0);
 }
 
-void recibirNombrePkm(int socketServer, char nombrePkm[18]){
-
-	void* buffer = malloc(18);
-	nombrePkm[18] = '\0';
-
-	if(!recibirTodo(socketServer,buffer, 18))
-		memcpy(&nombrePkm,buffer,18);
-
-	free(buffer);
-
-}
 
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
@@ -492,7 +481,7 @@ void sumarTiempos(char** tiempo, char* tiempoASumar){
 	}
 
 	minutos += minutosAS;
-	if(minutos > 60){
+ 	if(minutos > 60){
 		minutos = minutos - 60;
 		hora++;
 	}
@@ -585,4 +574,99 @@ bool filtrarMapa(t_pokemon* pokemon){
 bool distintoMapa(t_pokemon* pokemon){
 
 	return !string_equals_ignore_case(pokemon->mapa, nombreMapa);
+}
+
+char* sumaT(char* t1, char* t2){
+
+	int milisegundos = atoi(string_substring(t1,9, 3));
+	int segundos = atoi(string_substring(t1,6, 2));
+	int minutos = atoi(string_substring(t1,3, 2));
+	int hora = atoi(string_substring(t1,0,2));
+
+	int horaAS = atoi(string_substring(t2,0,2));
+	int minutosAS = atoi(string_substring(t2,3, 2));
+	int segundosAS = atoi(string_substring(t2, 6, 2));
+	int milisegundosAS = atoi(string_substring(t2, 9, 3));
+
+	int horaSumm=0;
+	int minutosSumm=0;
+	int segundosSumm=0;
+	int msegundosSumm=0;
+
+	char* mSegundosSum= string_new();
+	char* segundosSum= string_new();
+	char* minutosSum= string_new();
+	char* horaSum= string_new();
+
+	char* time = string_new();
+
+	msegundosSumm = milisegundos + milisegundosAS;
+	if(msegundosSumm >= 1000){
+		segundosSumm++;
+		msegundosSumm = msegundosSumm - 1000;
+	}
+
+
+	segundosSumm = segundos+ segundosAS;
+	if(segundosSumm >= 60){
+		segundosSumm = segundosSumm - 60;
+			minutosSumm++;
+	}
+
+	minutosSumm = minutos + minutosAS;
+	if(minutosSumm > 60){
+		minutosSumm = minutosSumm - 60;
+		horaSumm++;
+	}
+
+	horaSumm= hora+horaAS;
+	if(horaSumm >= 24){
+		horaSumm=horaSumm - 24;
+	}
+
+	if(msegundosSumm < 10){
+				string_append(&mSegundosSum,"00");
+				string_append(&mSegundosSum,string_itoa(msegundosSumm));
+			}
+			else
+				if(msegundosSumm < 100){
+				string_append(&mSegundosSum,"0");
+				string_append(&mSegundosSum, string_itoa(msegundosSumm));
+				}
+				else
+					mSegundosSum = string_itoa(msegundosSumm);
+
+	if(segundosSumm < 10){
+		string_append(&segundosSum,"0");
+		string_append(&segundosSum, string_itoa(segundosSumm));
+	}
+	else
+		segundosSum = string_itoa(segundosSumm);
+
+	if(minutosSumm < 10){
+			string_append(&minutosSum,"0");
+			string_append(&minutosSum,string_itoa(minutosSumm));
+		}
+		else
+			if(minutos == 0)
+				minutosSum = "00";
+			else
+				minutosSum = string_itoa(minutosSumm);
+
+	if(horaSumm < 10){
+		string_append(&horaSum, "0");
+		string_append(&horaSum, string_itoa(horaSumm))	;
+	}
+	else
+		horaSum = string_itoa(horaSumm);
+
+	string_append(&time,horaSum);
+	string_append(&time,":");
+	string_append(&time,minutosSum);
+	string_append(&time,":");
+	string_append(&time,segundosSum);
+	string_append(&time,":");
+	string_append(&time,mSegundosSum);
+
+	return time;
 }
