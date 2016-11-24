@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>			 //fixme crearme funcion que guarda cadenas de 17 bytes
-#include <stdbool.h>         //fixme crearme funcion que levanta cadenas de 17 bytes
-#include <time.h>			//todo usarlas en todas las putas funciones
+#include <stdlib.h>			 //fixme
+#include <stdbool.h>         //fixme evaluar, cuando creo cosas, los bloques libres con tamniobitmap
+#include <time.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <src/sockets.h>
@@ -13,7 +13,6 @@
 
 
 #define BLOCK_SIZE 64
-#define FILENAME_LENGTH 17
 
 
 //Estructuras
@@ -252,24 +251,31 @@ void atenderConexion(void* arg)
 		switch(operacion)
 		{
 			case abrirArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = aperturaArchivo(path,socket);
 				enviarHeader(socket,resultado);
+
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case contenidoArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				archivo = leerArchivo(path,parametro->elMapa,&tamanio);
 
 				enviarHeader(socket,tamanio);
 				send(socket,archivo,tamanio,0);
 
+				pthread_mutex_unlock(&mutex);
+
 				log_info(logger,"Se envio el archivo %s",path);
 				free(archivo);
 				break;
 
 			case privilegiosArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = getAtr(path,parametro->elMapa,&tamanio);
@@ -278,24 +284,32 @@ void atenderConexion(void* arg)
 				enviarHeader(socket,resultado);
 				enviarHeader(socket,tamanio);
 
+				pthread_mutex_unlock(&mutex);
+
 				break;
 
 			case contenidoDirectorio:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				log_info(logger,"path recibido readdir: %s",path);
 				enviarHeader(socket,comprobarPathValido(path));
 				leerDirectorio(path,socket);
+
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case crearFichero:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = crearArchivo(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
 				log_info(logger,"Resultado de la creacion de '%s': %d",path,resultado);
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case escribirEnFichero:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
@@ -305,56 +319,70 @@ void atenderConexion(void* arg)
 
 				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,parametro->elMapa,socket);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
+
 				log_info(logger,"Resultado de la escritura de '%s': %d",path,resultado);
 				free(ficheroEnviado);
 				break;
 
 			case eliminarArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = borrarArchivo(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				log_info(logger,"Resultado del borrado de '%s': %d",path,resultado);
 				break;
 
 			case cerrarArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = cerradoArchivo(path,socket);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case crearCarpeta:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = crearDirectorio(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				log_info(logger,"Resultado del mkdir del path %s: %d",path,resultado);
 				break;
 
 			case renombrarCosas:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				archivo = malloc(50);
 				recibirTodo(socket,archivo,50);   //uso archivo, como el 'nuevo path'
 
 				resultado = renombrar(path,(char*)archivo,parametro->elMapa);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				free(archivo);
 				break;
 
 			case removerDirectorio:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
 				resultado = borrarDirectorioVacio(path,parametro->elMapa);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			case truncarArchivo:
+				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 				tamanio = recibirHeader(socket);
 
 				resultado = truncar(path,tamanio,parametro->elMapa,socket);
 				enviarHeader(socket,resultado);
+				pthread_mutex_unlock(&mutex);
 				break;
 
 			default:
@@ -841,10 +869,10 @@ int crearDirectorio(char* path,char* mapa)
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreDirectorio);   //ahora tengo el nombre que le quieren dar al directorio
 
-	if(strlen(nombreDirectorio) > 17)
+	if(strlen(nombreDirectorio) > 16)
 	{
 		log_error(logger,"El nombre que le quieren dar al directorio es demasiado largo. Nombre: %s",nombreDirectorio);
-		return -1;
+		return -2;
 	}
 
 	log_info(logger,"path: %s, nombre: %s",copiaPath,nombreDirectorio);
@@ -882,7 +910,7 @@ int crearDirectorio(char* path,char* mapa)
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
 		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
-			return -1;
+			return -3;
 		}
 		else
 		{
@@ -929,10 +957,10 @@ int crearArchivo(char* path,char* mapa)
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
 
-	if(strlen(nombreEfectivo) > 17)
+	if(strlen(nombreEfectivo) > 16)
 	{
 		log_error(logger,"El nombre que le quieren dar al archivo es demasiado largo. Nombre: %s",nombreEfectivo);
-		return -1;
+		return -2;
 	}
 
 	if(comprobarPathValido(copiaPath))  //si el path es correcto
@@ -968,12 +996,12 @@ int crearArchivo(char* path,char* mapa)
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
 		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
-			return -1;
+			return -3;
 		}
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\1'; //es un archivo
-			strncpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo,17);
+			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
 			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;  //el offset, es el del bloque padre encontrado mas arriba
 
 					//ahora le asigno un bloque libre
@@ -1224,6 +1252,11 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	if(strcmp(copiaPathOriginal,copiaPathNuevo))
 	{
 		log_error(logger,"Se está intentando cambiar dos nombres a la vez. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
+		return -1;
+	}
+	if(strlen(nuevoNombre) > 16)
+	{
+		log_error(logger,"Nombre '%s' demasiado largo",nuevoNombre);
 		return -1;
 	}
 	else

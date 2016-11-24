@@ -172,10 +172,19 @@ static int f_crearCarpeta(const char *path, mode_t modo) {
 	enviarPath(path,S_POKEDEX_CLIENTE);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
-
 	pthread_mutex_unlock(&mutex);
-
-	return res;
+	switch(res)
+	{
+		case -1:
+			return -1;
+		case -2:
+			return ENAMETOOLONG;
+		case -3:
+			return EDQUOT;
+		case 0:
+			return 0;
+	}
+	return 0;	//lo pongo para que no hinche las pelotas, pero nunca va a pasar por aca
 }
 
 static int f_unlink(const char *path) {
@@ -270,14 +279,18 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 
 	pthread_mutex_unlock(&mutex);
 
-	if(res == 1)
+	switch(res)
 	{
-		return 0;
-	}else
-	{
-		return -1;
+		case 0:
+			return 0;
+		case -1:
+			return -1;
+		case -2:
+			return ENAMETOOLONG;
+		case -3:
+			return EDQUOT;
 	}
-
+	return 0;	//idem a los anteriores, me rompe las bolas el switch
 }
 
 static int f_truncate (const char* path,off_t size)
@@ -306,7 +319,7 @@ static struct fuse_operations ejemplo_oper = {
 		.open = f_open,
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
-		.create = f_crearArchivo,
+		.mknod = f_crearArchivo,
 		.truncate = f_truncate,
 };
 
