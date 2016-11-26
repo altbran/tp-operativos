@@ -189,8 +189,9 @@ static int f_crearCarpeta(const char *path, mode_t modo) {
 			return EDQUOT;
 		case 0:
 			return 0;
+		default:
+			return -1;
 	}
-	return 0;	//lo pongo para que no hinche las pelotas, pero nunca va a pasar por aca
 }
 
 static int f_unlink(const char *path) {
@@ -256,7 +257,17 @@ static int f_rename(const char *pathAntiguo, const char *pathNuevo)
 
 	pthread_mutex_unlock(&mutex);
 
-	return res;
+	switch(res)
+	{
+		case 0:
+			return 0;
+		case -1:
+			return -1;
+		case -2:
+			return ENAMETOOLONG;
+		default:
+			return -1;
+	}
 }
 
 static int f_removerDirectorio(const char *path, mode_t modo) {
@@ -269,7 +280,16 @@ static int f_removerDirectorio(const char *path, mode_t modo) {
 
 	pthread_mutex_unlock(&mutex);
 
-	return res;
+	switch(res)
+	{
+		case 0:
+			return 0;
+		case -1:
+			return -1;
+		case -2:
+			return ENOTEMPTY;
+	}
+	return 0;  //asi no jode
 }
 
 static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {

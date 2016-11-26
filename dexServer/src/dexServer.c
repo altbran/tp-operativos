@@ -75,6 +75,8 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 int aperturaArchivo(char* path,int socket);
 int cerradoArchivo(char* path,int socket);
 int truncar(char* path,int tamanio,char* mapa,int socket);
+void grabarNombreEn(int i, char* nombre);
+void recuperarNombre(int i, char* nombre);
 
 
 //Variables globales
@@ -137,7 +139,6 @@ int main(void) {
 	}
 
 	log_info(logger, "Se creo correctamente el socket servidor. Escuchando nuevas conexiones");
-
 
 
 	struct sockaddr_in direccionCliente;
@@ -430,6 +431,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 	int i = 0;
 	int offset = 0xFFFF;
 
@@ -452,9 +454,13 @@ int getAtr(char* path,char* mapa,int* tamanio)
 				i = 0;
 				while(i < 2048)
 				{
-					if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+					nombreRecuperado = malloc(18);
+					recuperarNombre(i,nombreRecuperado);
+
+					if(!strcmp(nombreRecuperado,nombreArchivo))
 						if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
 							break;
+					free(nombreRecuperado);
 					i++;
 				}
 
@@ -475,8 +481,9 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 			*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
 
-			log_warning(logger,"Lo encontrado. Nombre: %s   Estado: %u",estructuraAdministrativa.tablaArchivos[offset].nombre,estructuraAdministrativa.tablaArchivos[offset].estado);
+			log_warning(logger,"Lo encontrado. Nombre: %s   Estado: %u",nombreRecuperado,estructuraAdministrativa.tablaArchivos[offset].estado);
 
+			free(nombreRecuperado);
 			free(copiaPath);
 			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
 				return 0;
@@ -497,6 +504,7 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 	char* nombreArchivo;
 	char* archivo;
 	char* archivoTruncado;
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 
@@ -509,9 +517,16 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -574,6 +589,7 @@ void leerDirectorio(char* path, int socket)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 	int i = 0;
 	int contador = 0;
 	int offset = 0xFFFF;
@@ -592,9 +608,16 @@ void leerDirectorio(char* path, int socket)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -629,7 +652,8 @@ void leerDirectorio(char* path, int socket)
 				if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 				{
 					nombreArchivo = malloc(18);
-					strcpy(nombreArchivo,(char*)estructuraAdministrativa.tablaArchivos[i].nombre);
+					recuperarNombre(i,nombreArchivo);
+
 					send(socket,nombreArchivo,18,0);
 
 					log_info(logger,"Nombre enviado: %s",nombreArchivo);
@@ -647,6 +671,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 	int tamanioTotalEnBytes;
 	int bloqueSiguienteEnTabla;
 	int posicionDelMapa;
@@ -667,9 +692,16 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -677,7 +709,8 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				break;
+				free(copiaPath);
+				return NULL;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -870,19 +903,18 @@ int crearDirectorio(char* path,char* mapa)
 	char* nombreArchivo = malloc(18);
 	char* nombreDirectorio = malloc(18);
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreDirectorio);   //ahora tengo el nombre que le quieren dar al directorio
 
-	if(strlen(nombreDirectorio) > 16)
+	if(strlen(nombreDirectorio) > 17)
 	{
 		log_error(logger,"El nombre que le quieren dar al directorio es demasiado largo. Nombre: %s",nombreDirectorio);
 		free(copiaPath);
 		free(nombreDirectorio);
 		return -2;
 	}
-
-	log_info(logger,"path: %s, nombre: %s",copiaPath,nombreDirectorio);
 
 	if(comprobarPathValido(copiaPath))  //si el path es correcto
 	{
@@ -893,9 +925,16 @@ int crearDirectorio(char* path,char* mapa)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -927,7 +966,7 @@ int crearDirectorio(char* path,char* mapa)
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\2'; //es un directorio
 			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;
-			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreDirectorio);
+			grabarNombreEn(i,nombreDirectorio);
 
 					//ahora le asigno un bloque libre
 			int bitmapOffset = 0;
@@ -948,6 +987,7 @@ int crearDirectorio(char* path,char* mapa)
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
 
 			free(copiaPath);
+			free(nombreDirectorio);
 
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Directorio creado. Nombre: '%s'",path);
@@ -963,14 +1003,16 @@ int crearArchivo(char* path,char* mapa)
 {
 	int i = 0;
 	int offset = 0xFFFF;  //con esta recorro el bitmap
+	int verificador = 0;
 	char* nombreEfectivo = malloc(18);
 	char* copiaPath = malloc(50);
 	char* nombreArchivo;
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 	sacarNombre(copiaPath,nombreEfectivo);   //ahora tengo el nombre que le quieren dar al archivo
 
-	if(strlen(nombreEfectivo) > 16)
+	if(strlen(nombreEfectivo) > 17)
 	{
 		log_error(logger,"El nombre que le quieren dar al archivo es demasiado largo. Nombre: %s",nombreEfectivo);
 		free(copiaPath);
@@ -987,9 +1029,16 @@ int crearArchivo(char* path,char* mapa)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -1020,10 +1069,26 @@ int crearArchivo(char* path,char* mapa)
 		else
 		{
 			estructuraAdministrativa.tablaArchivos[i].estado = '\1'; //es un archivo
-			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreEfectivo);
+			grabarNombreEn(i,nombreEfectivo);
 			estructuraAdministrativa.tablaArchivos[i].bloquePadre = offset;  //el offset, es el del bloque padre encontrado mas arriba
 
 					//ahora le asigno un bloque libre
+			offset = 0;
+			while(offset < estructuraAdministrativa.header.tamanioFS)
+			{
+				if(!bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))
+					verificador++;
+			}
+				//aca verifico el espacio disponible
+
+			if(!verificador)
+			{
+				log_error(logger,"No hay espacio disponible");
+				free(copiaPath);
+				free(nombreEfectivo);
+				return -3;
+			}
+
 			offset = 0;
 			while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))  //hasta que no encuentre un '0'...
 				offset++;
@@ -1062,6 +1127,7 @@ int borrarArchivo(char* path,char* mapa)
 	int bloqueInicioDatos;
 	char* nombreArchivo = malloc(18);
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 	if(comprobarPathValido(path))  //si el path es correcto
@@ -1073,15 +1139,24 @@ int borrarArchivo(char* path,char* mapa)
 			i = 0;
 			while(i < 2048)
 			{
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
 				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(nombreArchivo);
+				free(copiaPath);
 				return -1;
 			}
 			else
@@ -1093,6 +1168,7 @@ int borrarArchivo(char* path,char* mapa)
 		if(aperturado[offset] != 0)
 		{
 			log_error(logger,"Archivo en uso, no se puede eliminar. Path: %s",path);
+			free(copiaPath);
 			return -1;
 		}
 
@@ -1134,6 +1210,7 @@ int borrarDirectorioVacio(char* path,char* mapa)
 	int bloqueInicioDatos;
 	char* nombreArchivo = malloc(18);
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 	if(comprobarPathValido(path))  //si el path es correcto
@@ -1145,15 +1222,23 @@ int borrarDirectorioVacio(char* path,char* mapa)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
 				return -1;
 			}
 			else
@@ -1166,6 +1251,7 @@ int borrarDirectorioVacio(char* path,char* mapa)
 		if(estructuraAdministrativa.tablaArchivos[offset].estado != '\2')	//si no es un directorio, avisa
 		{
 			log_error(logger,"El path no corresponde a un directorio. Path: %s",path);
+			free(copiaPath);
 			return -1;
 		}
 
@@ -1175,7 +1261,8 @@ int borrarDirectorioVacio(char* path,char* mapa)
 			if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset && estructuraAdministrativa.tablaArchivos[i].estado != '\0')
 			{
 				log_error(logger,"Se esta queriendo eliminar un directorio que no esta vacio. Path: %s",path);
-				return -1;
+				free(copiaPath);
+				return -2;
 			}
 			i++;
 		}
@@ -1211,18 +1298,14 @@ bool comprobarPathValido(char* path)
 	int offset = 0xFFFF;
 	int i;
 	char* copiaPath = malloc(50);
-	char* otraCopia = malloc(50);
 	char* viejoNombre;
-	char* otroNombre = malloc(18);
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
-	strcpy(otraCopia,path);
 
 	if(!strcmp(copiaPath,"/"))
 	{
 		free(copiaPath);
-		free(otroNombre);
-		free(otraCopia);
 		return true;
 	}
 	else
@@ -1234,15 +1317,24 @@ bool comprobarPathValido(char* path)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,viejoNombre))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
+				free(viejoNombre);
 				return false;
 			}
 			else
@@ -1251,7 +1343,6 @@ bool comprobarPathValido(char* path)
 			free(viejoNombre);
 		}
 	}
-
 	free(copiaPath);
 	return true;
 }
@@ -1264,6 +1355,7 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	char* copiaPathNuevo = malloc(50);
 	char* viejoNombre = malloc(17);
 	char* nuevoNombre = malloc(17);
+	char* nombreRecuperado;
 
 	strcpy(copiaPathOriginal,pathOriginal);
 	strcpy(copiaPathNuevo,pathNuevo);
@@ -1280,14 +1372,14 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 		free(viejoNombre);
 		return -1;
 	}
-	if(strlen(nuevoNombre) > 16)
+	if(strlen(nuevoNombre) > 17)
 	{
 		log_error(logger,"Nombre '%s' demasiado largo",nuevoNombre);
 		free(copiaPathOriginal);
 		free(copiaPathNuevo);
 		free(nuevoNombre);
 		free(viejoNombre);
-		return -1;
+		return -2;
 	}
 	else
 	{
@@ -1305,9 +1397,16 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 			i = 0;
 			while(i < 2048)
 			{
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
 				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
@@ -1329,7 +1428,7 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 		if(i != 2048)
 		{
 			estructuraAdministrativa.tablaArchivos[i].fecha = pedirFecha();
-			strcpy((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nuevoNombre);
+			grabarNombreEn(i,nuevoNombre);
 
 				//una vez cambiadas las cosas necesarias, no queda mas que guardar
 			guardarEstructuraEn(mapa);
@@ -1356,6 +1455,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 	int verificadorEspacioDisponible = 0;
 	char* copiaPath = malloc(50);
 	char* viejoNombre;
+	char* nombreRecuperado;
 
 	strcpy(copiaPath,path);
 
@@ -1368,15 +1468,24 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,viejoNombre))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,viejoNombre))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
+				free(viejoNombre);
 				return -1;
 			}
 			else
@@ -1388,6 +1497,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 		if(estructuraAdministrativa.tablaArchivos[offset].estado == '\2')        //si es un directorio, no debe ser escrito
 		{
 			log_error(logger,"No se puede escribir un directorio");
+			free(copiaPath);
 			return -1;
 		}
 		else
@@ -1476,6 +1586,7 @@ int aperturaArchivo(char* path,int socket)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 	int i = 0;
 	int offset = 0xFFFF;
 
@@ -1490,15 +1601,24 @@ int aperturaArchivo(char* path,int socket)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
+				free(nombreArchivo);
 				return -1;
 			}
 			else
@@ -1509,7 +1629,10 @@ int aperturaArchivo(char* path,int socket)
 			//aca tenemos el offset del directorio a contar
 
 		if(aperturado[offset] != 0)   //si el archivo ya esta abierto, sea por quien sea, devuelve ERROR
+		{
+			free(copiaPath);
 			return -1;
+		}
 		else
 			aperturado[offset] = socket;
 
@@ -1526,6 +1649,7 @@ int cerradoArchivo(char* path,int socket)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
+	char* nombreRecuperado;
 	int i = 0;
 	int offset = 0xFFFF;
 
@@ -1540,16 +1664,25 @@ int cerradoArchivo(char* path,int socket)
 			i = 0;
 			while(i < 2048)
 			{
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				nombreRecuperado = malloc(18);
+				recuperarNombre(i,nombreRecuperado);
+
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
+					{
+						free(nombreRecuperado);
 						break;
+					}
+				free(nombreRecuperado);
 				i++;
 			}
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
-				return 0;
+				free(copiaPath);
+				free(nombreArchivo);
+				return -1;
 			}
 			else
 				offset = i;  //pero si no, el offset pasa a ser el contador que recorre la tabla
@@ -1571,5 +1704,21 @@ int cerradoArchivo(char* path,int socket)
 
 void grabarNombreEn(int i, char* nombre)
 {
-	;//todo hacer que guarde 17 caracteres
+	int contador;
+
+	for(contador = 0; contador < strlen(nombre);contador++)
+	{
+		estructuraAdministrativa.tablaArchivos[i].nombre[contador] = nombre[contador];
+	}
+}
+
+void recuperarNombre(int i,char* nombre)
+{
+	int contador;
+
+	for(contador = 0; contador < 17;contador++)
+	{
+		nombre[contador] = estructuraAdministrativa.tablaArchivos[i].nombre[contador];
+	}
+	nombre[18] = '\0';
 }
