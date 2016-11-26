@@ -158,10 +158,16 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 
 	pthread_mutex_unlock(&mutex);
 
-	if(res)
-		return size;
-	else
-		return -1;
+	switch(res)
+	{
+		case 0:
+			return size;
+		case -1:
+			return -1;
+		case -2:
+			return EFBIG;
+	}
+	return 0; //asi no rompe las bolas
 }
 
 static int f_crearCarpeta(const char *path, mode_t modo) {

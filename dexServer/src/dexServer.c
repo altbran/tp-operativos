@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>			 //fixme
-#include <stdbool.h>         //fixme evaluar, cuando creo cosas, los bloques libres con tamniobitmap
+#include <stdbool.h>         //
 #include <time.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
@@ -222,6 +222,7 @@ int main(void) {
 	free(estructuraAdministrativa.tablaAsignaciones);
 	free(estructuraAdministrativa.tablaArchivos);
 	free(parametro->elMapa);
+	free(parametro);
 
 	return 0;
 }
@@ -439,6 +440,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 		if(!strcmp(copiaPath,"/"))
 		{
 			*tamanio = 0;
+			free(copiaPath);
 			return 1;
 		}
 		else
@@ -516,6 +518,7 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
 				return -1;
 			}
 			else
@@ -527,6 +530,7 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 		if(estructuraAdministrativa.tablaArchivos[offset].estado != '\1')
 		{
 			log_error(logger,"No se puede truncar, no es un archivo");
+			free(copiaPath);
 			return -1;
 		}
 
@@ -562,6 +566,7 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 		log_info(logger,"Archivo: '%s' truncado de %d bytes, a %d bytes",path,i,tamanio);
 		return 0;
 	}
+	free(copiaPath);
 	return -1;
 }
 
@@ -872,6 +877,8 @@ int crearDirectorio(char* path,char* mapa)
 	if(strlen(nombreDirectorio) > 16)
 	{
 		log_error(logger,"El nombre que le quieren dar al directorio es demasiado largo. Nombre: %s",nombreDirectorio);
+		free(copiaPath);
+		free(nombreDirectorio);
 		return -2;
 	}
 
@@ -895,6 +902,8 @@ int crearDirectorio(char* path,char* mapa)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(nombreDirectorio);
+				free(copiaPath);
 				return -1;
 			}
 			else
@@ -910,6 +919,8 @@ int crearDirectorio(char* path,char* mapa)
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
 		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
+			free(copiaPath);
+			free(nombreDirectorio);
 			return -3;
 		}
 		else
@@ -943,6 +954,8 @@ int crearDirectorio(char* path,char* mapa)
 			return 0;
 		}
 	}
+	free(copiaPath);
+	free(nombreDirectorio);
 	return -1;
 }
 
@@ -960,6 +973,8 @@ int crearArchivo(char* path,char* mapa)
 	if(strlen(nombreEfectivo) > 16)
 	{
 		log_error(logger,"El nombre que le quieren dar al archivo es demasiado largo. Nombre: %s",nombreEfectivo);
+		free(copiaPath);
+		free(nombreEfectivo);
 		return -2;
 	}
 
@@ -981,6 +996,8 @@ int crearArchivo(char* path,char* mapa)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				free(copiaPath);
+				free(nombreEfectivo);
 				return -1;
 			}
 			else
@@ -996,6 +1013,8 @@ int crearArchivo(char* path,char* mapa)
 		if(i == 2048)   //si llego a 2048, es porque no hay lugar en el array de archivos
 		{
 			log_error(logger,"Tabla de archivos completamente ocupada");
+			free(copiaPath);
+			free(nombreEfectivo);
 			return -3;
 		}
 		else
@@ -1031,6 +1050,8 @@ int crearArchivo(char* path,char* mapa)
 			return 1;
 		}
 	}
+	free(copiaPath);
+	free(nombreEfectivo);
 	return -1;
 }
 
@@ -1181,6 +1202,7 @@ int borrarDirectorioVacio(char* path,char* mapa)
 
 		return 0;
 	}
+	free(copiaPath);
 	return -1;
 }
 
@@ -1252,11 +1274,19 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 	if(strcmp(copiaPathOriginal,copiaPathNuevo))
 	{
 		log_error(logger,"Se está intentando cambiar dos nombres a la vez. Original: '%s'. Nuevo: '%s'",pathOriginal,pathNuevo);
+		free(copiaPathOriginal);
+		free(copiaPathNuevo);
+		free(nuevoNombre);
+		free(viejoNombre);
 		return -1;
 	}
 	if(strlen(nuevoNombre) > 16)
 	{
 		log_error(logger,"Nombre '%s' demasiado largo",nuevoNombre);
+		free(copiaPathOriginal);
+		free(copiaPathNuevo);
+		free(nuevoNombre);
+		free(viejoNombre);
 		return -1;
 	}
 	else
@@ -1284,6 +1314,10 @@ int renombrar(char* pathOriginal, char* pathNuevo, char* mapa)
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
 				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",pathOriginal);
+				free(copiaPathOriginal);
+				free(copiaPathNuevo);
+				free(nuevoNombre);
+				free(viejoNombre);
 				return -1;
 			}
 			else
@@ -1319,6 +1353,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 	int posicionMapa;
 	int bloqueSiguienteEnTabla;
 	int bloqueInicioDatos;
+	int verificadorEspacioDisponible = 0;
 	char* copiaPath = malloc(50);
 	char* viejoNombre;
 
@@ -1378,6 +1413,20 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			posicionMapa = (bloqueInicioDatos + bloqueSiguienteEnTabla) * BLOCK_SIZE;  //me paro en el bloque...
 			posicionMapa += otroContador; 	//..y en el offset
 
+			j = 0;
+			while(j < estructuraAdministrativa.header.tamanioFS)
+			{
+				if(!bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j))
+					verificadorEspacioDisponible++;
+			}
+				//aca verifico el espacio disponible
+
+			if(tam > verificadorEspacioDisponible * BLOCK_SIZE)
+			{
+				log_error(logger,"No hay espacio disponible");
+				return -2;
+			}
+
 			while(i < tam)	//ahora tengo que escribir el tamaño que me indican
 			{
 				if(otroContador == 64)		//este contador me va a indicar los cambios de bloque
@@ -1385,7 +1434,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 					if(estructuraAdministrativa.tablaAsignaciones[bloqueSiguienteEnTabla] == 0xFFFFFFFF)
 					{
 						j = 0;
-						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioBitmap*BLOCK_SIZE*8))
+						while(bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j) && (j < estructuraAdministrativa.header.tamanioFS))
 							j++;
 						   //donde para j, es el offset del bloque libre
 						bitarray_set_bit(estructuraAdministrativa.punteroBitmap,j);
@@ -1416,9 +1465,10 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo correctamente guardado. Path: %s",path);
 			free(copiaPath);
-			return 1;
+			return 0;
 		}
 	}
+	free(copiaPath);
 	return -1;
 }
 
@@ -1467,6 +1517,8 @@ int aperturaArchivo(char* path,int socket)
 	free(copiaPath);
 	return 0;
 	}
+
+	free(copiaPath);
 	return -1;
 }
 
@@ -1512,5 +1564,12 @@ int cerradoArchivo(char* path,int socket)
 	log_info(logger,"Archivo '%s' cerrado por el dexCliente N. %d",estructuraAdministrativa.tablaArchivos[offset].nombre,socket);
 	free(copiaPath);
 	}
+	else
+		free(copiaPath);
 	return 0;
+}
+
+void grabarNombreEn(int i, char* nombre)
+{
+	;//todo hacer que guarde 17 caracteres
 }
