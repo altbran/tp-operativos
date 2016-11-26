@@ -307,7 +307,7 @@ static int f_crearArchivo(const char *path,  mode_t modo, dev_t dev) {
 
 	switch(res)
 	{
-		case 0:
+		case 1:
 			return 0;
 		case -1:
 			return -1;
