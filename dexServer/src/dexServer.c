@@ -90,8 +90,8 @@ int main(void) {
 
 	logger = log_create("dexServer.log","DEXSERVER",0,log_level_from_string("INFO"));  //creo el archivo de log
 
-	int PUERTO_POKEDEX_SERVIDOR = 9000;//atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
-	char* IP_POKEDEX_SERVIDOR = "127.0.0.1";//getenv("IP_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = atoi(getenv("PUERTO_POKEDEX_SERVIDOR"));
+	char* IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 	FILE* archivo;
 	pthread_attr_t attr;
 	pthread_t thread;
@@ -139,7 +139,6 @@ int main(void) {
 	}
 
 	log_info(logger, "Se creo correctamente el socket servidor. Escuchando nuevas conexiones");
-
 
 	struct sockaddr_in direccionCliente;
 
