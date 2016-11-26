@@ -467,7 +467,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 				if(i == 2048) //si llego al final es porque no encontró nada
 				{
-					log_error(logger,"No se ha encontrado la entrada especificada. Path: '%s'",nombreArchivo);
+					log_error(logger,"GETATTR --- No se ha encontrado la entrada especificada. Path: '%s'",nombreArchivo);
 					*tamanio = 0;
 					free(nombreArchivo);
 					free(copiaPath);
@@ -481,7 +481,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 			*tamanio = estructuraAdministrativa.tablaArchivos[offset].tamanioArchivo;
 
-			log_warning(logger,"Lo encontrado. Nombre: %s   Estado: %u",nombreRecuperado,estructuraAdministrativa.tablaArchivos[offset].estado);
+			log_info(logger,"Lo encontrado. Nombre: %s   Estado: %u",nombreRecuperado,estructuraAdministrativa.tablaArchivos[offset].estado);
 
 			free(nombreRecuperado);
 			free(copiaPath);
@@ -1078,6 +1078,7 @@ int crearArchivo(char* path,char* mapa)
 			{
 				if(!bitarray_test_bit(estructuraAdministrativa.punteroBitmap,offset))
 					verificador++;
+				offset++;
 			}
 				//aca verifico el espacio disponible
 
@@ -1142,7 +1143,7 @@ int borrarArchivo(char* path,char* mapa)
 				nombreRecuperado = malloc(18);
 				recuperarNombre(i,nombreRecuperado);
 
-				if(!strcmp((char*)estructuraAdministrativa.tablaArchivos[i].nombre,nombreArchivo))
+				if(!strcmp(nombreRecuperado,nombreArchivo))
 					if(estructuraAdministrativa.tablaArchivos[i].bloquePadre == offset)
 					{
 						free(nombreRecuperado);
@@ -1167,7 +1168,7 @@ int borrarArchivo(char* path,char* mapa)
 				//aca tengo unequivocamente al archivo solicitado
 		if(aperturado[offset] != 0)
 		{
-			log_error(logger,"Archivo en uso, no se puede eliminar. Path: %s",path);
+			log_error(logger,"Archivo en uso por %d, no se puede eliminar. Path: %s",aperturado[offset],path);
 			free(copiaPath);
 			return -1;
 		}
@@ -1312,7 +1313,7 @@ bool comprobarPathValido(char* path)
 	{
 		while(strlen(copiaPath))  //mientras siga teniendo cosas para recorrer...
 		{
-			viejoNombre = malloc(17);
+			viejoNombre = malloc(18);
 			recorrerDesdeIzquierda(copiaPath,viejoNombre);
 			i = 0;
 			while(i < 2048)
@@ -1332,7 +1333,7 @@ bool comprobarPathValido(char* path)
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
-				log_error(logger,"No se ha encontrado la ruta especificada. Path: '%s'",path);
+				log_error(logger,"COMP PATH VALID --- No se ha encontrado la ruta especificada. Path: '%s'",path);
 				free(copiaPath);
 				free(viejoNombre);
 				return false;
@@ -1528,6 +1529,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			{
 				if(!bitarray_test_bit(estructuraAdministrativa.punteroBitmap,j))
 					verificadorEspacioDisponible++;
+				j++;
 			}
 				//aca verifico el espacio disponible
 
@@ -1636,7 +1638,10 @@ int aperturaArchivo(char* path,int socket)
 		else
 			aperturado[offset] = socket;
 
-	log_info(logger,"Archivo '%s' abierto por el dexCliente N. %d",estructuraAdministrativa.tablaArchivos[offset].nombre,socket);
+	nombreArchivo = malloc(18);
+	recuperarNombre(offset,nombreArchivo);
+	log_info(logger,"Archivo '%s' abierto por el dexCliente N. %d",nombreArchivo,socket);
+	free(nombreArchivo);
 	free(copiaPath);
 	return 0;
 	}
@@ -1720,5 +1725,5 @@ void recuperarNombre(int i,char* nombre)
 	{
 		nombre[contador] = estructuraAdministrativa.tablaArchivos[i].nombre[contador];
 	}
-	nombre[18] = '\0';
+	nombre[17] = '\0';
 }
