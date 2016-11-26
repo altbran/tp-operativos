@@ -24,6 +24,7 @@
 #include "deadlock.h"
 #include "planificadores.h"
 #include <semaphore.h>
+#include <errno.h>
 
 //variables
 t_log* logger;

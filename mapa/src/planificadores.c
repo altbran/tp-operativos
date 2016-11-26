@@ -223,13 +223,13 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 					log_error(logger, "movimiento invalido");
 					enviarHeader(miTurno, movimientoInvalido);
 				} else {
-					moverEntrenador(*devolverEntrenador(miTurno));
+					//todo moverEntrenador(*devolverEntrenador(miTurno));
 					enviarHeader(miTurno, movimientoAceptado);
-					dibujar(nombreMapa);
+					//todo dibujar(nombreMapa);
 				}
 				free(posX);
 				free(posY);
-				sleep(configuracion->retardo/1000);
+				//sleep(configuracion->retardo/1000);
 				break;
 
 			case capturarPokemon:

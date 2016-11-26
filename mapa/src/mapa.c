@@ -30,13 +30,13 @@ int main(int argc, char **argv) {
 
 	//cargo recursos de mapa
 	cargarMetadata();
-	crearItems();
+	//todo crearItems();
 	cargarRecursos();
 
 	//inicializo hilos
 	iniciarPlanificador();
-	//todo arreglar bloqueados!! pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
-
+	//todo arreglar bloqueados!! -pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
+	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL);
 	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
 
@@ -70,12 +70,18 @@ int main(int argc, char **argv) {
 
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	dibujar(nombreMapa);
+	//todo dibujar(nombreMapa);
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
-		if (select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL) == -1) {
-			perror("select");
-			return 1;
+		int err;
+		repeat_select:
+		if ((err = select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL)) < 0) {
+			if (errno == EINTR){
+				goto repeat_select;
+			}else{
+				perror("select");
+				return 1;
+			}
 		}
 		// run through the existing connections looking for data to read
 		for (i = 0; i <= fdmax; i++) {
@@ -116,7 +122,7 @@ int main(int argc, char **argv) {
 							list_add(Entrenadores, (void *) entrenador);
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
-							dibujar(nombreMapa);
+							//todo dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
@@ -128,6 +134,13 @@ int main(int argc, char **argv) {
 						break;
 					}
 
+				}else{
+					if(!FD_ISSET(i,&bolsaDeSockets)){
+						log_info(logger,"Consola socket %d desconectada", i);
+						close(i);
+						break;
+					}
+					FD_CLR(i,&bolsaDeSockets);
 				}
 			}
 		}

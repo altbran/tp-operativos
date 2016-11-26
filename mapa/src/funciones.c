@@ -34,8 +34,8 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 
 	entrenador->distanciaAPokenest = 0;
 	entrenador->socket = socketOrigen;
-	cargarEntrenador(*entrenador);
-	dibujar(nombreMapa);
+	//todo cargarEntrenador(*entrenador);
+	//todo dibujar(nombreMapa);
 	return i;
 }
 
@@ -154,7 +154,7 @@ void cargarRecursos() {
 				pokenest->disponiblesPokenest = DisponiblesPokenest;
 
 				list_add(Pokenests, (void *) pokenest);
-				cargarPokenest(*pokenest);
+				//todo cargarPokenest(*pokenest);
 
 				//creo hilo para la pokenest
 				pthread_t nuevoHilo;
@@ -223,7 +223,7 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 		if (pokemon->socketEntrenador == socketEntrenador) {
 			pokemon->socketEntrenador = -1;
 			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
-			sumarPokemon(pokemon->identificadorPokemon);
+			//todo sumarPokemon(pokemon->identificadorPokemon);
 			sem_post(pokenest->disponiblesPokenest);
 			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles, devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;

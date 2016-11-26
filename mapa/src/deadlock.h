@@ -12,6 +12,7 @@
 #include <pkmn/factory.h>
 
 t_log* logDeadlock;
+t_log * logers;
 int** pedidosMatriz;
 int** asignadosMatriz;
 int* recursosVector;

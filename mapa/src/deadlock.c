@@ -9,25 +9,31 @@
 
 void detectarDeadlock() {
 
+	logers = log_create("Pruebas.log", "deadlock", 0, log_level_from_string("INFO"));
+
 	inicializarMatrices();
 	inicializarVectores();
 
-	inicializarAlgoritmoVector();
+	log_info(logers, "Empezó");
 
 	cantidadDeEntrenadores = list_size(Entrenadores);
 
 	while(1){
 		//sem_wait(&contadorEntrenadoresBloqueados);
 		sleep(configuracion->tiempoChequeoDeadlock / 1000);
-		if(queue_size(bloqueados) > 1){
+		if(list_size(Entrenadores) > 1){
 
-			batallaActivada = configuracion->batalla;
+			cantidadDePokemones = list_size(Pokenests);
+
+			inicializarAlgoritmoVector();
+
+			log_info(logers, "Entró");
+
+			batallaActivada = true;
 
 			logDeadlock = log_create("Deadlock.log", "deadlock", 0, log_level_from_string("INFO"));
 
 			hayDeadlock = false;
-
-			cantidadDePokemones = list_size(Pokenests);
 
 			noTieneAsignadosOPedidos();
 
@@ -45,12 +51,17 @@ void detectarDeadlock() {
 				resolverDeadlock();
 			}
 
+			else{
+				log_info(logDeadlock, "No hay deadlock");
+			}
 		}
+
 	}
 }
 
 void inicializarMatrices() {
 	int i;
+	log_info(logers, "inicializa");
 	pedidosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
 	asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
 }
@@ -296,11 +307,14 @@ void crearPokemones(){
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
+	log_info(logDeadlock,"pedidos: %d", pedidosMatriz[indiceEntrenador][indicePokenest]);
 }
 
 void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
+	log_info(logDeadlock,"pedidos: %d", pedidosMatriz[indiceEntrenador][indicePokenest]);
+	log_info(logDeadlock,"asignados: %d", asignadosMatriz[indiceEntrenador][indicePokenest]);
 }
 
 void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
