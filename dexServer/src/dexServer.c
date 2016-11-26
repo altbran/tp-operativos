@@ -1715,6 +1715,9 @@ void grabarNombreEn(int i, char* nombre)
 	{
 		estructuraAdministrativa.tablaArchivos[i].nombre[contador] = nombre[contador];
 	}
+
+	if(contador < 17)
+		estructuraAdministrativa.tablaArchivos[i].nombre[contador] = '\0';
 }
 
 void recuperarNombre(int i,char* nombre)
@@ -1725,5 +1728,5 @@ void recuperarNombre(int i,char* nombre)
 	{
 		nombre[contador] = estructuraAdministrativa.tablaArchivos[i].nombre[contador];
 	}
-	nombre[17] = '\0';
+	nombre[contador] = '\0';
 }
