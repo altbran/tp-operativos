@@ -294,31 +294,38 @@ void enviarPokemon(int servidor, char pokemon){
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
 	int i;
-	t_pokemon pokemonMasFuerte;
-	for(i=0;i<list_size(pokemonesAtrapados);i++){
-		t_pokemon* variable = malloc(sizeof(t_pokemon));
-		variable =list_get(pokemonesAtrapados,i);
-		if(i == 0)
-			pokemonMasFuerte = *variable;
-		else
-			if(variable->nivel > pokemonMasFuerte.nivel)
-				pokemonMasFuerte = *variable;
-		free(variable);
-	}
 	t_metadataPokemon* pkm = malloc(sizeof(t_metadataPokemon));
-	pkm->nivel = pokemonMasFuerte.nivel;
-	strcpy(pkm->nombre,pokemonMasFuerte.nombre);
+	t_pokemon* variable = malloc(sizeof(t_pokemon));
+
+	for(i=0;i<list_size(pokemonesAtrapados);i++){
+
+		variable =list_get(pokemonesAtrapados,i);
+		if(i == 0){
+			pkm->nivel = variable->nivel;
+			strcpy(pkm->nombre,variable->nombre);
+		}
+
+		else{
+			if(variable->nivel > pkm->nivel){
+				pkm->nivel = variable->nivel;
+				strcpy(pkm->nombre,variable->nombre);
+			}
+		}
+
+	}
+
 
 	enviarHeader(servidorMapa, mejorPokemon);
-	void* buffer = malloc(sizeof(t_metadataPokemon));
-	memcpy(buffer,pkm,sizeof(t_metadataPokemon));
-	send(servidorMapa,buffer,sizeof(t_metadataPokemon),0);
-	free(buffer);
-	free(pkm);
+
+
+	send(servidorMapa,pkm,sizeof(t_metadataPokemon),0);
+
 
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
-			pokemonMasFuerte.nombre, pokemonMasFuerte.nivel);
+			pkm->nombre, pkm->nivel);
 
+	free(variable);
+	free(pkm);
 }
 
 void removerMedallas(char* entrenador){
