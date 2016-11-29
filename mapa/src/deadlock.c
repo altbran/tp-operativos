@@ -10,6 +10,7 @@
 void detectarDeadlock() {
 
 	logers = log_create("Pruebas.log", "deadlock", 0, log_level_from_string("INFO"));
+	logDeadlock = log_create("Deadlock.log", "deadlock", 0, log_level_from_string("INFO"));
 
 	inicializarMatrices();
 	inicializarVectores();
@@ -26,12 +27,11 @@ void detectarDeadlock() {
 			cantidadDePokemones = list_size(Pokenests);
 
 			inicializarAlgoritmoVector();
+			inicalizarEntrenadoresEnDeadlock();
 
 			log_info(logers, "Entró");
 
 			batallaActivada = true;
-
-			logDeadlock = log_create("Deadlock.log", "deadlock", 0, log_level_from_string("INFO"));
 
 			hayDeadlock = false;
 
@@ -63,12 +63,15 @@ void inicializarMatrices() {
 	int i;
 	log_info(logers, "inicializa");
 	pedidosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
+	//pedidosMatriz = calloc(cantidadDeEntrenadores,sizeof(int*));
 	asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
 }
 
 void inicializarEntrenadorEnMatrices(int indice){
-	pedidosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
-	asignadosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
+	//pedidosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
+	pedidosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
+	asignadosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
+	//asignadosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
 
 }
 
@@ -84,6 +87,10 @@ void inicializarVectores() {
 	disponiblesVector = calloc(cantidadDePokemones, sizeof(int*));
 	algoritmoVector = calloc(cantidadDePokemones, sizeof(int*));
 	recursosVector = calloc(cantidadDePokemones, sizeof(int*));
+	inicalizarEntrenadoresEnDeadlock();
+}
+
+void inicalizarEntrenadoresEnDeadlock(){
 	entrenadoresEnDeadlock = calloc(cantidadDeEntrenadores, sizeof(int*));
 }
 
@@ -92,6 +99,7 @@ void inicializarAlgoritmoVector(){
 	for(b=0;b<cantidadDePokemones;b++){
 		algoritmoVector[b] = disponiblesVector[b];
 	}
+	log_info(logDeadlock,"%s" ,algoritmoVector);
 }
 
 void mostrarMatriz(int** matriz) {
@@ -165,6 +173,7 @@ void algoritmo(){
 	int k;
 	marcar = true;
 	for(i = 0; i < cantidadDeEntrenadores; i++){
+		log_info(logDeadlock,"%d", entrenadoresEnDeadlock[i]);
 		if(entrenadoresEnDeadlock[i] == 0){
 			j = 0;
 			while(j < cantidadDePokemones && marcar){
@@ -195,23 +204,9 @@ void resolverDeadlock(){
 
 	if(batallaActivada)
 	{
-		crearPokemones();
-
-		cantidadDeEntrenadoresEnDeadlock = 4;
-
-		printf("alalal");
-
-		pokemonA = create_pokemon(fabrica, "Pikachu", 200);
-		pokemonB = create_pokemon(fabrica, "Squirtle", 500);
-		pokemonC = create_pokemon(fabrica, "Rhyhorn", 15);
-		pokemonD = create_pokemon(fabrica, "Charmander", 100);
-
 		mejoresPokemones = list_create();
 
-		list_add(mejoresPokemones, pokemonA);
-		list_add(mejoresPokemones, pokemonB);
-		list_add(mejoresPokemones, pokemonC);
-		list_add(mejoresPokemones, pokemonD);
+		crearPokemones();
 
 		pokemonPerdedor = list_get(mejoresPokemones, 0);
 		int indiceDeEntrenadorPerdedor = 0;
@@ -227,7 +222,9 @@ void resolverDeadlock(){
 		}
 		char str[100];
 		char str2[2];
-		str2[0] = indiceDeEntrenadorPerdedor + '0';
+		t_datosEntrenador* entrenador;
+		entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
+		str2[0] = entrenador->nombre + '0';
 		strcat(str,pokemonPerdedor->species);
 		strcat(str," del entrenador ");
 		strcat(str,str2);
@@ -288,33 +285,51 @@ void notificarResultadoBatalla(int indice, bool gano){
 void crearPokemones(){
 	fabrica = create_pkmn_factory();
 	int i;
+	t_datosEntrenador* entrenador;
+	t_metadataPokemon* pokemon;
+	t_pokemon* pokemonAGuardar;
 	for(i = 0; i < cantidadDeEntrenadores;i++){
 		if(entrenadoresEnDeadlock[i] == 0){
 			cantidadDeEntrenadoresEnDeadlock++;
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
-			t_datosEntrenador* entrenador;
+
 			entrenador = malloc(sizeof(t_datosEntrenador));
-			t_metadataPokemon* pokemon;
 			pokemon = malloc(sizeof(t_metadataPokemon));
+
 			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
 			enviarHeader(entrenador->socket,mejorPokemon);
-			recibirTodo(entrenador->socket,pokemon,sizeof(t_metadataPokemon));
-			list_add(mejoresPokemones,pokemon);
+			recibirTodo(entrenador->socket,&pokemon->nivel,sizeof(int));
+			recibirTodo(entrenador->socket,&pokemon->nombre,18);
+
+			pokemonAGuardar = create_pokemon(fabrica,pokemon->nombre,pokemon->nivel);
+			list_add(mejoresPokemones,pokemonAGuardar);
+			free(pokemon);
 			free(entrenador);
 		}
 	}
+	/*cantidadDeEntrenadoresEnDeadlock = 2;
+	pokemonA = create_pokemon(fabrica, "Pikachu", 200);
+	pokemonB = create_pokemon(fabrica, "Bulbasaur", 500);
+	list_add(mejoresPokemones,pokemonA);
+	list_add(mejoresPokemones,pokemonB);*/
 }
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
-	log_info(logDeadlock,"pedidos: %d", pedidosMatriz[indiceEntrenador][indicePokenest]);
+	log_info(logDeadlock,"pedidos de: %d", indiceEntrenador);
+	log_info(logDeadlock,"pokemon: %d", indicePokenest);
+	log_info(logDeadlock,"%d", pedidosMatriz[indiceEntrenador][indicePokenest]);
 }
 
 void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
-	log_info(logDeadlock,"pedidos: %d", pedidosMatriz[indiceEntrenador][indicePokenest]);
-	log_info(logDeadlock,"asignados: %d", asignadosMatriz[indiceEntrenador][indicePokenest]);
+	log_info(logDeadlock,"pedidos de: %d", indiceEntrenador);
+	log_info(logDeadlock,"pokemon: %d", indicePokenest);
+	log_info(logDeadlock,"%d", pedidosMatriz[indiceEntrenador][indicePokenest]);
+	log_info(logDeadlock,"asignadosde: %d", indiceEntrenador);
+	log_info(logDeadlock,"pokemon: %d", indicePokenest);
+	log_info(logDeadlock,"%d", asignadosMatriz[indiceEntrenador][indicePokenest]);
 }
 
 void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
