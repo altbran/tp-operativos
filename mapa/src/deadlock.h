@@ -55,5 +55,6 @@ void notificarResultadoBatalla(int indice, bool gano);
 void resolverDeadlockAMiManera();
 int obtenerPrimerEntrenadorEnDeadlock();
 void inicalizarEntrenadoresEnDeadlock();
+int traerIndiceEntrenadorPerdedor(int indice);
 
 #endif /* DEADLOCK_H_ */

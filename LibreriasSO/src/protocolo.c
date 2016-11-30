@@ -1,8 +1,13 @@
 #include "protocolo.h"
 #include "sockets.h"
 #include "structs.h"
-void enviarHeader(int socketDestino, int header) {
-	send(socketDestino, &header, sizeof(int), 0);
+int enviarHeader(int socketDestino, int header) {
+	int hayError;
+	if ((hayError = send(socketDestino, &header, sizeof(int), 0)) <= 0) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 int recibirHeader(int socketOrigen) {

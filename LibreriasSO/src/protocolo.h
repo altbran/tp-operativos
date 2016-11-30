@@ -39,6 +39,6 @@ enum headers { //Constantes que identifican los headers de los mensajes
 
 };
 int recibirHeader(int socketOrigen);
-void enviarHeader(int socketDestino, int header);
+int enviarHeader(int socketDestino, int header);
 
 #endif /* PROTOCOLO_H_ */

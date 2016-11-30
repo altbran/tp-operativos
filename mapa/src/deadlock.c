@@ -139,6 +139,7 @@ void notificarMuerteAEntrenador(int indice){
 	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
 	enviarHeader(entrenador->socket,entrenadorMuerto);
 	cantidadDeEntrenadores--;
+	desconectadoOFinalizado(entrenador->socket);
 
 }
 
@@ -222,6 +223,7 @@ void resolverDeadlock(){
 		}
 		char str[100];
 		char str2[2];
+		indiceDeEntrenadorPerdedor = traerIndiceEntrenadorPerdedor(indiceDeEntrenadorPerdedor);
 		t_datosEntrenador* entrenador;
 		entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 		str2[0] = entrenador->nombre + '0';
@@ -243,6 +245,20 @@ void resolverDeadlock(){
 	}
 }
 
+int traerIndiceEntrenadorPerdedor(int indice){
+
+	int i;
+	int j = 0;
+	for(i = 0; i < cantidadDeEntrenadores;i++){
+		if(entrenadoresEnDeadlock[i] == 0){
+			if(j == indice)
+				return i;
+			else j++;
+		}
+	}
+
+}
+
 void resolverDeadlockAMiManera(){
 	int indiceEntrenadorMuerto;
 	indiceEntrenadorMuerto = obtenerPrimerEntrenadorEnDeadlock();
@@ -259,7 +275,7 @@ int obtenerPrimerEntrenadorEnDeadlock(){
 
 t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB){
 	pokemonPerdedor = pkmn_battle(pkmnA,pkmnB);
-	if(pokemonPerdedor == pkmnA){
+	/*if(pokemonPerdedor == pkmnA){
 		notificarResultadoBatalla(indiceA, false);
 		notificarResultadoBatalla(indiceB, true);
 	}
@@ -267,6 +283,7 @@ t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int i
 			notificarResultadoBatalla(indiceB, false);
 			notificarResultadoBatalla(indiceA, true);
 		}
+		*/
 	return pokemonPerdedor;
 }
 
@@ -287,12 +304,13 @@ void crearPokemones(){
 	int i;
 	t_datosEntrenador* entrenador;
 	t_metadataPokemon* pokemon;
-	t_pokemon* pokemonAGuardar;
+
 	for(i = 0; i < cantidadDeEntrenadores;i++){
 		if(entrenadoresEnDeadlock[i] == 0){
 			cantidadDeEntrenadoresEnDeadlock++;
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
 
+			t_pokemon* pokemonAGuardar;
 			entrenador = malloc(sizeof(t_datosEntrenador));
 			pokemon = malloc(sizeof(t_metadataPokemon));
 
@@ -301,7 +319,7 @@ void crearPokemones(){
 			recibirTodo(entrenador->socket,&pokemon->nivel,sizeof(int));
 			recibirTodo(entrenador->socket,&pokemon->nombre,18);
 
-			pokemonAGuardar = create_pokemon(fabrica,pokemon->nombre,pokemon->nivel);
+			pokemonAGuardar = create_pokemon(fabrica,&pokemon->nombre,pokemon->nivel);
 			list_add(mejoresPokemones,pokemonAGuardar);
 			free(pokemon);
 			free(entrenador);
