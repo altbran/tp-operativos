@@ -2,6 +2,6 @@ nombre=Erik
 simbolo=#
 vidas=3
 reintentos=0
-hojaDeViaje=[Paleta,francoPT]
+hojaDeViaje=[Paleta]
 obj[Paleta]=[B,P]
-obj[francoPT]=[P,B]
+

@@ -124,6 +124,7 @@ char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
 	//string_append(&path, "/mnt/pokedex/Mapas/");
 	string_append(&path, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
 	string_append(&path,nombreMapa);
+
 	string_append(&path,"/Pokenests/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,"/");
@@ -315,11 +316,9 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 	}
 
 
-	enviarHeader(servidorMapa, mejorPokemon);
-
+	//enviarHeader(servidorMapa, mejorPokemon);
 
 	send(servidorMapa,pkm,sizeof(t_metadataPokemon),0);
-
 
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
 			pkm->nombre, pkm->nivel);

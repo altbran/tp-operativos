@@ -67,7 +67,6 @@ int j;
 int estado;
 char* puntero;
 char pkm;
-t_pokemon* pokemon;
 t_metadataPokenest* pokenestProxima;
 char* comando;
 char* numeroPokemon;

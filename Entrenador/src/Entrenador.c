@@ -11,8 +11,8 @@ int main(int argc, char** argv){
 
 	if(argc != 3){
 
-	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Erik/MetadataEntrenador.txt");
-	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Erik/Dir' 'de' 'Bill");
+	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
+	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/Dir' 'de' 'Bill");
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
@@ -71,6 +71,8 @@ int main(int argc, char** argv){
 		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
 		string_append(&rutaMetadataMapa,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
+		//string_append(&rutaMetadataMapa, argv[2]);
+		//string_append(&rutaMetadataMapa, "/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);
 		string_append(&rutaMetadataMapa,"/metadata");
 
@@ -120,12 +122,13 @@ int main(int argc, char** argv){
 		enviarMisDatos(servidorMapa);
 
 
-		pokemon = malloc(sizeof(t_pokemon));
-		pokenestProxima = malloc(sizeof(t_metadataPokenest));
+
 
 		//EMPIEZO A BUSCAR POKEMONES
  		for(j=0; j < list_size(elemento->objetivos);j++){
 
+ 			t_pokemon* pokemon = malloc(sizeof(t_pokemon));
+ 			pokenestProxima = malloc(sizeof(t_metadataPokenest));
 
 			puntero = (char*)list_get(elemento->objetivos,j);
 			pkm = *puntero;
@@ -174,10 +177,12 @@ int main(int argc, char** argv){
 
 										case notificarDeadlock:
 
-											cantidadDeadlocks++;
-											log_info(logger, "Entrenador entra en Deadlock");
-											enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
-											estado = 3;
+											if (mejorPokemon == recibirHeader(servidorMapa)){
+												cantidadDeadlocks++;
+												log_info(logger, "Entrenador entra en Deadlock");
+												enviarPokemonMasFuerte(pokemonesAtrapados,servidorMapa);
+												estado = 3;
+											}
 											break;
 
 										case pokemonesDisponibles:
@@ -194,15 +199,20 @@ int main(int argc, char** argv){
 							break;
 
 						case 3://estado deadlock, abarca el caso perdedor y ganador
-
-							if(recibirHeader(servidorMapa) == entrenadorGanador){
+							;
+							int headercito = recibirHeader(servidorMapa);
+							if(headercito == entrenadorGanador){
 								log_info(logger, "Entrenador sale vencedor de la batalla");
 								estado = 2;
 							}
 							else
-								if(recibirHeader(servidorMapa) == entrenadorPerdedor){
+								if(headercito == entrenadorMuerto){
 
-									printf("Entrenador salio perdedor de la batalla y por eso morira, perdera todos sus pokemons atrapados en el mapa y"
+									desconectarseDe(servidorMapa);
+
+
+									printf("Entrenador salio perdedor de la batalla y por eso morira, "
+											"perdera todos sus pokemons atrapados en el mapa y"
 												"se desconectara del mismo/n");
 
 									log_info(logger, "Entrenador sale perdedor de la batalla");
@@ -242,7 +252,7 @@ int main(int argc, char** argv){
 
 
 									log_info(logger,"El Entrenador pierde una vida y se vuelve a conectar al mapa");
-									desconectarseDe(servidorMapa);
+
 								}
 							break;
 							}
@@ -285,7 +295,7 @@ int main(int argc, char** argv){
 
 		}//aca cierra el for de atrapar pokemones
 
-		free(pokemon);
+
 		free(pokenestProxima);
 
 
