@@ -64,8 +64,7 @@ void hiloPokenest(void * parametros) {
 			//me fijo si hay pokemones disponibles
 			sem_wait(pokenest->disponiblesPokenest);
 			log_info(logger, "corre hilo pokenest: %c", pokenest->identificador);
-			if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon,
-					indice)) {
+			if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon,indice)) {
 				//aviso a entrenador que hay pokemones
 				if (enviarHeader(*socketEntrenador, pokemonesDisponibles)) {
 					//error, se desconecto
@@ -86,15 +85,14 @@ void hiloPokenest(void * parametros) {
 						t_duenioPokemon * pokemon = (t_duenioPokemon *) list_get(pokemones, *indice);
 						pokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
-						restarPokemon(pokenest->identificador);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
-								devolverIndicePokenest(pokenest->identificador));
+						//todo restarPokemon(pokenest->identificador);
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						int * elTurno = malloc(sizeof(int));
 						*elTurno = *socketEntrenador;
 						queue_push(listos, (void *) elTurno);
 						sem_post(&contadorEntrenadoresListos);
 						log_info(logger, "Pasa a listo el entrenador del socket: %d", *socketEntrenador);
-						dibujar(nombreMapa);
+						//todo dibujar(nombreMapa);
 						break;
 
 					case finalizoMapa:
@@ -103,10 +101,9 @@ void hiloPokenest(void * parametros) {
 						t_duenioPokemon * Mipokemon = (t_duenioPokemon *) list_get(pokemones, *indice);
 						Mipokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
-						restarPokemon(pokenest->identificador);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
-								devolverIndicePokenest(pokenest->identificador));
-						dibujar(nombreMapa);
+						//todo restarPokemon(pokenest->identificador);
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
+						//todo dibujar(nombreMapa);
 						//devuelvo todos sus recursos
 						desconectadoOFinalizado(*socketEntrenador);
 						log_info(logger, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
@@ -233,9 +230,9 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 				log_error(logger, "movimiento invalido");
 				enviarHeader(miTurno, movimientoInvalido);
 			} else {
-				moverEntrenador(*devolverEntrenador(miTurno));
+				//todo moverEntrenador(*devolverEntrenador(miTurno));
 				enviarHeader(miTurno, movimientoAceptado);
-				dibujar(nombreMapa);
+				//todo dibujar(nombreMapa);
 			}
 			free(posX);
 			free(posY);

@@ -1,0 +1,7 @@
+TiempoChequeoDeadlock=10000
+Batalla=1
+algoritmo=RR
+quantum=8
+retardo=1000
+IP=127.0.0.1
+Puerto=8000

@@ -5,11 +5,11 @@ int main(int argc, char **argv) {
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
-	printf("%d", argc);
+
 
 	//busco las configuraciones
 	if (argc != 3) {
-		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa", "/Mapas/", "Paleta", "/");
+		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt", "/Mapas/", "Paleta", "/");
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = "Paleta";
 	} else {
@@ -30,13 +30,13 @@ int main(int argc, char **argv) {
 
 	//cargo recursos de mapa
 	cargarMetadata();
-	crearItems();
+	//todo crearItems();
 	cargarRecursos();
 
 	//inicializo hilos
 	iniciarPlanificador();
-	//todo arreglar bloqueados!! -pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL); //todo falta el semaforo!!!
 	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL);
+
 	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
 	fdmax = listener; //lo agregue para que no marque error pero es lo de arriba
 	int i;
-	dibujar(nombreMapa);
+	//todo dibujar(nombreMapa);
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		int err;
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 							list_add(Entrenadores, (void *) entrenador);
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
-							dibujar(nombreMapa);
+							//todo dibujar(nombreMapa);
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
