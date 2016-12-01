@@ -7,19 +7,19 @@ int main(int argc, char** argv){
 	char* rutaMetadata = string_new();
 	rutaDirBill= string_new();
 	char* ruta = string_new();
-	rutaMontaje = argv[2];
 
 	if(argc != 3){
 
-	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Gary/MetadataEntrenador.txt");
-	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Gary/Dir' 'de' 'Bill");
+	  	string_append(&rutaMetadata, "/home/utnso/miMnt/Entrenadores/Gary/MetadataEntrenador.txt");
+	  	string_append(&rutaDirBill, "/home/utnso/miMnt/Entrenadores/Gary/Dir' 'de' 'Bill");
+	  	rutaMontaje = "/home/utnso/miMnt";
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
 	}
 	else{
-
-		string_append(&rutaMetadata, argv[2]);
+		rutaMontaje = argv[2];
+		string_append(&rutaMetadata, rutaMontaje);
 		string_append(&rutaMetadata,"/Entrenadores/");
 		string_append(&rutaMetadata, argv[1]);
 		string_append(&ruta, rutaMetadata);
