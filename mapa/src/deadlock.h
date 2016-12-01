@@ -15,12 +15,15 @@ t_log* logDeadlock;
 t_log * logers;
 int** pedidosMatriz;
 int** asignadosMatriz;
+int** pedidosMatrizClonada;
+int** asignadosMatrizClonada;
 int* recursosVector;
 int* disponiblesVector;
 int* algoritmoVector;
 int* entrenadoresEnDeadlock;
 int cantidadDeEntrenadoresEnDeadlock;
 int cantidadDeEntrenadores;
+int cantidadDeEntrenadoresClonada;
 int cantidadDePokemones;
 bool hayDeadlock;
 bool batallaActivada;
@@ -56,5 +59,6 @@ void resolverDeadlockAMiManera();
 int obtenerPrimerEntrenadorEnDeadlock();
 void inicalizarEntrenadoresEnDeadlock();
 int traerIndiceEntrenadorPerdedor(int indice);
+void cargarMatrices();
 
 #endif /* DEADLOCK_H_ */

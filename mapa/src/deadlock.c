@@ -25,13 +25,18 @@ void detectarDeadlock() {
 		if(list_size(Entrenadores) > 1){
 
 			cantidadDePokemones = list_size(Pokenests);
+			cantidadDeEntrenadores = list_size(Entrenadores);
+			cantidadDeEntrenadoresClonada = cantidadDeEntrenadores;
 
+			cargarMatrices();
 			inicializarAlgoritmoVector();
 			inicalizarEntrenadoresEnDeadlock();
 
 			log_info(logers, "Entró");
 
-			batallaActivada = true;
+			if(configuracion->batalla == 1)
+				batallaActivada = true;
+			else batallaActivada = false;
 
 			hayDeadlock = false;
 
@@ -42,9 +47,9 @@ void detectarDeadlock() {
 			if(hayDeadlock){
 				log_info(logDeadlock, "Hay deadlock");
 				log_info(logDeadlock, "Matriz de asignados");
-				mostrarMatriz(asignadosMatriz);
+				mostrarMatriz(asignadosMatrizClonada);
 				log_info(logDeadlock, "Matriz de pedidos");
-				mostrarMatriz(pedidosMatriz);
+				mostrarMatriz(pedidosMatrizClonada);
 				log_info(logDeadlock, "Entrenadores en deadlock");
 				mostrarEntrenadoresEnDeadlock();
 
@@ -59,20 +64,34 @@ void detectarDeadlock() {
 	}
 }
 
-void inicializarMatrices() {
+void cargarMatrices(){
+	pedidosMatrizClonada = (int **) realloc(pedidosMatrizClonada, cantidadDeEntrenadoresClonada * sizeof(int*));
+	asignadosMatrizClonada = (int **) realloc(asignadosMatrizClonada, cantidadDeEntrenadoresClonada * sizeof(int*));
+	int a;
+	for(a = 0; a < cantidadDePokemones; a++){
+		pedidosMatrizClonada[a] = calloc(cantidadDePokemones,sizeof(int*));
+		asignadosMatrizClonada[a] = calloc(cantidadDePokemones,sizeof(int*));
+	}
 	int i;
-	log_info(logers, "inicializa");
+	int j;
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+		for(j=0; j < cantidadDePokemones; j++){
+			asignadosMatrizClonada[i][j] = asignadosMatriz[i][j];
+			pedidosMatrizClonada[i][j] = pedidosMatriz[i][j];
+		}
+	}
+}
+
+void inicializarMatrices() {
 	pedidosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
-	//pedidosMatriz = calloc(cantidadDeEntrenadores,sizeof(int*));
 	asignadosMatriz = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
+	pedidosMatrizClonada = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
+	asignadosMatrizClonada = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
 }
 
 void inicializarEntrenadorEnMatrices(int indice){
-	//pedidosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
 	pedidosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
 	asignadosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
-	//asignadosMatriz[indice] = (int *) malloc(cantidadDePokemones * sizeof(int));
-
 }
 
 void agregarEntrenadorEnMatrices(){
@@ -80,7 +99,6 @@ void agregarEntrenadorEnMatrices(){
 	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	inicializarEntrenadorEnMatrices(cantidadDeEntrenadores - 1);
-
 }
 
 void inicializarVectores() {
@@ -153,10 +171,10 @@ void noTieneAsignadosOPedidos(){
 		tienePedido = false;
 		tieneAsignado = false;
 		while(j < cantidadDePokemones && (!tienePedido || !tieneAsignado)){
-			if (pedidosMatriz[i][j] != 0){
+			if (pedidosMatrizClonada[i][j] != 0){
 				tienePedido= true;
 			}
-			if(asignadosMatriz[i][j] != 0){
+			if(asignadosMatrizClonada[i][j] != 0){
 				tieneAsignado = true;
 			}
 			j++;
@@ -178,7 +196,7 @@ void algoritmo(){
 		if(entrenadoresEnDeadlock[i] == 0){
 			j = 0;
 			while(j < cantidadDePokemones && marcar){
-				if (pedidosMatriz[i][j] > algoritmoVector[j]){
+				if (pedidosMatrizClonada[i][j] > algoritmoVector[j]){
 					marcar = false;
 				}
 				j++;
@@ -275,15 +293,6 @@ int obtenerPrimerEntrenadorEnDeadlock(){
 
 t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB){
 	pokemonPerdedor = pkmn_battle(pkmnA,pkmnB);
-	/*if(pokemonPerdedor == pkmnA){
-		notificarResultadoBatalla(indiceA, false);
-		notificarResultadoBatalla(indiceB, true);
-	}
-	else{
-			notificarResultadoBatalla(indiceB, false);
-			notificarResultadoBatalla(indiceA, true);
-		}
-		*/
 	return pokemonPerdedor;
 }
 
@@ -325,11 +334,6 @@ void crearPokemones(){
 			free(entrenador);
 		}
 	}
-	/*cantidadDeEntrenadoresEnDeadlock = 2;
-	pokemonA = create_pokemon(fabrica, "Pikachu", 200);
-	pokemonB = create_pokemon(fabrica, "Bulbasaur", 500);
-	list_add(mejoresPokemones,pokemonA);
-	list_add(mejoresPokemones,pokemonB);*/
 }
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
