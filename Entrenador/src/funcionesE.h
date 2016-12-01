@@ -83,7 +83,7 @@ char resultado;
 time_t solicitoAtraparPkm;
 time_t atrapePkm;
 double diferencia;
-
+char* rutaMontaje;
 
 
 //FUNCIONES

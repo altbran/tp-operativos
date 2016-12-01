@@ -7,12 +7,12 @@ int main(int argc, char** argv){
 	char* rutaMetadata = string_new();
 	rutaDirBill= string_new();
 	char* ruta = string_new();
-
+	rutaMontaje = argv[2];
 
 	if(argc != 3){
 
-	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/MetadataEntrenador.txt");
-	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Ash/Dir' 'de' 'Bill");
+	  	string_append(&rutaMetadata, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Gary/MetadataEntrenador.txt");
+	  	string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/Entrenador/Entrenadores/Gary/Dir' 'de' 'Bill");
 	//	log_error(logger,"Numero de parametros incorrectos");
 	//	return 1;
 
@@ -68,11 +68,10 @@ int main(int argc, char** argv){
 
 		//creo la ruta del metadata mapa
 		rutaMetadataMapa = string_new();
-		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
-		//string_append(&rutaMetadataMapa,"mnt/pokedex/Mapas/");
-		string_append(&rutaMetadataMapa,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
-		//string_append(&rutaMetadataMapa, argv[2]);
-		//string_append(&rutaMetadataMapa, "/Mapas/");
+
+		string_append(&rutaMetadataMapa, rutaMontaje);
+		//string_append(&rutaMetadataMapa, "/home/utnso/miMnt");
+		string_append(&rutaMetadataMapa, "/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);
 		string_append(&rutaMetadataMapa,"/metadata");
 

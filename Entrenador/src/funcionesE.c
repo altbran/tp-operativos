@@ -121,8 +121,10 @@ void cargarDatos(t_config* metaDataEntrenador){
 char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
 
 	char* path = string_new();
-	//string_append(&path, "/mnt/pokedex/Mapas/");
-	string_append(&path, "/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
+
+	//string_append(&path, "/home/utnso/miMnt");
+	string_append(&path, rutaMontaje);
+	string_append(&path, "/Mapas/");
 	string_append(&path,nombreMapa);
 
 	string_append(&path,"/Pokenests/");
@@ -208,17 +210,14 @@ void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
 void copiarMedalla(char* nombreMapa){
 
 	char* rutaOrigen = string_new();
-	//string_append(&rutaOrigen,"mnt/pokedex/Mapas/");
-	string_append(&rutaOrigen,"/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Mapas/");
+
+	string_append(&rutaOrigen, rutaMontaje);
+	//string_append(&rutaOrigen, "/home/utnso/miMnt");
+	string_append(&rutaOrigen, "/Mapas/");
 	string_append(&rutaOrigen, nombreMapa);
 	string_append(&rutaOrigen, "/medalla-");
 	string_append(&rutaOrigen, nombreMapa);
 	string_append(&rutaOrigen, ".jpg");
-
-/*	char* rutaDestino = string_new();
-	string_append(&rutaDestino,"mnt/pokedex/Entrenadores/");
-	string_append(&rutaDestino, entrenador.nombre);
-	string_append(&rutaDestino, "/medallas");*/
 
 	char* comando = copiarArchivo(rutaOrigen,rutaDirBill);
 	system(comando);
@@ -329,7 +328,11 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
 void removerMedallas(char* entrenador){
 	char* comando = string_new();
-	string_append(&comando,"rm mnt/pokedex/Entrenadores");
+
+	string_append(&comando,"rm ");
+	string_append(&comando, rutaMontaje);
+	//string_append(&comando, "/home/utnso/miMnt");
+	string_append(&comando, "/Entrenadores/");
 	string_append(&comando,entrenador);
 	string_append(&comando,"/medallas/*");
 	system(comando);
@@ -337,7 +340,11 @@ void removerMedallas(char* entrenador){
 
 void removerPokemones(char* entrenador){
 	char* comando = string_new();
-	string_append(&comando,"rm mnt/pokedex/Entrenadores");
+
+	string_append(&comando,"rm ");
+	string_append(&comando, rutaMontaje);
+	//string_append(&comando, "/home/utnso/miMnt");
+	string_append(&comando, "/Entrenadores/");
 	string_append(&comando,entrenador);
 	string_append(&comando,"Dir' 'de' 'Bill/*");
 	system(comando);
