@@ -112,15 +112,14 @@ void enviarCantidadDeMovsAPokenest(t_metadataPokenest* pokenest, int serverMapa)
 char* obtenerNombre(char identificador);
 void enviarPokemon(int servidor, char pokemon);
 void removerMedallas(char* entrenador);
-void removerPokemones(char* entrenador);
 void copiarMedalla(char* nombreMapa);
 void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa);
 char* diferenciaDeTiempo(char* tiempoDeInicio, char* tiempoFinal);
 void sumarTiempos(char** tiempo, char* tiempoASumar);
-void eliminarArchivosPokemones(t_list* lista, char* ruta);
+void eliminarArchivosPokemones(t_list* lista);
 bool filtrarMapa(t_pokemon* pokemon);
 bool distintoMapa(t_pokemon* pokemon);
 char* sumaT(char* t1, char* t2);
-
+char* rutaMedallas;
 
 #endif /* FUNCIONESE_H_ */

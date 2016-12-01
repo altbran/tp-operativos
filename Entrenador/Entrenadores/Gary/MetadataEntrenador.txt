@@ -1,0 +1,7 @@
+nombre=Gary
+simbolo=$
+vidas=2
+reintentos=0
+hojaDeViaje=[Paleta,francoPT]
+obj[Paleta]=[B]
+obj[francoPT]=[Y,C]

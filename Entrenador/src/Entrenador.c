@@ -7,6 +7,8 @@ int main(int argc, char** argv){
 	char* rutaMetadata = string_new();
 	rutaDirBill= string_new();
 	char* ruta = string_new();
+	rutaMedallas = string_new();
+
 
 	if(argc != 3){
 
@@ -29,6 +31,8 @@ int main(int argc, char** argv){
 		string_append(&rutaDirBill, "/Dir' 'de' 'Bill");
 
 	}
+	string_append(&rutaMedallas, rutaDirBill);
+	string_append(&rutaMedallas,"/medallas/");
 
 	//creo el config y el log
 	t_config* metaDataEntrenador = config_create(rutaMetadata);
@@ -37,7 +41,7 @@ int main(int argc, char** argv){
 
 	//leo del config mis datos y lo destruyo
 	cargarDatos(metaDataEntrenador);
-	config_destroy(metaDataEntrenador);
+
 
 
 	log_info(logger,"Entrenador leera sus atributos de la ruta %s", rutaMetadata);
@@ -50,16 +54,16 @@ int main(int argc, char** argv){
 	//momento de inicio
 	diferencia = 0;
 	tiempoDeInicio = temporal_get_string_time();
-
-
+	pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS en este mapa, LISTA CON STRUCTS METADATA POKEMON
+	muertes = 0;
 
 	int i;
-	for(i=0;i < list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
+	i = 0;
+	for(;i < list_size(entrenador.hojaDeViaje); i++){ //comienzo a leer los mapas de la hoja de viaje
 
 
 		volverAEmpezar = 5;
-
-		pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS en este mapa, LISTA CON STRUCTS METADATA POKEMON
+		murio = 0;
 		elemento = malloc(sizeof(t_objetivosPorMapa));//reservo memoria p/ leer el mapa con sus objetivos
 		elemento = list_get(entrenador.hojaDeViaje,i);//le asigno al contenido del puntero, el mapa con sus objetivos
 		nombreMapa = string_new();
@@ -70,7 +74,6 @@ int main(int argc, char** argv){
 		rutaMetadataMapa = string_new();
 
 		string_append(&rutaMetadataMapa, rutaMontaje);
-		//string_append(&rutaMetadataMapa, "/home/utnso/miMnt");
 		string_append(&rutaMetadataMapa, "/Mapas/");
 		string_append(&rutaMetadataMapa,nombreMapa);
 		string_append(&rutaMetadataMapa,"/metadata");
@@ -157,7 +160,8 @@ int main(int argc, char** argv){
 						//le pido al mapa permiso para moverme y chequeo si llegue a la pokenest
 						case 1:
 
-							solicitarMovimiento(servidorMapa,*pokenestProxima);
+							//solicitarMovimiento(servidorMapa,*pokenestProxima);
+							solicitarMovimiento(servidorMapa, *pokenestProxima);
 							if(recibirHeader(servidorMapa) == movimientoAceptado){
 								if(llegoAPokenest(*pokenestProxima)){
 									estado = 2;
@@ -191,7 +195,10 @@ int main(int argc, char** argv){
 											atrapePkm = time(NULL);
 											diferencia += difftime(atrapePkm, solicitoAtraparPkm);
 											log_info(logger,"Entrenador capturó correctamente pokemon %s", pokemon->nombre);
+
+
 											estado = 4;
+
 											break;
 							}
 
@@ -211,14 +218,15 @@ int main(int argc, char** argv){
 
 
 									printf("Entrenador salio perdedor de la batalla y por eso morira, "
-											"perdera todos sus pokemons atrapados en el mapa y"
-												"se desconectara del mismo/n");
+											"perdera todos sus pokemons atrapados en el mapa y "
+												"se desconectara del mismo\n");
 
 									log_info(logger, "Entrenador sale perdedor de la batalla");
 
 									murio = 1;
-									muertes++;
 
+									muertes++;
+									entrenador.vidas --;
 									// si no le quedan vidas al entrenador, tiene la opcion de volver a empezar
 									if(entrenador.vidas <= 0){
 
@@ -226,6 +234,7 @@ int main(int argc, char** argv){
 												"Desea volver a jugar? Ingrese 's' para si, 'n' para no",entrenador.reintentos);
 
 										scanf("%c", &resultado);
+
 
 										//opcion si
 										if(resultado == 's')
@@ -235,20 +244,19 @@ int main(int argc, char** argv){
 											if (resultado == 'n')
 												volverAEmpezar = 0;
 										}
-
-										list_clean(pokemonesAtrapados);
+										estado = 4;
 										break;
 									}
-
-									entrenador.vidas --;
 
 									j = 0;//empieza a leer los objs desde 0
 									i--;//vuelve a conectarse al mismo mapa
 
 									//elimino los archivos de los pokemones copiados de este mapa y  los borro de la lista de atrapados
-									eliminarArchivosPokemones(list_filter(pokemonesAtrapados,(void*) filtrarMapa), ruta);
+									eliminarArchivosPokemones(list_filter(pokemonesAtrapados,(void*) filtrarMapa));
 									pokemonesAtrapados = list_filter(pokemonesAtrapados,(void*) distintoMapa);
 
+									estado = 4;
+									volverAEmpezar = 6;
 
 									log_info(logger,"El Entrenador pierde una vida y se vuelve a conectar al mapa");
 
@@ -259,8 +267,10 @@ int main(int argc, char** argv){
 
 
 			//primero chequeo si se murio
-			if(murio)
+			if(murio){
+				log_info(logger,"cantidad de pokemones atrapados: %d", list_size(pokemonesAtrapados));
 				break;
+			}
 
 			//creo la ruta del metadata pkm
 			numeroPokemon = obtenerNumero(pokemon->numero);
@@ -277,6 +287,7 @@ int main(int argc, char** argv){
 
 			//agrego el pkm a la lista de pokemones atrapados
 			list_add(pokemonesAtrapados,(void*)pokemon);
+			log_info(logger,"cantidad de pokemones atrapados: %d", list_size(pokemonesAtrapados));
 
 			//copio el archivo pkm en mi directorio Bill
 			comando = string_new();
@@ -298,14 +309,14 @@ int main(int argc, char** argv){
 		free(pokenestProxima);
 
 
-		log_info(logger,"cantidad de pokemones atrapados: %d", list_size(pokemonesAtrapados));
-
 		//switch de : a)volver a empezar la ruta de viaje  b)dejar de jugar  c)haber atrapado  pokemon
 
 		switch(volverAEmpezar){
 
 		case 0:
 			log_info(logger,"El Entrenador abandona el juego");
+			removerMedallas(entrenador.nombre);
+			eliminarArchivosPokemones(pokemonesAtrapados);
 			break;
 
 		case 1:
@@ -314,19 +325,20 @@ int main(int argc, char** argv){
 				metaDataEntrenador = config_create(rutaMetadata);
 				entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
 				config_destroy(metaDataEntrenador);
-				list_clean(pokemonesAtrapados);
 				removerMedallas(entrenador.nombre);
-				removerPokemones(entrenador.nombre);
+				eliminarArchivosPokemones(pokemonesAtrapados);
+				list_clean(pokemonesAtrapados);
 				log_info(logger,"El Entrenador vuelve a empezar el juego desde cero");
 			break;
 
 		case 5:
 				copiarMedalla(nombreMapa);
-				free(elemento);
-				//enviarHeader(servidorMapa,finalizoMapa);
 				desconectarseDe(servidorMapa);
 				log_info(logger,"El Entrenador finalizo el mapa %s",nombreMapa);
 			break;
+
+		case 6:
+				break;
 
 	}
 
@@ -349,7 +361,7 @@ int main(int argc, char** argv){
 		log_info(logger,"El Entrenador se convirtio en Maestro Pokemon");
 
 	}
-
+	config_destroy(metaDataEntrenador);
 
 
 	return EXIT_SUCCESS;

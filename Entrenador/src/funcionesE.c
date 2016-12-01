@@ -219,7 +219,7 @@ void copiarMedalla(char* nombreMapa){
 	string_append(&rutaOrigen, nombreMapa);
 	string_append(&rutaOrigen, ".jpg");
 
-	char* comando = copiarArchivo(rutaOrigen,rutaDirBill);
+	char* comando = copiarArchivo(rutaOrigen,rutaMedallas);
 	system(comando);
 }
 
@@ -330,25 +330,13 @@ void removerMedallas(char* entrenador){
 	char* comando = string_new();
 
 	string_append(&comando,"rm ");
-	string_append(&comando, rutaMontaje);
+	string_append(&comando, rutaMedallas);
 	//string_append(&comando, "/home/utnso/miMnt");
-	string_append(&comando, "/Entrenadores/");
-	string_append(&comando,entrenador);
-	string_append(&comando,"/medallas/*");
+	string_append(&comando, "*");
 	system(comando);
 }
 
-void removerPokemones(char* entrenador){
-	char* comando = string_new();
 
-	string_append(&comando,"rm ");
-	string_append(&comando, rutaMontaje);
-	//string_append(&comando, "/home/utnso/miMnt");
-	string_append(&comando, "/Entrenadores/");
-	string_append(&comando,entrenador);
-	string_append(&comando,"Dir' 'de' 'Bill/*");
-	system(comando);
-}
 
 char* diferenciaDeTiempo(char* tiempoDeInicio, char* tiempoFinal){
 
@@ -552,7 +540,7 @@ void sumarTiempos(char** tiempo, char* tiempoASumar){
 
 }
 
-void eliminarArchivosPokemones(t_list* lista, char* ruta){
+void eliminarArchivosPokemones(t_list* lista){
 
 	int i;
 	for(i=0;i<list_size(lista);i++){
@@ -561,13 +549,11 @@ void eliminarArchivosPokemones(t_list* lista, char* ruta){
 		char* rutta = string_new();
 		char* nro = obtenerNumero(pers->numero);
 
-		string_append(&rutta,ruta);
-		string_append(&rutta, "/");
-		string_append(&rutta,pers->nombre);
+		string_append(&rutta, rutaDirBill);
 		string_append(&rutta,"/");
 		string_append(&rutta,pers->nombre);
 		string_append(&rutta,nro);
-		string_append(&rutta,".jpg");
+		string_append(&rutta,".dat");
 
 		char* comando = string_new();
 		string_append(&comando, "rm ");
