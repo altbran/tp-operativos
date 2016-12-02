@@ -34,6 +34,7 @@ t_pokemon* pokemonC;
 t_pokemon* pokemonD;
 t_pokemon* pokemonPerdedor;
 t_list * mejoresPokemones;
+pthread_mutex_t miMutex;
 
 void detectarDeadlock();
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest);
@@ -60,5 +61,6 @@ int obtenerPrimerEntrenadorEnDeadlock();
 void inicalizarEntrenadoresEnDeadlock();
 int traerIndiceEntrenadorPerdedor(int indice);
 void cargarMatrices();
+void cargarDisponiblesVector();
 
 #endif /* DEADLOCK_H_ */
