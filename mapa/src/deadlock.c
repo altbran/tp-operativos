@@ -360,32 +360,30 @@ void crearPokemones(){
 }
 
 void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
+	pthread_mutex_lock(&miMutex);
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
-	log_info(logDeadlock,"pedidos de: %d", indiceEntrenador);
-	log_info(logDeadlock,"pokemon: %d", indicePokenest);
-	log_info(logDeadlock,"%d", pedidosMatriz[indiceEntrenador][indicePokenest]);
+	pthread_mutex_unlock(&miMutex);
 }
 
 void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+	pthread_mutex_lock(&miMutex);
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
 	disponiblesVector[indicePokenest] = disponiblesVector[indicePokenest] - 1;
-	log_info(logDeadlock,"pedidos de: %d", indiceEntrenador);
-	log_info(logDeadlock,"pokemon: %d", indicePokenest);
-	log_info(logDeadlock,"%d", pedidosMatriz[indiceEntrenador][indicePokenest]);
-	log_info(logDeadlock,"asignadosde: %d", indiceEntrenador);
-	log_info(logDeadlock,"pokemon: %d", indicePokenest);
-	log_info(logDeadlock,"%d", asignadosMatriz[indiceEntrenador][indicePokenest]);
+	pthread_mutex_unlock(&miMutex);
 }
 
 void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+	pthread_mutex_lock(&miMutex);
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] - 1;
 	disponiblesVector[indicePokenest] = disponiblesVector[indicePokenest] + 1;
+	pthread_mutex_unlock(&miMutex);
 }
 
 void liberarRecursosEntrenador(int indiceEntrenador){
 	int i;
 	int j;
+	pthread_mutex_lock(&miMutex);
 	for(i = indiceEntrenador; i < cantidadDeEntrenadores-1;i++){
 		for(j = 0; j < cantidadDePokemones;j++){
 			asignadosMatriz[i][j] = asignadosMatriz[i+1][j];
@@ -393,4 +391,5 @@ void liberarRecursosEntrenador(int indiceEntrenador){
 		}
 	}
 	cantidadDeEntrenadores--;
+	pthread_mutex_unlock(&miMutex);
 }
