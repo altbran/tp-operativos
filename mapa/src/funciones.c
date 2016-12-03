@@ -217,11 +217,11 @@ void desconectadoOFinalizado(int socketEntrenador) {
 		//free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
-	int valor;
-	sem_getvalue(&binarioDeLaMuerte,&valor);
-	if(valor == 0){
-		sem_post(&binarioDeLaMuerte);
-	}
+	//int valor;
+	//sem_getvalue(&binarioDeLaMuerte,&valor);
+	//if(valor == 0){
+		//sem_post(&binarioDeLaMuerte);
+	//}
 }
 
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {

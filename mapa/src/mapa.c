@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
 						//recibir datos del entrenador nuevo
 						//pthread_mutex_lock(&miMutex);
-						sem_wait(&binarioDeLaMuerte);
+						//sem_wait(&binarioDeLaMuerte);
 						if (recibirEntrenador(*socketNuevo, entrenador)) {
 							log_error(logger, "error en el recibir entrenador, socket %d", *socketNuevo);
 							free(socketNuevo);
@@ -130,8 +130,8 @@ int main(int argc, char **argv) {
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
-						sem_post(&binarioDeLaMuerte);
-						pthread_mutex_unlock(&miMutex);
+						//sem_post(&binarioDeLaMuerte);
+						//pthread_mutex_unlock(&miMutex);
 						break;
 
 					default:
