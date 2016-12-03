@@ -34,7 +34,7 @@ int servidorMapa;
 fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 sem_t contadorEntrenadoresListos;
-sem_t contadorEntrenadoresBloqueados;
+sem_t binarioDeLaMuerte;
 pthread_mutex_t mutex;
 pthread_mutex_t mutexDeadlock;
 t_metadataMapa * configuracion;
@@ -47,7 +47,7 @@ t_list * listaRecursosDisponibles;
 pthread_t planificador;
 pthread_t deadlock;
 t_list * pokemones;
-
+pthread_mutex_t miMutex;
 
 //funciones
 void receptorSIG(int sig);

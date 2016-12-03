@@ -58,24 +58,31 @@ void hiloPokenest(void * parametros) {
 		sem_wait(pokenest->semaforoPokenest);
 		if (!queue_is_empty(pokenest->colaPokenest)) {
 			int * socketEntrenador = (int *) queue_pop(pokenest->colaPokenest);
+			log_info(logger, "Entro al hilo el socket: %d",*socketEntrenador);
+			log_info(logger, "en la pokenest: %c", pokenest->identificador);
 			int * numeroPokemon = malloc(sizeof(int));
 			int * indice = malloc(sizeof(int));
 
 			//me fijo si hay pokemones disponibles
 			sem_wait(pokenest->disponiblesPokenest);
-			log_info(logger, "corre hilo pokenest: %c", pokenest->identificador);
+			log_info(logger, "corre hilo pokenest (hay pokemons): %c", pokenest->identificador);
 			if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon,indice)) {
+
 				//aviso a entrenador que hay pokemones
 				if (enviarHeader(*socketEntrenador, pokemonesDisponibles)) {
+					log_info(logger, "Error al enviar pokemon disp pokenest: %c", pokenest->identificador);
 					//error, se desconecto
 					desconectadoOFinalizado(*socketEntrenador);
 				}else if (enviarTodo(*socketEntrenador, numeroPokemon, sizeof(int))) {
+					log_info(logger, "Error al enviar el numero de pokemon disp pokenest: %c", pokenest->identificador);
 					//error, se desconecto
 					desconectadoOFinalizado(*socketEntrenador);
 				} else {
 
 					int header = recibirHeader(*socketEntrenador);
-					log_info(logger, "el header es: %d", header);
+					//log_info(logger, "recibido del socket %d en la pokenest %s",*socketEntrenador, pokenest->identificador);
+					log_info(logger, "el header es: %d",header);
+					log_info(logger, "del socket: %d",*socketEntrenador);
 					//entrenador avisa que ya lo copio
 					switch (header) {
 					case entrenadorListo:
@@ -251,10 +258,10 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 				t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokemon);
 				int * socketEntrenador = malloc(sizeof(int));
 				*socketEntrenador = miTurno;
-				queue_push(pokenest->colaPokenest, (void *) socketEntrenador);
 				sumarPedidosMatriz(devolverIndiceEntrenador(miTurno), devolverIndicePokenest(pokenest->identificador));
 				*i = total;
 				*quedoBloqueado = 1;
+				queue_push(pokenest->colaPokenest, (void *) socketEntrenador);
 				sem_post(pokenest->semaforoPokenest);
 			}
 			break;

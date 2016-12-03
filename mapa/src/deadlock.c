@@ -22,10 +22,10 @@ void detectarDeadlock() {
 
 	log_info(logers, "Empezó");
 
-	while(1){
+	while (1) {
 		//sem_wait(&contadorEntrenadoresBloqueados);
 		sleep(configuracion->tiempoChequeoDeadlock / 1000);
-		if(list_size(Entrenadores) > 1){
+		if (list_size(Entrenadores) > 1) {
 
 			pthread_mutex_lock(&miMutex);
 
@@ -40,9 +40,10 @@ void detectarDeadlock() {
 
 			log_info(logers, "Entró");
 
-			if(configuracion->batalla == 1)
+			if (configuracion->batalla == 1)
 				batallaActivada = true;
-			else batallaActivada = false;
+			else
+				batallaActivada = false;
 
 			hayDeadlock = false;
 
@@ -50,7 +51,7 @@ void detectarDeadlock() {
 
 			algoritmo();
 
-			if(hayDeadlock){
+			if (hayDeadlock) {
 				log_info(logDeadlock, "Hay deadlock");
 				log_info(logDeadlock, "Matriz de asignados");
 				mostrarMatriz(asignadosMatrizClonada);
@@ -62,7 +63,7 @@ void detectarDeadlock() {
 				resolverDeadlock();
 			}
 
-			else{
+			else {
 				log_info(logDeadlock, "No hay deadlock");
 			}
 			free(pedidosMatrizClonada);
@@ -72,28 +73,29 @@ void detectarDeadlock() {
 	}
 }
 
-void cargarDisponiblesVector(){
+void cargarDisponiblesVector() {
 	int i;
 	t_metadataPokenest* pokenest;
-	for(i=0;i<cantidadDePokemones;i++){
-		pokenest = (t_metadataPokenest*) list_get(Pokenests,i);
+	for (i = 0; i < cantidadDePokemones; i++) {
+		pokenest = (t_metadataPokenest*) list_get(Pokenests, i);
 		disponiblesVector[i] = pokenest->cantidad;
 	}
 }
 
-void cargarMatrices(){
-	pedidosMatrizClonada = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
-	asignadosMatrizClonada = (int **) malloc(cantidadDeEntrenadores * sizeof(int*));
+void cargarMatrices() {
+	pedidosMatrizClonada = (int **) malloc(cantidadDeEntrenadoresClonada * sizeof(int*));
+	asignadosMatrizClonada = (int **) malloc(cantidadDeEntrenadoresClonada * sizeof(int*));
 	int a;
-	for(a = 0; a < cantidadDePokemones; a++){
-		pedidosMatrizClonada[a] = calloc(cantidadDePokemones,sizeof(int*));
-		asignadosMatrizClonada[a] = calloc(cantidadDePokemones,sizeof(int*));
+	for (a = 0; a < cantidadDeEntrenadoresClonada; a++) {
+		pedidosMatrizClonada[a] = calloc(cantidadDePokemones, sizeof(int*));
+		asignadosMatrizClonada[a] = calloc(cantidadDePokemones, sizeof(int*));
 	}
 	int i;
 	int j;
-	int aa; int p;
+	int aa;
+	int p;
 	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
-		for(j=0; j < cantidadDePokemones; j++){
+		for (j = 0; j < cantidadDePokemones; j++) {
 			aa = asignadosMatriz[i][j];
 			p = pedidosMatriz[i][j];
 			asignadosMatrizClonada[i][j] = asignadosMatriz[i][j];
@@ -108,12 +110,12 @@ void inicializarMatrices() {
 
 }
 
-void inicializarEntrenadorEnMatrices(int indice){
-	pedidosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
-	asignadosMatriz[indice] = calloc(cantidadDePokemones,sizeof(int*));
+void inicializarEntrenadorEnMatrices(int indice) {
+	pedidosMatriz[indice] = calloc(cantidadDePokemones, sizeof(int*));
+	asignadosMatriz[indice] = calloc(cantidadDePokemones, sizeof(int*));
 }
 
-void agregarEntrenadorEnMatrices(){
+void agregarEntrenadorEnMatrices() {
 	cantidadDeEntrenadores++;
 	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
@@ -127,17 +129,18 @@ void inicializarVectores() {
 	inicalizarEntrenadoresEnDeadlock();
 }
 
-void inicalizarEntrenadoresEnDeadlock(){
+void inicalizarEntrenadoresEnDeadlock() {
 	entrenadoresEnDeadlock = calloc(cantidadDeEntrenadoresClonada, sizeof(int*));
 }
 
-void inicializarAlgoritmoVector(){
-	int b;int j;
-	for(b=0;b<cantidadDePokemones;b++){
+void inicializarAlgoritmoVector() {
+	int b;
+	int j;
+	for (b = 0; b < cantidadDePokemones; b++) {
 		j = disponiblesVector[b];
 		algoritmoVector[b] = disponiblesVector[b];
 	}
-	log_info(logDeadlock,"%s" ,algoritmoVector);
+	log_info(logDeadlock, "%s", algoritmoVector);
 }
 
 void mostrarMatriz(int** matriz) {
@@ -145,103 +148,99 @@ void mostrarMatriz(int** matriz) {
 	int j;
 	char* vector = calloc(cantidadDePokemones, sizeof(int*));
 	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
-		for(j=0; j<cantidadDePokemones; j++){
+		for (j = 0; j < cantidadDePokemones; j++) {
 			vector[j] = matriz[i][j] + '0';
 		}
-		log_info(logDeadlock,"%s" ,vector);
+		log_info(logDeadlock, "%s", vector);
 
 	}
 }
 
-void mostrarEntrenadoresEnDeadlock(){
+void mostrarEntrenadoresEnDeadlock() {
 	int p;
-	for(p=0;p<cantidadDeEntrenadoresClonada;p++){
-		if(entrenadoresEnDeadlock[p] == 0){
+	for (p = 0; p < cantidadDeEntrenadoresClonada; p++) {
+		if (entrenadoresEnDeadlock[p] == 0) {
 			t_datosEntrenador* entrenador;
 			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, p));
-			log_info(logDeadlock,"%s", entrenador->nombre);
-			log_info(logDeadlock,"%d", p);
+			log_info(logDeadlock, "%s", entrenador->nombre);
+			log_info(logDeadlock, "%d", p);
 			notificarDeadlockAEntrenador(p);
 		}
 	}
 }
 
-void notificarDeadlockAEntrenador(int indice){
+void notificarDeadlockAEntrenador(int indice) {
 	t_datosEntrenador* entrenador;
 	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
-	enviarHeader(entrenador->socket,notificarDeadlock);
+	enviarHeader(entrenador->socket, notificarDeadlock);
 }
 
-void notificarMuerteAEntrenador(int indice){
-	t_datosEntrenador* entrenador;
-	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
-	enviarHeader(entrenador->socket,entrenadorMuerto);
-	desconectadoOFinalizado(entrenador->socket);
-
+void notificarMuerteAEntrenador(int sockete) {
+	sem_wait(&binarioDeLaMuerte);
+	enviarHeader(sockete, entrenadorMuerto);
+	close(sockete);
 }
 
-void noTieneAsignadosOPedidos(){
+void noTieneAsignadosOPedidos() {
 	bool tienePedido;
 	bool tieneAsignado;
 	int j;
 	int i;
-	for(i = 0; i < cantidadDeEntrenadoresClonada; i++){
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
 		j = 0;
 		tienePedido = false;
 		tieneAsignado = false;
-		while(j < cantidadDePokemones && (!tienePedido || !tieneAsignado)){
-			if (pedidosMatrizClonada[i][j] != 0){
-				tienePedido= true;
+		while (j < cantidadDePokemones && (!tienePedido || !tieneAsignado)) {
+			if (pedidosMatrizClonada[i][j] != 0) {
+				tienePedido = true;
 			}
-			if(asignadosMatrizClonada[i][j] != 0){
+			if (asignadosMatrizClonada[i][j] != 0) {
 				tieneAsignado = true;
 			}
 			j++;
 		}
 
-		if((!tienePedido || !tieneAsignado)){
+		if ((!tienePedido || !tieneAsignado)) {
 			entrenadoresEnDeadlock[i] = 1;
 		}
 	}
 }
-void algoritmo(){
+void algoritmo() {
 	bool marcar;
 	int j;
 	int i;
 	int k;
 	marcar = true;
-	for(i = 0; i < cantidadDeEntrenadoresClonada; i++){
-		log_info(logDeadlock,"%d", entrenadoresEnDeadlock[i]);
-		if(entrenadoresEnDeadlock[i] == 0){
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+		log_info(logDeadlock, "%d", entrenadoresEnDeadlock[i]);
+		if (entrenadoresEnDeadlock[i] == 0) {
 			j = 0;
-			while(j < cantidadDePokemones && marcar){
-				if (pedidosMatrizClonada[i][j] > algoritmoVector[j]){
+			while (j < cantidadDePokemones && marcar) {
+				if (pedidosMatrizClonada[i][j] > algoritmoVector[j]) {
 					marcar = false;
 				}
 				j++;
 			}
 
-			if(marcar){
+			if (marcar) {
 				entrenadoresEnDeadlock[i] = 1;
-				for(k = 0;k < cantidadDePokemones; k++){
+				for (k = 0; k < cantidadDePokemones; k++) {
 					algoritmoVector[k] = algoritmoVector[k] + asignadosMatriz[i][k];
 				}
 				algoritmo();
 
-			}
-			else {
+			} else {
 				hayDeadlock = true;
 			}
 			marcar = true;
+		} else {
 		}
-		else {}
 	}
 }
 
-void resolverDeadlock(){
+void resolverDeadlock() {
 
-	if(batallaActivada)
-	{
+	if (batallaActivada) {
 		mejoresPokemones = list_create();
 
 		crearPokemones();
@@ -250,9 +249,9 @@ void resolverDeadlock(){
 		int indiceDeEntrenadorPerdedor = 0;
 		int h = 1;
 		t_pokemon* pokemonPerdedorAnterior = pokemonPerdedor;
-		while(h < cantidadDeEntrenadoresEnDeadlock){
-			pokemonPerdedor = batallaPokemon(pokemonPerdedor,list_get(mejoresPokemones,h),indiceDeEntrenadorPerdedor,h);
-			if(pokemonPerdedor != pokemonPerdedorAnterior){
+		while (h < cantidadDeEntrenadoresEnDeadlock) {
+			pokemonPerdedor = batallaPokemon(pokemonPerdedor, list_get(mejoresPokemones, h), indiceDeEntrenadorPerdedor, h);
+			if (pokemonPerdedor != pokemonPerdedorAnterior) {
 				pokemonPerdedorAnterior = pokemonPerdedor;
 				indiceDeEntrenadorPerdedor = h;
 			}
@@ -264,81 +263,112 @@ void resolverDeadlock(){
 		t_datosEntrenador* entrenador;
 		entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 		str2[0] = entrenador->nombre + '0';
-		strcat(str,pokemonPerdedor->species);
-		strcat(str," del entrenador ");
-		strcat(str,str2);
-		notificarMuerteAEntrenador(indiceDeEntrenadorPerdedor);
-		log_info(logDeadlock,str);
+		strcat(str, pokemonPerdedor->species);
+		strcat(str, " del entrenador ");
+		strcat(str, str2);
+
+		int socketPerdedor = notificarGanadoresEntrenadores(indiceDeEntrenadorPerdedor);
+		notificarMuerteAEntrenador(socketPerdedor);
+		log_info(logDeadlock, str);
 
 		//free(str);
 		//free(algoritmoVector);
-	//	free(entrenadoresEnDeadlock);
+		//	free(entrenadoresEnDeadlock);
 		list_destroy(mejoresPokemones);
 		destroy_pkmn_factory(fabrica);
-	}
-	else
-	{
+	} else {
 		resolverDeadlockAMiManera();
 	}
 }
 
-int traerIndiceEntrenadorPerdedor(int indice){
+int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
+	int i = 0;
+	int j = 0;
+
+	//aviso a los que ganaron
+	while (i < cantidadDeEntrenadoresEnDeadlock - 1) {
+		if (entrenadoresEnDeadlock[j] == 0 && j != indiceDeEntrenadorPerdedor) {
+			notificarResultadoBatalla(j, true);
+			i++;
+		}
+		j++;
+	}
+	//borro al entrenador que pierde
+	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
+	int socketPerdedor = perdedor->socket;
+	int indiceEntrenador = devolverIndiceEntrenador(socketPerdedor);
+	log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
+	if (indiceEntrenador != -1) {
+		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
+		liberarRecursosEntrenador(indiceEntrenador);
+		reasignarPokemonesDeEntrenadorADisponibles(socketPerdedor);
+		//todo eliminarEntrenador(finalizado->identificador);
+		//log_info(logger, "desconectado o finalizado el socket: %d", socketPerdedor);
+		//free(finalizado);
+		//todo dibujar(nombreMapa);
+	}
+	int valor;
+	sem_getvalue(&binarioDeLaMuerte, &valor);
+	if (valor == 0) {
+		sem_post(&binarioDeLaMuerte);
+	}
+
+	return socketPerdedor;
+}
+
+int traerIndiceEntrenadorPerdedor(int indice) {
 
 	int i;
 	int j = 0;
-	for(i = 0; i < cantidadDeEntrenadoresClonada;i++){
-		if(entrenadoresEnDeadlock[i] == 0){
-			if(j == indice)
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+		if (entrenadoresEnDeadlock[i] == 0) {
+			if (j == indice)
 				return i;
-			else j++;
+			else
+				j++;
 		}
 	}
 
 }
 
-void resolverDeadlockAMiManera(){
+void resolverDeadlockAMiManera() {
 	int indiceEntrenadorMuerto;
 	indiceEntrenadorMuerto = obtenerPrimerEntrenadorEnDeadlock();
 	notificarMuerteAEntrenador(indiceEntrenadorMuerto);
 }
 
-int obtenerPrimerEntrenadorEnDeadlock(){
+int obtenerPrimerEntrenadorEnDeadlock() {
 	int i;
-	for(i = 0;i < cantidadDeEntrenadoresClonada;i++){
-		if(entrenadoresEnDeadlock[i] == 0)
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+		if (entrenadoresEnDeadlock[i] == 0)
 			return i;
 	}
 }
 
-t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB){
-	pokemonPerdedor = pkmn_battle(pkmnA,pkmnB);
-	if(pokemonPerdedor == pkmnA)
-		notificarResultadoBatalla(traerIndiceEntrenadorPerdedor(indiceB), true);
-	else notificarResultadoBatalla(traerIndiceEntrenadorPerdedor(indiceA), true);
-
+t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB) {
+	pokemonPerdedor = pkmn_battle(pkmnA, pkmnB);
 	return pokemonPerdedor;
 }
 
-void notificarResultadoBatalla(int indice, bool gano){
+void notificarResultadoBatalla(int indice, bool gano) {
 	t_datosEntrenador* entrenador;
 	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
-	if(gano){
-		enviarHeader(entrenador->socket,entrenadorGanador);
-	}
-	else {
-		enviarHeader(entrenador->socket,entrenadorPerdedor);
+	if (gano) {
+		enviarHeader(entrenador->socket, entrenadorGanador);
+	} else {
+		enviarHeader(entrenador->socket, entrenadorPerdedor);
 		close(entrenador->socket);
 	}
 }
 
-void crearPokemones(){
+void crearPokemones() {
 	fabrica = create_pkmn_factory();
 	int i;
 	t_datosEntrenador* entrenador;
 	t_metadataPokemon* pokemon;
 
-	for(i = 0; i < cantidadDeEntrenadoresClonada;i++){
-		if(entrenadoresEnDeadlock[i] == 0){
+	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+		if (entrenadoresEnDeadlock[i] == 0) {
 			cantidadDeEntrenadoresEnDeadlock++;
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
 
@@ -347,25 +377,25 @@ void crearPokemones(){
 			pokemon = malloc(sizeof(t_metadataPokemon));
 
 			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
-			enviarHeader(entrenador->socket,mejorPokemon);
-			recibirTodo(entrenador->socket,&pokemon->nivel,sizeof(int));
-			recibirTodo(entrenador->socket,&pokemon->nombre,18);
+			enviarHeader(entrenador->socket, mejorPokemon);
+			recibirTodo(entrenador->socket, &pokemon->nivel, sizeof(int));
+			recibirTodo(entrenador->socket, &pokemon->nombre, 18);
 
-			pokemonAGuardar = create_pokemon(fabrica,&pokemon->nombre,pokemon->nivel);
-			list_add(mejoresPokemones,pokemonAGuardar);
+			pokemonAGuardar = create_pokemon(fabrica, &pokemon->nombre, pokemon->nivel);
+			list_add(mejoresPokemones, pokemonAGuardar);
 			free(pokemon);
 			free(entrenador);
 		}
 	}
 }
 
-void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest){
+void sumarPedidosMatriz(int indiceEntrenador, int indicePokenest) {
 	pthread_mutex_lock(&miMutex);
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] + 1;
 	pthread_mutex_unlock(&miMutex);
 }
 
-void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest) {
 	pthread_mutex_lock(&miMutex);
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] + 1;
 	pedidosMatriz[indiceEntrenador][indicePokenest] = pedidosMatriz[indiceEntrenador][indicePokenest] - 1;
@@ -373,23 +403,39 @@ void sumarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
 	pthread_mutex_unlock(&miMutex);
 }
 
-void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest){
+void restarAsignadosMatriz(int indiceEntrenador, int indicePokenest) {
 	pthread_mutex_lock(&miMutex);
 	asignadosMatriz[indiceEntrenador][indicePokenest] = asignadosMatriz[indiceEntrenador][indicePokenest] - 1;
 	disponiblesVector[indicePokenest] = disponiblesVector[indicePokenest] + 1;
 	pthread_mutex_unlock(&miMutex);
 }
 
-void liberarRecursosEntrenador(int indiceEntrenador){
+void sumarDisponibles(int indicePokenest) {
+	disponiblesVector[indicePokenest] = disponiblesVector[indicePokenest] + 1;
+}
+
+void liberarRecursosEntrenador(int indiceEntrenador) {
+	pthread_mutex_lock(&miMutex);
 	int i;
 	int j;
-	pthread_mutex_lock(&miMutex);
-	for(i = indiceEntrenador; i < cantidadDeEntrenadores-1;i++){
-		for(j = 0; j < cantidadDePokemones;j++){
-			asignadosMatriz[i][j] = asignadosMatriz[i+1][j];
-			pedidosMatriz[i][j] = pedidosMatriz[i+1][j];
+	log_info(logDeadlock, "Vamo a probar");
+	log_info(logDeadlock, "Matriz de asignados");
+	mostrarMatriz(asignadosMatriz);
+	log_info(logDeadlock, "Matriz de pedidos");
+	mostrarMatriz(pedidosMatriz);
+	for (i = indiceEntrenador; i < cantidadDeEntrenadores - 1; i++) {
+		for (j = 0; j < cantidadDePokemones; j++) {
+			asignadosMatriz[i][j] = asignadosMatriz[i + 1][j];
+			pedidosMatriz[i][j] = pedidosMatriz[i + 1][j];
 		}
 	}
 	cantidadDeEntrenadores--;
+	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
+	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
+	log_info(logDeadlock, "Vamo a probar despues de reacomodar");
+	log_info(logDeadlock, "Matriz de asignados");
+	mostrarMatriz(asignadosMatriz);
+	log_info(logDeadlock, "Matriz de pedidos");
+	mostrarMatriz(pedidosMatriz);
 	pthread_mutex_unlock(&miMutex);
 }

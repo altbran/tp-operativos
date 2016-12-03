@@ -206,14 +206,21 @@ int pokemonDisponible(int indicePokenest, char identificador, int * numeroPokemo
 }
 
 void desconectadoOFinalizado(int socketEntrenador) {
-	if (devolverIndiceEntrenador(socketEntrenador) != -1) {
-		liberarRecursosEntrenador(devolverIndiceEntrenador(socketEntrenador));
+	int indiceEntrenador = devolverIndiceEntrenador(socketEntrenador);
+	if (indiceEntrenador != -1) {
+		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
+		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
-		t_datosEntrenador * finalizado = list_remove(Entrenadores, devolverIndiceEntrenador(socketEntrenador));
 		//todo eliminarEntrenador(finalizado->identificador);
+		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
 		close(socketEntrenador);
-		free(finalizado);
+		//free(finalizado);
 		//todo dibujar(nombreMapa);
+	}
+	int valor;
+	sem_getvalue(&binarioDeLaMuerte,&valor);
+	if(valor == 0){
+		sem_post(&binarioDeLaMuerte);
 	}
 }
 
@@ -225,9 +232,10 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 			pokemon->socketEntrenador = -1;
 			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
 			//todo sumarPokemon(pokemon->identificadorPokemon);
-			sem_post(pokenest->disponiblesPokenest);
 			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;
+			sumarDisponibles(devolverIndicePokenest(pokemon->identificadorPokemon));
+			sem_post(pokenest->disponiblesPokenest);
 		}
 	}
 }

@@ -21,8 +21,10 @@ int main(int argc, char **argv) {
 	//inicializo semaforos
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&mutexDeadlock, NULL);
-	sem_init(&contadorEntrenadoresBloqueados,-1, 0);
+	pthread_mutex_lock(&miMutex);
+	sem_init(&binarioDeLaMuerte,0, 1);
 	sem_init(&contadorEntrenadoresListos, 0, 0);
+
 
 	//inicio colas y listas
 	listos = queue_create();
@@ -113,6 +115,8 @@ int main(int argc, char **argv) {
 						*socketNuevo = nuevaConexion;
 
 						//recibir datos del entrenador nuevo
+						//pthread_mutex_lock(&miMutex);
+						sem_wait(&binarioDeLaMuerte);
 						if (recibirEntrenador(*socketNuevo, entrenador)) {
 							log_error(logger, "error en el recibir entrenador, socket %d", *socketNuevo);
 							free(socketNuevo);
@@ -126,6 +130,8 @@ int main(int argc, char **argv) {
 							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
+						sem_post(&binarioDeLaMuerte);
+						pthread_mutex_unlock(&miMutex);
 						break;
 
 					default:
