@@ -351,9 +351,9 @@ static struct fuse_operations ejemplo_oper = {
 
 int main(int argc, char *argv[])
 {
-	//char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
-	int PUERTO_POKEDEX_SERVIDOR = 9000;//atoi(PUERTOSTR);
-	char *IP_POKEDEX_SERVIDOR = "127.0.0.1";//getenv("IP_POKEDEX_SERVIDOR");
+	char *PUERTOSTR = getenv("PUERTO_POKEDEX_SERVIDOR");
+	int PUERTO_POKEDEX_SERVIDOR = atoi(PUERTOSTR);
+	char *IP_POKEDEX_SERVIDOR = getenv("IP_POKEDEX_SERVIDOR");
 
 	//me conecto al proceso servidor
 	if (crearSocket(&S_POKEDEX_CLIENTE))
