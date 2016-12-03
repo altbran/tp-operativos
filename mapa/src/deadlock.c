@@ -152,7 +152,7 @@ void mostrarMatriz(int** matriz) {
 		int i;
 		int j;
 		char* vector = calloc(cantidadDePokemones, sizeof(int*));
-		for (i = 0; i < cantidadDeEntrenadores; i++) {
+		for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
 			for (j = 0; j < cantidadDePokemones; j++) {
 				vector[j] = matriz[i][j] + '0';
 			}
@@ -425,27 +425,16 @@ void liberarRecursosEntrenador(int indiceEntrenador) {
 	pthread_mutex_lock(&miMutex);
 	int i;
 	int j;
-	log_info(logDeadlock, "Vamo a probar");
-	log_info(logDeadlock, "Matriz de asignados");
-	mostrarMatriz(asignadosMatriz);
-	log_info(logDeadlock, "Matriz de pedidos");
-	mostrarMatriz(pedidosMatriz);
 	for (i = indiceEntrenador; i < cantidadDeEntrenadores - 1; i++) {
 		for (j = 0; j < cantidadDePokemones; j++) {
 			asignadosMatriz[i][j] = asignadosMatriz[i + 1][j];
 			pedidosMatriz[i][j] = pedidosMatriz[i + 1][j];
 		}
 	}
-	cantidadDeEntrenadoresClonada--;
 	cantidadDeEntrenadores--;
 	if (cantidadDeEntrenadores != 0) {
 		pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
 		asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	}
-	log_info(logDeadlock, "Vamo a probar despues de reacomodar");
-	log_info(logDeadlock, "Matriz de asignados");
-	mostrarMatriz(asignadosMatriz);
-	log_info(logDeadlock, "Matriz de pedidos");
-	mostrarMatriz(pedidosMatriz);
 	pthread_mutex_unlock(&miMutex);
 }
