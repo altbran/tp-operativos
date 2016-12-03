@@ -112,7 +112,7 @@ void hiloPokenest(void * parametros) {
 						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						//todo dibujar(nombreMapa);
 						//devuelvo todos sus recursos
-						desconectadoOFinalizado(*socketEntrenador);
+						elFinalizado(*socketEntrenador);
 						log_info(logger, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
 						break;
 

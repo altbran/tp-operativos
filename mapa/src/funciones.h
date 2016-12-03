@@ -68,6 +68,7 @@ void restarRecursoDisponible(int indicePokenest);
 void iniciarPlanificador();
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador);
 void desconectadoOFinalizado(int socketEntrenador);
+void elFinalizado(int socketEntrenador);
 
 
 #endif /* FUNCIONES_H_ */
