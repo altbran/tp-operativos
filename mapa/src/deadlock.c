@@ -52,12 +52,12 @@ void detectarDeadlock() {
 			algoritmo();
 
 			if (hayDeadlock) {
-				log_info(logDeadlock, "Hay deadlock");
-				log_info(logDeadlock, "Matriz de asignados");
-				mostrarMatriz(asignadosMatrizClonada);
-				log_info(logDeadlock, "Matriz de pedidos");
-				mostrarMatriz(pedidosMatrizClonada);
-				log_info(logDeadlock, "Entrenadores en deadlock");
+				//log_info(logDeadlock, "Hay deadlock");
+				//log_info(logDeadlock, "Matriz de asignados");
+				//mostrarMatriz(asignadosMatrizClonada);
+				//log_info(logDeadlock, "Matriz de pedidos");
+				//mostrarMatriz(pedidosMatrizClonada);
+				//log_info(logDeadlock, "Entrenadores en deadlock");
 				mostrarEntrenadoresEnDeadlock();
 
 				resolverDeadlock();
@@ -303,6 +303,7 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 	//borro al entrenador que pierde
 	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 	int socketPerdedor = perdedor->socket;
+	strcpy(&ultimoPerdedor,&perdedor->nombre);
 	int indiceEntrenador = devolverIndiceEntrenador(socketPerdedor);
 	log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
 	if (indiceEntrenador != -1) {
@@ -314,6 +315,7 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 		//free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
+	sem_post(&semaforoMuerto);
 	//int valor;
 	//sem_getvalue(&binarioDeLaMuerte, &valor);
 	//if (valor == 0) {

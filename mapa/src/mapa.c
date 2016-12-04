@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
 	pthread_mutex_lock(&miMutex);
 	sem_init(&binarioDeLaMuerte,0, 1);
 	sem_init(&contadorEntrenadoresListos, 0, 0);
+	sem_init(&semaforoMuerto, 0, 0);
 
 
 	//inicio colas y listas
@@ -123,6 +124,9 @@ int main(int argc, char **argv) {
 							free(entrenador);
 							break;
 						} else {
+							if(ultimoPerdedor == entrenador->nombre){
+								sem_wait(&semaforoMuerto);
+							}
 							list_add(Entrenadores, (void *) entrenador);
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
