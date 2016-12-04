@@ -3,4 +3,4 @@ simbolo=@
 vidas=3
 reintentos=0
 hojaDeViaje=[Paleta]
-obj[Paleta]=[P,B]
+obj[Paleta]=[S,B,C,P]
