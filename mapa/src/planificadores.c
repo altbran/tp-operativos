@@ -58,8 +58,8 @@ void hiloPokenest(void * parametros) {
 		sem_wait(pokenest->semaforoPokenest);
 		if (!queue_is_empty(pokenest->colaPokenest)) {
 			int * socketEntrenador = (int *) queue_pop(pokenest->colaPokenest);
-			log_info(logger, "Entro al hilo el socket: %d",*socketEntrenador);
-			log_info(logger, "en la pokenest: %c", pokenest->identificador);
+			//log_info(logger, "Entro al hilo el socket: %d",*socketEntrenador);
+			//log_info(logger, "en la pokenest: %c", pokenest->identificador);
 			int * numeroPokemon = malloc(sizeof(int));
 			int * indice = malloc(sizeof(int));
 
@@ -112,7 +112,7 @@ void hiloPokenest(void * parametros) {
 						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						//todo dibujar(nombreMapa);
 						//devuelvo todos sus recursos
-						desconectadoOFinalizado(*socketEntrenador);
+						elFinalizado(*socketEntrenador);
 						log_info(logger, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
 						break;
 
@@ -190,6 +190,7 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 	int header = recibirHeader(miTurno);
 	if (header == 0) {
 		log_error(logger, "error al recibir header");
+		log_error(logger, "socket %d: ", miTurno);
 		*i = total;
 		*quedoBloqueado = 1;
 		desconectadoOFinalizado(miTurno);

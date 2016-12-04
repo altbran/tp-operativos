@@ -217,11 +217,31 @@ void desconectadoOFinalizado(int socketEntrenador) {
 		//free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
-	int valor;
-	sem_getvalue(&binarioDeLaMuerte,&valor);
-	if(valor == 0){
-		sem_post(&binarioDeLaMuerte);
+	//int valor;
+	//sem_getvalue(&binarioDeLaMuerte,&valor);
+	//if(valor == 0){
+		//sem_post(&binarioDeLaMuerte);
+	//}
+}
+
+void elFinalizado(int socketEntrenador) {
+	int indiceEntrenador = devolverIndiceEntrenador(socketEntrenador);
+	if (indiceEntrenador != -1) {
+		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
+		liberarRecursosEntrenador(indiceEntrenador);
+		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
+		//todo eliminarEntrenador(finalizado->identificador);
+		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
+		enviarHeader(socketEntrenador,moriteEntrenador);
+		close(socketEntrenador);
+		//free(finalizado);
+		//todo dibujar(nombreMapa);
 	}
+	//int valor;
+	//sem_getvalue(&binarioDeLaMuerte,&valor);
+	//if(valor == 0){
+		//sem_post(&binarioDeLaMuerte);
+	//}
 }
 
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {

@@ -52,12 +52,12 @@ void detectarDeadlock() {
 			algoritmo();
 
 			if (hayDeadlock) {
-				log_info(logDeadlock, "Hay deadlock");
-				log_info(logDeadlock, "Matriz de asignados");
-				mostrarMatriz(asignadosMatrizClonada);
-				log_info(logDeadlock, "Matriz de pedidos");
-				mostrarMatriz(pedidosMatrizClonada);
-				log_info(logDeadlock, "Entrenadores en deadlock");
+				//log_info(logDeadlock, "Hay deadlock");
+				//log_info(logDeadlock, "Matriz de asignados");
+				//mostrarMatriz(asignadosMatrizClonada);
+				//log_info(logDeadlock, "Matriz de pedidos");
+				//mostrarMatriz(pedidosMatrizClonada);
+				//log_info(logDeadlock, "Entrenadores en deadlock");
 				mostrarEntrenadoresEnDeadlock();
 
 				resolverDeadlock();
@@ -116,10 +116,12 @@ void inicializarEntrenadorEnMatrices(int indice) {
 }
 
 void agregarEntrenadorEnMatrices() {
+	pthread_mutex_lock(&miMutex);
 	cantidadDeEntrenadores++;
 	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
 	inicializarEntrenadorEnMatrices(cantidadDeEntrenadores - 1);
+	pthread_mutex_unlock(&miMutex);
 }
 
 void inicializarVectores() {
@@ -144,15 +146,19 @@ void inicializarAlgoritmoVector() {
 }
 
 void mostrarMatriz(int** matriz) {
-	int i;
-	int j;
-	char* vector = calloc(cantidadDePokemones, sizeof(int*));
-	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
-		for (j = 0; j < cantidadDePokemones; j++) {
-			vector[j] = matriz[i][j] + '0';
-		}
-		log_info(logDeadlock, "%s", vector);
+	if (cantidadDeEntrenadores == 0) {
+		log_info(logDeadlock, "No hay entrenadores");
+	} else {
+		int i;
+		int j;
+		char* vector = calloc(cantidadDePokemones, sizeof(int*));
+		for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
+			for (j = 0; j < cantidadDePokemones; j++) {
+				vector[j] = matriz[i][j] + '0';
+			}
+			log_info(logDeadlock, "%s", vector);
 
+		}
 	}
 }
 
@@ -268,6 +274,7 @@ void resolverDeadlock() {
 		strcat(str, str2);
 
 		int socketPerdedor = notificarGanadoresEntrenadores(indiceDeEntrenadorPerdedor);
+
 		notificarMuerteAEntrenador(socketPerdedor);
 		log_info(logDeadlock, str);
 
@@ -296,6 +303,7 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 	//borro al entrenador que pierde
 	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 	int socketPerdedor = perdedor->socket;
+	strcpy(&ultimoPerdedor,&perdedor->nombre);
 	int indiceEntrenador = devolverIndiceEntrenador(socketPerdedor);
 	log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
 	if (indiceEntrenador != -1) {
@@ -307,11 +315,12 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 		//free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
-	int valor;
-	sem_getvalue(&binarioDeLaMuerte, &valor);
-	if (valor == 0) {
-		sem_post(&binarioDeLaMuerte);
-	}
+	sem_post(&semaforoMuerto);
+	//int valor;
+	//sem_getvalue(&binarioDeLaMuerte, &valor);
+	//if (valor == 0) {
+	//	sem_post(&binarioDeLaMuerte);
+	//}
 
 	return socketPerdedor;
 }
@@ -366,7 +375,7 @@ void crearPokemones() {
 	int i;
 	t_datosEntrenador* entrenador;
 	t_metadataPokemon* pokemon;
-
+	cantidadDeEntrenadoresEnDeadlock = 0;
 	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
 		if (entrenadoresEnDeadlock[i] == 0) {
 			cantidadDeEntrenadoresEnDeadlock++;
@@ -418,11 +427,6 @@ void liberarRecursosEntrenador(int indiceEntrenador) {
 	pthread_mutex_lock(&miMutex);
 	int i;
 	int j;
-	log_info(logDeadlock, "Vamo a probar");
-	log_info(logDeadlock, "Matriz de asignados");
-	mostrarMatriz(asignadosMatriz);
-	log_info(logDeadlock, "Matriz de pedidos");
-	mostrarMatriz(pedidosMatriz);
 	for (i = indiceEntrenador; i < cantidadDeEntrenadores - 1; i++) {
 		for (j = 0; j < cantidadDePokemones; j++) {
 			asignadosMatriz[i][j] = asignadosMatriz[i + 1][j];
@@ -430,12 +434,9 @@ void liberarRecursosEntrenador(int indiceEntrenador) {
 		}
 	}
 	cantidadDeEntrenadores--;
-	pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
-	asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
-	log_info(logDeadlock, "Vamo a probar despues de reacomodar");
-	log_info(logDeadlock, "Matriz de asignados");
-	mostrarMatriz(asignadosMatriz);
-	log_info(logDeadlock, "Matriz de pedidos");
-	mostrarMatriz(pedidosMatriz);
+	if (cantidadDeEntrenadores != 0) {
+		pedidosMatriz = (int **) realloc(pedidosMatriz, cantidadDeEntrenadores * sizeof(int*));
+		asignadosMatriz = (int **) realloc(asignadosMatriz, cantidadDeEntrenadores * sizeof(int*));
+	}
 	pthread_mutex_unlock(&miMutex);
 }

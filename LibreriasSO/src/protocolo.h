@@ -20,6 +20,7 @@ enum headers { //Constantes que identifican los headers de los mensajes
 	entrenadorMuerto = 23,
 	movimientoInvalido = 24,
 	perdioPorDeadlock = 28,
+	moriteEntrenador = 29,
 	//Headers para comunicacion entre cliente y servidor pokedex
 	privilegiosArchivo = 4,
 	contenidoDirectorio = 5,
