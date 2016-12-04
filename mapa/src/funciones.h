@@ -35,6 +35,7 @@ fd_set bolsaDeSockets;
 fd_set bolsaAuxiliar;
 sem_t contadorEntrenadoresListos;
 sem_t binarioDeLaMuerte;
+sem_t semaforoMuerto;
 pthread_mutex_t mutex;
 pthread_mutex_t mutexDeadlock;
 t_metadataMapa * configuracion;
@@ -48,6 +49,7 @@ pthread_t planificador;
 pthread_t deadlock;
 t_list * pokemones;
 pthread_mutex_t miMutex;
+char ultimoPerdedor[18];
 
 //funciones
 void receptorSIG(int sig);
