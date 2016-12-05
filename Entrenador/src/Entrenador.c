@@ -11,8 +11,8 @@ int main(int argc, char** argv) {
 	if (argc != 3) {
 
 		string_append(&rutaMetadata,
-				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/FranquitoPT/MetadataEntrenador.txt");
-		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/FranquitoPT/Dir' 'de' 'Bill");
+				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/MetadataEntrenador.txt");
+		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/Dir' 'de' 'Bill");
 		rutaMontaje = "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt";
 		//	log_error(logger,"Numero de parametros incorrectos");
 		//	return 1;
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
 
 			estado = 0; 			//representa el estado en q se encuentra de la captura de un pokemon el entrenador
 
-			while (estado != 4) {
+			while (estado != 5) {
 				switch (estado) {
 
 				//solicito la ubicacion de la pokenest, guardo la ubicacion pknest y el nombre del pkm y envio la cantidad de movs a pokenest
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
 						diferencia += difftime(atrapePkm, solicitoAtraparPkm);
 						log_info(logger, "Entrenador capturó correctamente pokemon %s", pokemon->nombre);
 
-						estado = 4;
+						estado = 5;
 
 						break;
 					}
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 					int headercito = recibirHeader(servidorMapa);
 					if (headercito == entrenadorGanador) {
 						log_info(logger, "Entrenador sale vencedor de la batalla");
-						estado = 5;
+						estado = 4;
 					} else if (headercito == entrenadorMuerto) {
 
 						desconectarseDe(servidorMapa);
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
 								if (resultado == 'n')
 									volverAEmpezar = 0;
 							}
-							estado = 4;
+							estado = 5;
 							break;
 						}
 
@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
 						eliminarArchivosPokemones(list_filter(pokemonesAtrapados, (void*) filtrarMapa));
 						pokemonesAtrapados = list_filter(pokemonesAtrapados, (void*) distintoMapa);
 
-						estado = 4;
+						estado = 5;
 						volverAEmpezar = 6;
 
 						log_info(logger, "El Entrenador pierde una vida y se vuelve a conectar al mapa");
@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
 					}
 					break;
 
-				case 5:
+				case 4:
 					switch (recibirHeader(servidorMapa)) {
 
 					case notificarDeadlock:
@@ -261,7 +261,7 @@ int main(int argc, char** argv) {
 						diferencia += difftime(atrapePkm, solicitoAtraparPkm);
 						log_info(logger, "Entrenador capturó correctamente pokemon %s", pokemon->nombre);
 
-						estado = 4;
+						estado = 5;
 
 						break;
 					}

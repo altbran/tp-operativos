@@ -179,8 +179,8 @@ void desconectarseDe(int socketServer){
 	close(socketServer);
 }
 void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest, char nombrePkm[18]){
-
-	if (recibirHeader(socketOrigen) == enviarDatosPokenest){
+	int headercito = recibirHeader(socketOrigen);
+	if ( headercito == enviarDatosPokenest){
 
 		void* buffer = malloc(sizeof(int) + sizeof(int)+sizeof(char[18]));
 
@@ -188,17 +188,23 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest
 
 			int cursorMemoria = 0;
 			memcpy(&pokenest->posicionX,buffer, sizeof(int));
+			log_info(logger, "posicion x recibida es %d", pokenest->posicionX);
 
 			cursorMemoria += sizeof(int);
 			memcpy(&pokenest->posicionY,buffer + cursorMemoria, sizeof(int));
+			log_info(logger, "posicion y recibida es %d", pokenest->posicionY);
 
 			cursorMemoria += sizeof(int);
 
 			memcpy(nombrePkm,buffer + cursorMemoria, sizeof(char[18]));
 
 			free(buffer);
+		}else{
+			log_error(logger, "error al recibir posicion de pokenest");
 		}
 
+	}else{
+		log_error(logger, "error al recibir header de datos de pokenest, el header es: %d", headercito);
 	}
 
 }
@@ -297,6 +303,10 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 	t_metadataPokemon* pkm = malloc(sizeof(t_metadataPokemon));
 	t_pokemon* variable = malloc(sizeof(t_pokemon));
 
+	int tamanio = sizeof(int)+sizeof(char[18]);
+	void* buffer = malloc(tamanio);
+	int cursor = 0;
+
 	for(i=0;i<list_size(pokemonesAtrapados);i++){
 
 		variable =list_get(pokemonesAtrapados,i);
@@ -316,14 +326,19 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
 
 	//enviarHeader(servidorMapa, mejorPokemon);
+	memcpy(buffer,&pkm->nivel ,sizeof(int));
+	cursor += sizeof(int);
+	memcpy(buffer+cursor,&pkm->nombre ,sizeof(char[18]));
+	cursor += sizeof(char[18]);
 
-	send(servidorMapa,pkm,sizeof(t_metadataPokemon),0);
+	send(servidorMapa,buffer,tamanio,0);
 
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
 			pkm->nombre, pkm->nivel);
 
 	free(variable);
 	free(pkm);
+	free(buffer);
 }
 
 void removerMedallas(char* entrenador){
