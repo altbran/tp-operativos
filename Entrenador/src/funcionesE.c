@@ -301,12 +301,12 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 
 	int i;
 	t_metadataPokemon* pkm = malloc(sizeof(t_metadataPokemon));
-	t_pokemon* variable = malloc(sizeof(t_pokemon));
+	t_pokemon* variable;
 
 	int tamanio = sizeof(int)+sizeof(char[18]);
 	void* buffer = malloc(tamanio);
 	int cursor = 0;
-
+	log_info(logger,"antes de buscar pokemon mas fuerte tengo esta cantidad de pokemones: %d",list_size(pokemonesAtrapados));
 	for(i=0;i<list_size(pokemonesAtrapados);i++){
 
 		variable =list_get(pokemonesAtrapados,i);
@@ -336,7 +336,6 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
 			pkm->nombre, pkm->nivel);
 
-	free(variable);
 	free(pkm);
 	free(buffer);
 }
