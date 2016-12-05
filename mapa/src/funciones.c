@@ -232,7 +232,7 @@ void elFinalizado(int socketEntrenador) {
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
 		//todo eliminarEntrenador(finalizado->identificador);
 		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
-		enviarHeader(socketEntrenador,moriteEntrenador);
+		//enviarHeader(socketEntrenador,moriteEntrenador);
 		close(socketEntrenador);
 		//free(finalizado);
 		//todo dibujar(nombreMapa);

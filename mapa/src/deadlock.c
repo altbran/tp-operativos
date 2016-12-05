@@ -52,6 +52,7 @@ void detectarDeadlock() {
 			algoritmo();
 
 			if (hayDeadlock) {
+				log_info(logger, "hay deadlock");
 				//log_info(logDeadlock, "Hay deadlock");
 				//log_info(logDeadlock, "Matriz de asignados");
 				//mostrarMatriz(asignadosMatrizClonada);
@@ -266,8 +267,7 @@ void resolverDeadlock() {
 		char str[100];
 		char str2[2];
 		indiceDeEntrenadorPerdedor = traerIndiceEntrenadorPerdedor(indiceDeEntrenadorPerdedor);
-		t_datosEntrenador* entrenador;
-		entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
+		t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 		str2[0] = entrenador->nombre + '0';
 		strcat(str, pokemonPerdedor->species);
 		strcat(str, " del entrenador ");
@@ -281,7 +281,7 @@ void resolverDeadlock() {
 		//free(str);
 		//free(algoritmoVector);
 		//	free(entrenadoresEnDeadlock);
-		list_destroy(mejoresPokemones);
+		list_destroy_and_destroy_elements(mejoresPokemones,free);
 		destroy_pkmn_factory(fabrica);
 	} else {
 		resolverDeadlockAMiManera();
@@ -373,8 +373,6 @@ void notificarResultadoBatalla(int indice, bool gano) {
 void crearPokemones() {
 	fabrica = create_pkmn_factory();
 	int i;
-	t_datosEntrenador* entrenador;
-	t_metadataPokemon* pokemon;
 	cantidadDeEntrenadoresEnDeadlock = 0;
 	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
 		if (entrenadoresEnDeadlock[i] == 0) {
@@ -382,10 +380,9 @@ void crearPokemones() {
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
 
 			t_pokemon* pokemonAGuardar;
-			entrenador = malloc(sizeof(t_datosEntrenador));
-			pokemon = malloc(sizeof(t_metadataPokemon));
+			t_metadataPokemon* pokemon = malloc(sizeof(t_metadataPokemon));
 
-			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
+			t_datosEntrenador * entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
 			enviarHeader(entrenador->socket, mejorPokemon);
 			recibirTodo(entrenador->socket, &pokemon->nivel, sizeof(int));
 			recibirTodo(entrenador->socket, &pokemon->nombre, 18);
@@ -393,7 +390,6 @@ void crearPokemones() {
 			pokemonAGuardar = create_pokemon(fabrica, &pokemon->nombre, pokemon->nivel);
 			list_add(mejoresPokemones, pokemonAGuardar);
 			free(pokemon);
-			free(entrenador);
 		}
 	}
 }
