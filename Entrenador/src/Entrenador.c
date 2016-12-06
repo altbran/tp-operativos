@@ -234,14 +234,18 @@ int main(int argc, char** argv) {
 
 							scanf("%c", &resultado);
 
-
 							//opcion si
-							if (resultado == 's')
+							if (resultado == 's'){
 								volverAEmpezar = 1;
+								log_info(logger,"Eligio la opcion de volver a jugar");
+							}
 							else {
 								//opcion no
-								if (resultado == 'n')
+								if (resultado == 'n'){
 									volverAEmpezar = 0;
+									log_info(logger,"Eligio la opcion de abandonar el juego");
+								}
+
 							}
 							estado = 5;
 							break;
@@ -356,7 +360,6 @@ int main(int argc, char** argv) {
 			entrenador.reintentos++;
 			metaDataEntrenador = config_create(rutaMetadata);
 			entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
-			config_destroy(metaDataEntrenador);
 			if(medallas > 0)
 				removerMedallas(entrenador.nombre);
 			eliminarArchivosPokemones(pokemonesAtrapados);
