@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 	if (argc != 3) {
 
 		string_append(&rutaMetadata,
-				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/MetadataEntrenador.txt");
+				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/metadata.txt");
 		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/Dir' 'de' 'Bill");
 		rutaMontaje = "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt";
 		//	log_error(logger,"Numero de parametros incorrectos");
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 		string_append(&rutaMetadata, argv[1]);
 		string_append(&ruta, rutaMetadata);
 
-		string_append(&rutaMetadata, "/MetadataEntrenador.txt");
+		string_append(&rutaMetadata, "/metadata.txt");
 		string_append(&rutaDirBill, ruta);
 		string_append(&rutaDirBill, "/Dir' 'de' 'Bill");
 
@@ -150,6 +150,10 @@ int main(int argc, char** argv) {
 							log_info(logger, "Entrenador alcanza pokenest de %s", pokemon->nombre);
 						}
 					}
+					else{
+						desconectarseDe(servidorMapa);
+						log_error(logger,"error al solicitar movimiento");
+					}
 
 					break;
 
@@ -168,11 +172,18 @@ int main(int argc, char** argv) {
 							enviarPokemonMasFuerte(pokemonesAtrapados, servidorMapa);
 							estado = 3;
 						}
+						else{
+							log_error(logger,"error al entrar recibir header mejorPokemon");
+							desconectarseDe(servidorMapa);
+						}
 						break;
 
 					case pokemonesDisponibles:
 
-						recibirTodo(servidorMapa, &pokemon->numero, sizeof(int));
+						if(recibirTodo(servidorMapa, &pokemon->numero, sizeof(int))){
+							log_error(logger,"error al recibir numero del pokemon");
+							desconectarseDe(servidorMapa);
+						}
 
 						atrapePkm = time(NULL);
 						diferencia += difftime(atrapePkm, solicitoAtraparPkm);
@@ -181,6 +192,11 @@ int main(int argc, char** argv) {
 						estado = 5;
 
 						break;
+
+					default:
+
+						log_error(logger,"error al recibir header para atrapar pokemon");
+						desconectarseDe(servidorMapa);
 					}
 
 					break;
@@ -188,10 +204,14 @@ int main(int argc, char** argv) {
 				case 3: 			//estado deadlock, abarca el caso perdedor y ganador
 					;
 					int headercito = recibirHeader(servidorMapa);
-					if (headercito == entrenadorGanador) {
+
+					switch(headercito){
+					case entrenadorGanador:
 						log_info(logger, "Entrenador sale vencedor de la batalla");
 						estado = 4;
-					} else if (headercito == entrenadorMuerto) {
+						break;
+
+					case entrenadorMuerto:
 
 						desconectarseDe(servidorMapa);
 
@@ -236,7 +256,11 @@ int main(int argc, char** argv) {
 						volverAEmpezar = 6;
 
 						log_info(logger, "El Entrenador pierde una vida y se vuelve a conectar al mapa");
+						break;
 
+					default:
+						log_error(logger,"Error en estado deadlock");
+						desconectarseDe(servidorMapa);
 					}
 					break;
 
@@ -264,6 +288,8 @@ int main(int argc, char** argv) {
 						estado = 5;
 
 						break;
+					default:
+						log_error(logger,"error al solicitar atrapar pokemon, estado 4");
 					}
 				}
 			} 			//termina while estado
@@ -297,10 +323,15 @@ int main(int argc, char** argv) {
 			system(comando);
 
 			// AVISO QUE COPIE EL POKEMON
-			if (j == (list_size(elemento->objetivos) - 1))
-				enviarHeader(servidorMapa, finalizoMapa);
+			if (j == (list_size(elemento->objetivos) - 1)){
+				if(enviarHeader(servidorMapa, finalizoMapa)){
+					log_error(logger,"error al enviar header finalzoMapa");
+				}
+			}
 			else
-				enviarHeader(servidorMapa, entrenadorListo);
+				if(enviarHeader(servidorMapa, entrenadorListo)){
+					log_error(logger,"error al enviar header entrenadorListo");
+				}
 
 		} 			//aca cierra el for de atrapar pokemones
 

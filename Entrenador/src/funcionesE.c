@@ -111,8 +111,7 @@ void cargarDatos(t_config* metaDataEntrenador){
 	log_info(logger,"Simbolo: %c", entrenador.simbolo);
 	entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
 	log_info(logger,"Vidas: %d", entrenador.vidas);
-	entrenador.reintentos = config_get_int_value(metaDataEntrenador, "reintentos");
-	log_info(logger,"Reintentos: %d", entrenador.reintentos);
+	entrenador.reintentos = 0;
 	entrenador.hojaDeViaje = asignarHojaDeViajeYObjetivos(metaDataEntrenador);
 
 }
@@ -209,8 +208,16 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest
 
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
-	enviarHeader(socketDestino, datosPokenest);
-	send(socketDestino,&pokemonRecibido,sizeof(char),0);
+	if(!enviarHeader(socketDestino, datosPokenest)){
+		desconectarseDe(socketDestino);
+		log_error(logger, "error al enviar header datosPokenest");
+	}
+
+	if(enviarTodo(socketDestino, &pokemonRecibido, sizeof(char))){
+		desconectarseDe(socketDestino);
+		log_error(logger,"error al enviar id del pokemon");
+	}
+
 }
 
 void copiarMedalla(char* nombreMapa){
@@ -230,17 +237,26 @@ void copiarMedalla(char* nombreMapa){
 }
 
 void solicitarAtraparPkm(char pokemn, int servidorMapa){
-	enviarHeader(servidorMapa, capturarPokemon);
-	//void *buffer = malloc(sizeof(char));
-	//memcpy(buffer, &pokemn,sizeof(char));
-	//buffer
-	send(servidorMapa, &pokemn, sizeof(char), 0);
-	//free(buffer);
+
+	if(!enviarHeader(servidorMapa, capturarPokemon)){
+		desconectarseDe(servidorMapa);
+		log_error(logger,"error al capturar pokemon, header");
+	}
+
+	if(enviarTodo(servidorMapa,&pokemn,sizeof(char))){
+		log_error(logger,"error al enviar solicitud de atrapar pokemon");
+		desconectarseDe(servidorMapa);
+	}
+
 }
 void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	void* buffer = malloc(sizeof(int)+sizeof(int));
 	int cursorMemoria = 0;
-	enviarHeader(socketDestino, posicionEntrenador);
+
+	if(!enviarHeader(socketDestino, posicionEntrenador)){
+		desconectarseDe(socketDestino);
+		log_error(logger,"error al solicitar movimiento");
+	}
 
 	moverEntrenador(pokenest);
 
@@ -248,7 +264,11 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	cursorMemoria += sizeof(int);
 	memcpy(buffer+cursorMemoria, &ubicacionEntrenador.coordenadasY, sizeof(int));
 	cursorMemoria += sizeof(int);
-	send(socketDestino,buffer,cursorMemoria,0);
+	if(enviarTodo(socketDestino, buffer, cursorMemoria)){
+		desconectarseDe(socketDestino);
+		log_error(logger,"error al enviar coordenadas");
+	}
+
 	//hasta aca envio el header con las coordenadas del entrenador
 
 	free(buffer);
@@ -269,7 +289,10 @@ void enviarMisDatos(int socketDestino){
 	cursor += sizeof(int);
 	memcpy(buffer+cursor,&ubicacionEntrenador.coordenadasY,sizeof(int));
 
-	send(socketDestino,buffer,tamanio,0);
+	if(enviarTodo(socketDestino,buffer, tamanio)){
+		desconectarseDe(socketDestino);
+		log_error(logger, "Error al enviar mis datos");
+	}
 
 	free(buffer);
 
@@ -285,7 +308,10 @@ void enviarCantidadDeMovsAPokenest(t_metadataPokenest* pokenest, int serverMapa)
 
 	int* movs =malloc(sizeof(int));
 	*movs = cantidadDeMovimientosAPokenest(pokenest);
-	send(serverMapa, movs, sizeof(int), 0);
+	if(enviarTodo(serverMapa, movs, sizeof(int))){
+		desconectarseDe(serverMapa);
+		log_error(logger, "error al enviar cantidad de movimientos a pokenest");
+	}
 	log_info(logger,"cantidad de movs a la pokenest %d", *movs);
 	free(movs);
 
@@ -331,7 +357,11 @@ void enviarPokemonMasFuerte(t_list* pokemonesAtrapados,int servidorMapa){
 	memcpy(buffer+cursor,&pkm->nombre ,sizeof(char[18]));
 	cursor += sizeof(char[18]);
 
-	send(servidorMapa,buffer,tamanio,0);
+
+	if(enviarTodo(servidorMapa,buffer,tamanio)){
+		log_error(logger,"error al enviar pokemon mas fuerte");
+		desconectarseDe(servidorMapa);
+	}
 
 	log_info(logger,"Entrenador envía a pelear a su pokemon más fuerte, el cual es: %s con un nivel de: %d",
 			pkm->nombre, pkm->nivel);
