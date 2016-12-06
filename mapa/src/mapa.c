@@ -5,6 +5,7 @@ int main(int argc, char **argv) {
 	//Creo log para el mapa
 
 	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
+	logPlanificador = log_create("Planificador.log", "MAPA", 0, log_level_from_string("INFO"));
 
 
 	//busco las configuraciones
@@ -131,7 +132,8 @@ int main(int argc, char **argv) {
 							queue_push(listos, (void *) socketNuevo);
 							agregarEntrenadorEnMatrices();
 							//todo dibujar(nombreMapa);
-							log_info(logger, "Nuevo entrenador listo, socket %d", *socketNuevo);
+							log_info(logger, "Nuevo entrenador conectado %s", entrenador->nombre);
+							log_info(logger, "en el socket %d", *socketNuevo);
 							sem_post(&contadorEntrenadoresListos);
 						}
 						//sem_post(&binarioDeLaMuerte);

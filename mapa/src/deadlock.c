@@ -21,6 +21,7 @@ void detectarDeadlock() {
 	cargarDisponiblesVector();
 
 	log_info(logers, "Empezó");
+	fabrica = create_pkmn_factory();
 
 	while (1) {
 		//sem_wait(&contadorEntrenadoresBloqueados);
@@ -52,7 +53,7 @@ void detectarDeadlock() {
 			algoritmo();
 
 			if (hayDeadlock) {
-				log_info(logger, "hay deadlock");
+				//log_info(logger, "hay deadlock");
 				//log_info(logDeadlock, "Hay deadlock");
 				//log_info(logDeadlock, "Matriz de asignados");
 				//mostrarMatriz(asignadosMatrizClonada);
@@ -167,8 +168,7 @@ void mostrarEntrenadoresEnDeadlock() {
 	int p;
 	for (p = 0; p < cantidadDeEntrenadoresClonada; p++) {
 		if (entrenadoresEnDeadlock[p] == 0) {
-			t_datosEntrenador* entrenador;
-			entrenador = (t_datosEntrenador*) (list_get(Entrenadores, p));
+			t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, p));
 			log_info(logDeadlock, "%s", entrenador->nombre);
 			log_info(logDeadlock, "%d", p);
 			notificarDeadlockAEntrenador(p);
@@ -177,15 +177,21 @@ void mostrarEntrenadoresEnDeadlock() {
 }
 
 void notificarDeadlockAEntrenador(int indice) {
-	t_datosEntrenador* entrenador;
-	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
-	enviarHeader(entrenador->socket, notificarDeadlock);
+	t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
+	if (enviarHeader(entrenador->socket, notificarDeadlock)) {
+		log_info(logDeadlock, "Error al notificar deadlock al entrenador %s: ", entrenador->nombre);
+		desconectadoOFinalizado(entrenador->socket);
+	}
 }
 
 void notificarMuerteAEntrenador(int sockete) {
-	sem_wait(&binarioDeLaMuerte);
-	enviarHeader(sockete, entrenadorMuerto);
-	close(sockete);
+	//sem_wait(&binarioDeLaMuerte);
+	if(enviarHeader(sockete, entrenadorMuerto)){
+		log_error(logDeadlock, "error al enviar que se murio al entrenador del socket %d: ",sockete);
+		desconectadoOFinalizado(sockete);
+	}else{
+		close(sockete);
+	}
 }
 
 void noTieneAsignadosOPedidos() {
@@ -252,7 +258,7 @@ void resolverDeadlock() {
 
 		crearPokemones();
 
-		pokemonPerdedor = list_get(mejoresPokemones, 0);
+		t_pokemon* pokemonPerdedor = list_get(mejoresPokemones, 0);
 		int indiceDeEntrenadorPerdedor = 0;
 		int h = 1;
 		t_pokemon* pokemonPerdedorAnterior = pokemonPerdedor;
@@ -281,8 +287,8 @@ void resolverDeadlock() {
 		//free(str);
 		//free(algoritmoVector);
 		//	free(entrenadoresEnDeadlock);
-		list_destroy_and_destroy_elements(mejoresPokemones,free);
-		destroy_pkmn_factory(fabrica);
+		list_destroy_and_destroy_elements(mejoresPokemones, free);
+		//destroy_pkmn_factory(fabrica);
 	} else {
 		resolverDeadlockAMiManera();
 	}
@@ -303,25 +309,10 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 	//borro al entrenador que pierde
 	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 	int socketPerdedor = perdedor->socket;
-	strcpy(&ultimoPerdedor,&perdedor->nombre);
-	int indiceEntrenador = devolverIndiceEntrenador(socketPerdedor);
+	strcpy(&ultimoPerdedor, &perdedor->nombre);
 	log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
-	if (indiceEntrenador != -1) {
-		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
-		liberarRecursosEntrenador(indiceEntrenador);
-		reasignarPokemonesDeEntrenadorADisponibles(socketPerdedor);
-		//todo eliminarEntrenador(finalizado->identificador);
-		//log_info(logger, "desconectado o finalizado el socket: %d", socketPerdedor);
-		//free(finalizado);
-		//todo dibujar(nombreMapa);
-	}
+	elMuertoDelDeadlock(socketPerdedor);
 	sem_post(&semaforoMuerto);
-	//int valor;
-	//sem_getvalue(&binarioDeLaMuerte, &valor);
-	//if (valor == 0) {
-	//	sem_post(&binarioDeLaMuerte);
-	//}
-
 	return socketPerdedor;
 }
 
@@ -355,41 +346,49 @@ int obtenerPrimerEntrenadorEnDeadlock() {
 }
 
 t_pokemon* batallaPokemon(t_pokemon* pkmnA, t_pokemon* pkmnB, int indiceA, int indiceB) {
-	pokemonPerdedor = pkmn_battle(pkmnA, pkmnB);
+	t_pokemon* pokemonPerdedor = pkmn_battle(pkmnA, pkmnB);
 	return pokemonPerdedor;
 }
 
 void notificarResultadoBatalla(int indice, bool gano) {
-	t_datosEntrenador* entrenador;
-	entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
+	t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indice));
 	if (gano) {
-		enviarHeader(entrenador->socket, entrenadorGanador);
+		if (enviarHeader(entrenador->socket, entrenadorGanador)) {
+			log_error(logDeadlock, "error al enviar el header de ganador al entrenador %s: ", entrenador->nombre);
+			desconectadoOFinalizado(entrenador->socket);
+		}
 	} else {
-		enviarHeader(entrenador->socket, entrenadorPerdedor);
-		close(entrenador->socket);
+		if (enviarHeader(entrenador->socket, entrenadorPerdedor)) {
+			log_error(logDeadlock, "error al enviar el header de perdedor al entrenador %s: ", entrenador->nombre);
+			desconectadoOFinalizado(entrenador->socket);
+		}
+		//close(entrenador->socket);
 	}
 }
 
 void crearPokemones() {
-	fabrica = create_pkmn_factory();
+
 	int i;
 	cantidadDeEntrenadoresEnDeadlock = 0;
 	for (i = 0; i < cantidadDeEntrenadoresClonada; i++) {
 		if (entrenadoresEnDeadlock[i] == 0) {
 			cantidadDeEntrenadoresEnDeadlock++;
 			//todo obtengo el indice, el socket, y le pido el pokemon mas fuerte
-
+			int errores = 0;
 			t_pokemon* pokemonAGuardar;
 			t_metadataPokemon* pokemon = malloc(sizeof(t_metadataPokemon));
 
 			t_datosEntrenador * entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
-			enviarHeader(entrenador->socket, mejorPokemon);
-			recibirTodo(entrenador->socket, &pokemon->nivel, sizeof(int));
-			recibirTodo(entrenador->socket, &pokemon->nombre, 18);
-
-			pokemonAGuardar = create_pokemon(fabrica, &pokemon->nombre, pokemon->nivel);
-			list_add(mejoresPokemones, pokemonAGuardar);
-			free(pokemon);
+			errores = enviarHeader(entrenador->socket, mejorPokemon);
+			errores += recibirTodo(entrenador->socket, &pokemon->nivel, sizeof(int));
+			errores += recibirTodo(entrenador->socket, &pokemon->nombre, 18);
+			if (errores) {
+				log_error(logDeadlock, "error al recibir pokemon mas fuerte del entrenador %s: ", entrenador->nombre);
+				desconectadoOFinalizado(entrenador->socket);
+			} else {
+				pokemonAGuardar = create_pokemon(fabrica, &pokemon->nombre, pokemon->nivel);
+				list_add(mejoresPokemones, pokemonAGuardar);
+			}
 		}
 	}
 }

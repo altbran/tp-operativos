@@ -214,7 +214,7 @@ void desconectadoOFinalizado(int socketEntrenador) {
 		//todo eliminarEntrenador(finalizado->identificador);
 		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
 		close(socketEntrenador);
-		//free(finalizado);
+		free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
 	//int valor;
@@ -224,24 +224,25 @@ void desconectadoOFinalizado(int socketEntrenador) {
 	//}
 }
 
-void elFinalizado(int socketEntrenador) {
+void elMuertoDelDeadlock(int socketEntrenador) {
 	int indiceEntrenador = devolverIndiceEntrenador(socketEntrenador);
 	if (indiceEntrenador != -1) {
 		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
+		t_metadataPokenest * pokenest = devolverPokenest(&finalizado->identificadorPokenest);
+		int i;
+		for(i=0;i<queue_size(pokenest->colaPokenest);i++){
+			int * socketDeCola = (int *) queue_pop(pokenest->colaPokenest);
+			if(*socketDeCola != socketEntrenador){
+				queue_push(pokenest->colaPokenest, (void *) socketDeCola);
+			}
+		}
 		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
 		//todo eliminarEntrenador(finalizado->identificador);
-		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
-		//enviarHeader(socketEntrenador,moriteEntrenador);
-		close(socketEntrenador);
-		//free(finalizado);
+		//log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
+		free(finalizado);
 		//todo dibujar(nombreMapa);
 	}
-	//int valor;
-	//sem_getvalue(&binarioDeLaMuerte,&valor);
-	//if(valor == 0){
-		//sem_post(&binarioDeLaMuerte);
-	//}
 }
 
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {

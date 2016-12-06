@@ -32,7 +32,7 @@ t_pokemon* pokemonA;
 t_pokemon* pokemonB;
 t_pokemon* pokemonC;
 t_pokemon* pokemonD;
-t_pokemon* pokemonPerdedor;
+
 t_list * mejoresPokemones;
 
 void detectarDeadlock();

@@ -30,6 +30,7 @@ typedef struct {
 	int socket;
 	char nombre[18];
 	int distanciaAPokenest;
+	char identificadorPokenest;
 }t_datosEntrenador;
 
 typedef struct {

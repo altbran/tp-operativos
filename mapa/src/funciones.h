@@ -28,6 +28,7 @@
 
 //variables
 t_log* logger;
+t_log* logPlanificador;
 char *texto;
 char * nombreMapa;
 int servidorMapa;
@@ -70,7 +71,7 @@ void restarRecursoDisponible(int indicePokenest);
 void iniciarPlanificador();
 void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador);
 void desconectadoOFinalizado(int socketEntrenador);
-void elFinalizado(int socketEntrenador);
+void elMuertoDelDeadlock(int socketEntrenador);
 
 
 #endif /* FUNCIONES_H_ */
