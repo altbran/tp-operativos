@@ -59,7 +59,7 @@ void hiloPokenest(void * parametros) {
 	while (1) {
 		//me fijo si hay pokemones disponibles
 		sem_wait(pokenest->disponiblesPokenest);
-		log_info(logPokenest, "corre hilo pokenest (hay pokemons): %c", pokenest->identificador);
+		log_info(logPokenest, "corre hilo pokenest (hay pokemons)");
 		int * numeroPokemon = malloc(sizeof(int));
 		int * indice = malloc(sizeof(int));
 		if (pokemonDisponible(devolverIndicePokenest(pokenest->identificador), pokenest->identificador, numeroPokemon, indice)) {
@@ -73,11 +73,11 @@ void hiloPokenest(void * parametros) {
 
 				//aviso a entrenador que hay pokemones
 				if (enviarHeader(*socketEntrenador, pokemonesDisponibles)) {
-					log_error(logPokenest, "Error al enviar pokemon disp pokenest: %c", pokenest->identificador);
+					log_error(logPokenest, "Error al enviar pokemon disp pokenest");
 					//error, se desconecto
 					desconectadoOFinalizado(*socketEntrenador);
 				} else if (enviarTodo(*socketEntrenador, numeroPokemon, sizeof(int))) {
-					log_error(logPokenest, "Error al enviar el numero de pokemon disp pokenest: %c", pokenest->identificador);
+					log_error(logPokenest, "Error al enviar el numero de pokemon disp pokenest");
 					//error, se desconecto
 					desconectadoOFinalizado(*socketEntrenador);
 				} else {
@@ -90,7 +90,7 @@ void hiloPokenest(void * parametros) {
 					switch (header) {
 					case entrenadorListo:
 						;
-						log_info(logPokenest, "atrapo el pokemon: %c", pokenest->identificador);
+						log_info(logPokenest, "atrapo el pokemon");
 						//hago cosas correspondientes a que lo atrapo
 						t_duenioPokemon * pokemon = (t_duenioPokemon *) list_get(pokemones, *indice);
 						pokemon->socketEntrenador = *socketEntrenador;
@@ -102,7 +102,7 @@ void hiloPokenest(void * parametros) {
 						*elTurno = *socketEntrenador;
 						queue_push(listos, (void *) elTurno);
 						sem_post(&contadorEntrenadoresListos);
-						log_info(logPokenest, "Pasa a listo el entrenador del socket: %d", *socketEntrenador);
+						log_info(logPokenest, "Pasa a listo el entrenador");
 						//todo dibujar(nombreMapa);
 						break;
 

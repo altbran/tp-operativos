@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 		}
+
 		// run through the existing connections looking for data to read
 		for (i = 0; i <= fdmax; i++) {
 			if (FD_ISSET(i, &bolsaAuxiliar)) { // we got one!!
