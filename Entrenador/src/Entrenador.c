@@ -33,8 +33,11 @@ int main(int argc, char** argv) {
 	string_append(&rutaMedallas, "/medallas/");
 
 	//creo el config y el log
+	char* nombreLog = string_new();
+	string_append(&nombreLog, argv[1]);
+	string_append(&nombreLog, ".log");
 	t_config* metaDataEntrenador = config_create(rutaMetadata);
-	logger = log_create("Entrenador.log", "ENTRENADOR", 0, LOG_LEVEL_INFO);
+	logger = log_create(nombreLog, "ENTRENADOR", 0, LOG_LEVEL_INFO);
 
 	//leo del config mis datos y lo destruyo
 	cargarDatos(metaDataEntrenador);
