@@ -1,0 +1,5 @@
+nombre=Ash
+simbolo=@
+vidas=3
+hojaDeViaje=[Paleta]
+obj[Paleta]=[S,B,C,P]

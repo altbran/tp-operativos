@@ -208,7 +208,7 @@ void recibirYAsignarCoordPokenest(int socketOrigen, t_metadataPokenest* pokenest
 
 }
 void solicitarUbicacionPokenest(int socketDestino,char pokemonRecibido){
-	if(!enviarHeader(socketDestino, datosPokenest)){
+	if(enviarHeader(socketDestino, datosPokenest)){
 		desconectarseDe(socketDestino);
 		log_error(logger, "error al enviar header datosPokenest");
 	}
@@ -238,7 +238,7 @@ void copiarMedalla(char* nombreMapa){
 
 void solicitarAtraparPkm(char pokemn, int servidorMapa){
 
-	if(!enviarHeader(servidorMapa, capturarPokemon)){
+	if(enviarHeader(servidorMapa, capturarPokemon)){
 		desconectarseDe(servidorMapa);
 		log_error(logger,"error al capturar pokemon, header");
 	}
@@ -253,7 +253,7 @@ void solicitarMovimiento(int socketDestino, t_metadataPokenest pokenest){
 	void* buffer = malloc(sizeof(int)+sizeof(int));
 	int cursorMemoria = 0;
 
-	if(!enviarHeader(socketDestino, posicionEntrenador)){
+	if(enviarHeader(socketDestino, posicionEntrenador)){
 		desconectarseDe(socketDestino);
 		log_error(logger,"error al solicitar movimiento");
 	}

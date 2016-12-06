@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
 		printf(
 				"Felicidades!! Te has convertido en Maestro Pokemon.\nDatos de la aventura:\n"
 						"Cantidad de veces involucrado en Deadlocks: %d\nCantidad de muertes: %d\nTiempo total de la aventura(hh:mm:ss:mmmm): %s\nTiempo"
-						" total bloqueado en Pokenests: %.f\n", cantidadDeadlocks, muertes,
+						" total bloqueado en Pokenests(s): %.f\n", cantidadDeadlocks, muertes,
 				diferenciaDeTiempo(tiempoDeInicio, tiempoFinal), diferencia);
 
 		log_info(logger, "El Entrenador se convirtio en Maestro Pokemon");
