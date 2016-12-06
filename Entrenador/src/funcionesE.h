@@ -84,7 +84,7 @@ time_t solicitoAtraparPkm;
 time_t atrapePkm;
 double diferencia;
 char* rutaMontaje;
-
+int medallas;
 
 //FUNCIONES
 void senialRecibirVida();

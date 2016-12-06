@@ -11,8 +11,8 @@ int main(int argc, char** argv) {
 	if (argc != 3) {
 
 		string_append(&rutaMetadata,
-				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/metadata.txt");
-		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Ash/Dir' 'de' 'Bill");
+				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Colo/metadata.txt");
+		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Colo/Dir' 'de' 'Bill");
 		rutaMontaje = "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt";
 		//	log_error(logger,"Numero de parametros incorrectos");
 		//	return 1;
@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
 	tiempoDeInicio = temporal_get_string_time();
 	pokemonesAtrapados = list_create();		//POKEMONES ATRAPADOS en este mapa, LISTA CON STRUCTS METADATA POKEMON
 	muertes = 0;
+	medallas = 0;
 
 	int i;
 	i = 0;
@@ -228,10 +229,11 @@ int main(int argc, char** argv) {
 						// si no le quedan vidas al entrenador, tiene la opcion de volver a empezar
 						if (entrenador.vidas <= 0) {
 
-							printf("Vidas insuficientes.\nCantidad de reintentos: %d\n "
-									"Desea volver a jugar? Ingrese 's' para si, 'n' para no", entrenador.reintentos);
+							printf("Vidas insuficientes.\nCantidad de reintentos: %d\n"
+									"Desea volver a jugar? Ingrese 's' para si, 'n' para no\n", entrenador.reintentos);
 
 							scanf("%c", &resultado);
+
 
 							//opcion si
 							if (resultado == 's')
@@ -343,8 +345,10 @@ int main(int argc, char** argv) {
 
 		case 0:
 			log_info(logger, "El Entrenador abandona el juego");
-			removerMedallas(entrenador.nombre);
+			if(medallas > 0)
+				removerMedallas(entrenador.nombre);
 			eliminarArchivosPokemones(pokemonesAtrapados);
+			printf("Entrenador abandona el juego\n");
 			break;
 
 		case 1:
@@ -353,7 +357,8 @@ int main(int argc, char** argv) {
 			metaDataEntrenador = config_create(rutaMetadata);
 			entrenador.vidas = config_get_int_value(metaDataEntrenador, "vidas");
 			config_destroy(metaDataEntrenador);
-			removerMedallas(entrenador.nombre);
+			if(medallas > 0)
+				removerMedallas(entrenador.nombre);
 			eliminarArchivosPokemones(pokemonesAtrapados);
 			list_clean(pokemonesAtrapados);
 			log_info(logger, "El Entrenador vuelve a empezar el juego desde cero");
@@ -361,6 +366,7 @@ int main(int argc, char** argv) {
 
 		case 5:
 			copiarMedalla(nombreMapa);
+			medallas++;
 			desconectarseDe(servidorMapa);
 			log_info(logger, "El Entrenador finalizo el mapa %s", nombreMapa);
 			break;
