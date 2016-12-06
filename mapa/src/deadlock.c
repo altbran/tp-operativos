@@ -270,12 +270,12 @@ void resolverDeadlock() {
 			}
 			h++;
 		}
-		char str[100];
-		char str2[2];
+		char * str[100];
+		char * str2[2];
 		indiceDeEntrenadorPerdedor = traerIndiceEntrenadorPerdedor(indiceDeEntrenadorPerdedor);
 		t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 		str2[0] = entrenador->nombre + '0';
-		strcat(str, pokemonPerdedor->species);
+		strcat(str, &pokemonPerdedor->species);
 		strcat(str, " del entrenador ");
 		strcat(str, str2);
 
@@ -286,7 +286,7 @@ void resolverDeadlock() {
 
 		//free(str);
 		//free(algoritmoVector);
-		//	free(entrenadoresEnDeadlock);
+		free(entrenadoresEnDeadlock);
 		list_destroy_and_destroy_elements(mejoresPokemones, free);
 		//destroy_pkmn_factory(fabrica);
 	} else {
@@ -310,7 +310,7 @@ int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
 	int socketPerdedor = perdedor->socket;
 	strcpy(&ultimoPerdedor, &perdedor->nombre);
-	log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
+	//log_info(logger, "corre borrador del deadlock borrando el socket: %d", socketPerdedor);
 	elMuertoDelDeadlock(socketPerdedor);
 	sem_post(&semaforoMuerto);
 	return socketPerdedor;
