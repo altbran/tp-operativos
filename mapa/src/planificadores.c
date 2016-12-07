@@ -5,13 +5,14 @@ void srdf() {
 	while (1) {
 		sem_wait(&contadorEntrenadoresListos);
 		if (!queue_is_empty(listos)) {
+			log_info(logPlanificador, "corre hilo planificador srdf");
 			int * turno = malloc(sizeof(int));
 			int * movimientos = malloc(sizeof(int));
 			*turno = entrenadorMasCercano(movimientos);
 			log_info(logPlanificador, "el turno es: %d", *turno);
 			log_info(logPlanificador, "movimientos es: %d", *movimientos);
 			int quedoBloqueado = 0;
-			for (i = 0; i < *movimientos; i++) {
+			for (i = 0; i <= *movimientos; i++) {
 				pthread_mutex_lock(&mutex);
 				jugada(*turno, &quedoBloqueado, &i, *movimientos);
 				pthread_mutex_unlock(&mutex);
@@ -20,6 +21,8 @@ void srdf() {
 			if (!quedoBloqueado) {
 				queue_push(listos, (void *) turno);
 				sem_post(&contadorEntrenadoresListos);
+			} else {
+				free(turno);
 			}
 		}
 	}
@@ -54,7 +57,7 @@ void hiloPokenest(void * parametros) {
 	//parametros de la pokenest
 	t_metadataPokenest * pokenest = (t_metadataPokenest *) parametros;
 
-	t_log* logPokenest = log_create(concat(2, &pokenest->identificador, ".log"), "MAPA", 0, log_level_from_string("INFO"));
+	t_log* logPokenest = log_create(concat(2, &pokenest->nombre, ".log"), "MAPA", 0, log_level_from_string("INFO"));
 
 	while (1) {
 		//me fijo si hay pokemones disponibles
@@ -95,7 +98,7 @@ void hiloPokenest(void * parametros) {
 						t_duenioPokemon * pokemon = (t_duenioPokemon *) list_get(pokemones, *indice);
 						pokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
-						//todo restarPokemon(pokenest->identificador);
+						restarPokemon(pokenest->identificador);
 						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
 								devolverIndicePokenest(pokenest->identificador));
 						int * elTurno = malloc(sizeof(int));
@@ -103,7 +106,7 @@ void hiloPokenest(void * parametros) {
 						queue_push(listos, (void *) elTurno);
 						sem_post(&contadorEntrenadoresListos);
 						log_info(logPokenest, "Pasa a listo el entrenador");
-						//todo dibujar(nombreMapa);
+						dibujar(nombreMapa);
 						break;
 
 					case finalizoMapa:
@@ -112,10 +115,10 @@ void hiloPokenest(void * parametros) {
 						t_duenioPokemon * Mipokemon = (t_duenioPokemon *) list_get(pokemones, *indice);
 						Mipokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
-						//todo restarPokemon(pokenest->identificador);
+						restarPokemon(pokenest->identificador);
 						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
 								devolverIndicePokenest(pokenest->identificador));
-						//todo dibujar(nombreMapa);
+						dibujar(nombreMapa);
 						//devuelvo todos sus recursos
 						desconectadoOFinalizado(*socketEntrenador);
 						log_info(logPokenest, "Termino el mapa el entrenador del socket: %d", *socketEntrenador);
@@ -131,7 +134,7 @@ void hiloPokenest(void * parametros) {
 					free(socketEntrenador);
 				}
 
-			}else{
+			} else {
 				sem_post(pokenest->disponiblesPokenest);
 			}
 			free(numeroPokemon);
@@ -139,15 +142,18 @@ void hiloPokenest(void * parametros) {
 		}
 	}
 }
-int hayEntrenadorSinDistancia(int * indice) {
+int hayEntrenadorSinDistancia(int * socketSinDistancia) {
 	int i;
-	for (i = 0; i < list_size(Entrenadores); i++) {
-		t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, i);
+	for (i = 0; i < queue_size(listos); i++) {
+		int * sockete = (int *) queue_pop(listos);
+		t_datosEntrenador * entrenador = devolverEntrenador(*sockete);
 		if (entrenador->distanciaAPokenest == 0) {
-			*indice = i;
+			*socketSinDistancia = *sockete;
 			log_info(logPlanificador, "el entrenador sin distancia es: %s", entrenador->nombre);
 			return 1;
 			break;
+		} else {
+			queue_push(listos, (void *) sockete);
 		}
 	}
 	return 0;
@@ -156,32 +162,25 @@ int hayEntrenadorSinDistancia(int * indice) {
 int entrenadorMasCercano(int * movimientos) {
 	int i;
 	int menor = 200;
-	int indice;
+	int sockete;
 	t_datosEntrenador * entrenadorADevolver;
 	//me fijo si hay uno sin distancia
-	if (hayEntrenadorSinDistancia(&indice)) {
-		t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, indice);
+	if (hayEntrenadorSinDistancia(&sockete)) {
 		*movimientos = 1;
-		return entrenador->socket;
+		return sockete;
 	} else {
 		//busco el mas cercano
-		for (i = 0; i < list_size(Entrenadores); i++) {
-			t_datosEntrenador * entrenador = (t_datosEntrenador *) list_get(Entrenadores, i);
+		for (i = 0; i < queue_size(listos); i++) {
+			int * sockete = (int *) queue_pop(listos);
+			t_datosEntrenador * entrenador = devolverEntrenador(*sockete);
 			if (entrenador->distanciaAPokenest < menor) {
 				menor = entrenador->distanciaAPokenest;
 				entrenadorADevolver = entrenador;
-			}
-		}
-		//lo saco de la cola de listos
-		for (i = 0; i < queue_size(listos); i++) {
-			int * sockete = (int *) queue_pop(listos);
-			if (*sockete == entrenadorADevolver->socket) {
-				free(sockete);
-				break;
 			} else {
 				queue_push(listos, (void *) sockete);
 			}
 		}
+		log_info(logPlanificador, "la distancia es: %d", entrenadorADevolver->distanciaAPokenest);
 		*movimientos = entrenadorADevolver->distanciaAPokenest;
 		return entrenadorADevolver->socket;
 	}
@@ -222,8 +221,9 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 				desconectadoOFinalizado(miTurno);
 				break;
 			}
-			log_info(logPlanificador, "mi pokenest : %c", identificadorPokenest);
-			*i = *i - 1;
+
+			*i = total;
+			log_info(logPlanificador, "pide ubicacion pokenest : %c", identificadorPokenest);
 			break;
 
 		case posicionEntrenador:
@@ -246,13 +246,14 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 				log_error(logPlanificador, "movimiento invalido");
 				enviarHeader(miTurno, movimientoInvalido);
 			} else {
-				//todo moverEntrenador(*devolverEntrenador(miTurno));
+				moverEntrenador(*devolverEntrenador(miTurno));
 				enviarHeader(miTurno, movimientoAceptado);
-				//todo dibujar(nombreMapa);
+				dibujar(nombreMapa);
 			}
 			free(posX);
 			free(posY);
-			//sleep(configuracion->retardo/1000);
+			log_info(logPlanificador, "mueve");
+			sleep(configuracion->retardo/1000);
 			break;
 
 		case capturarPokemon:
@@ -267,6 +268,7 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 				log_info(logPlanificador, "Quedo bloqueado el entrenador del socket: %d", miTurno);
 				t_metadataPokenest * pokenest = devolverPokenest(&identificadorPokemon);
 				t_datosEntrenador * entrenador = devolverEntrenador(miTurno);
+				entrenador->distanciaAPokenest = 0;
 				entrenador->identificadorPokenest = identificadorPokemon;
 				int * socketEntrenador = malloc(sizeof(int));
 				*socketEntrenador = miTurno;

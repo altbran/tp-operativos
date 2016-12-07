@@ -91,7 +91,7 @@ int recibirTodo(int socketOrigen, void * buffer, int largo) {
 	int bytesRecibidosTotales = 0;
 	bytesRecibidosTotales = recv(socketOrigen, buffer, largo, 0);
 	while (bytesRecibidosTotales < largo) {
-		bytesRecibidos = recv(socketOrigen, buffer + bytesRecibidosTotales, largo - bytesRecibidosTotales, 0);
+		bytesRecibidos = recv(socketOrigen, buffer + bytesRecibidosTotales, largo - bytesRecibidosTotales, MSG_NOSIGNAL);
 		bytesRecibidosTotales = bytesRecibidosTotales + bytesRecibidos;
 		if (bytesRecibidos <= 0) {
 			return 1;
@@ -104,7 +104,7 @@ int enviarTodo(int socketDestino, void* buffer, int largo){
 	int bytesEnviadosTotales = 0;
 	bytesEnviadosTotales = send(socketDestino, buffer, largo, 0);
 	while(bytesEnviadosTotales < largo){
-		bytesEnviados = send(socketDestino, buffer+bytesEnviadosTotales, largo - bytesEnviadosTotales, 0);
+		bytesEnviados = send(socketDestino, buffer+bytesEnviadosTotales, largo - bytesEnviadosTotales, MSG_NOSIGNAL);
 		bytesEnviadosTotales += bytesEnviados;
 		if (bytesEnviados <= 0)
 			return 1;

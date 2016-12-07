@@ -33,8 +33,8 @@ int recibirEntrenador(int socketOrigen, t_datosEntrenador *entrenador) {
 
 	entrenador->distanciaAPokenest = 0;
 	entrenador->socket = socketOrigen;
-	//todo cargarEntrenador(*entrenador);
-	//todo dibujar(nombreMapa);
+	cargarEntrenador(*entrenador);
+	dibujar(nombreMapa);
 	return i;
 }
 
@@ -153,7 +153,7 @@ void cargarRecursos() {
 				pokenest->disponiblesPokenest = DisponiblesPokenest;
 
 				list_add(Pokenests, (void *) pokenest);
-				//todo cargarPokenest(*pokenest);
+				cargarPokenest(*pokenest);
 
 				//creo hilo para la pokenest
 				pthread_t nuevoHilo;
@@ -211,11 +211,11 @@ void desconectadoOFinalizado(int socketEntrenador) {
 		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
 		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
-		//todo eliminarEntrenador(finalizado->identificador);
+		eliminarEntrenador(finalizado->identificador);
 		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
 		close(socketEntrenador);
 		free(finalizado);
-		//todo dibujar(nombreMapa);
+		dibujar(nombreMapa);
 	}
 	//int valor;
 	//sem_getvalue(&binarioDeLaMuerte,&valor);
@@ -238,10 +238,10 @@ void elMuertoDelDeadlock(int socketEntrenador) {
 		}
 		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
-		//todo eliminarEntrenador(finalizado->identificador);
+		eliminarEntrenador(finalizado->identificador);
 		//log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
 		free(finalizado);
-		//todo dibujar(nombreMapa);
+		dibujar(nombreMapa);
 	}
 }
 
@@ -252,7 +252,7 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 		if (pokemon->socketEntrenador == socketEntrenador) {
 			pokemon->socketEntrenador = -1;
 			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
-			//todo sumarPokemon(pokemon->identificadorPokemon);
+			sumarPokemon(pokemon->identificadorPokemon);
 			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;
 			sumarDisponibles(devolverIndicePokenest(pokemon->identificadorPokemon));
