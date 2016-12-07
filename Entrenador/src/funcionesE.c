@@ -8,10 +8,12 @@
 
 void senialRecibirVida(){
 	entrenador.vidas = entrenador.vidas + 1;
+	log_info(logger, "Me dieron una vida");
 }
 
 void senialQuitarVida(){
 	entrenador.vidas = entrenador.vidas - 1;
+	log_info(logger, "Me sacaron una vida (forever alone)");
 }
 
 void moverEntrenador(t_metadataPokenest pokenest){
