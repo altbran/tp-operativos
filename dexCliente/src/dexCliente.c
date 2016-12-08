@@ -29,11 +29,14 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 	t_privilegiosArchivo privilegios;
 
 	pthread_mutex_lock(&mutex);
+	int fecha;
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	printf("Path enviado. getattr: %s\n",path);
+
+	fecha = recibirHeader(S_POKEDEX_CLIENTE);
 
 	privilegios.esDir = recibirHeader(S_POKEDEX_CLIENTE);
 	privilegios.tamanio = recibirHeader(S_POKEDEX_CLIENTE);
@@ -46,6 +49,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		stbuf->st_size = 0;
+		memcpy(&stbuf->st_mtim,&fecha,sizeof(int));
 		pthread_mutex_unlock(&mutex);
 		return 0;
 	}
@@ -56,6 +60,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 			stbuf->st_mode = S_IFREG | 0777;
 			stbuf->st_nlink = 1;
 			stbuf->st_size = privilegios.tamanio;
+			memcpy(&stbuf->st_mtim,&fecha,sizeof(int));
 			pthread_mutex_unlock(&mutex);
 			return 0;
 		}

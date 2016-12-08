@@ -63,7 +63,7 @@ bool comprobarPathValido(char* path);
 void recorrerDesdeIzquierda(char* path, char* nombre);
 void guardarEstructuraEn(char* mapa);
 void atenderConexion(void* arg);
-int getAtr(char* path,char* mapa,int* tamanio);
+int getAtr(char* path,char* mapa,int* tamanio,int socket);
 void leerDirectorio(char* path, int socket);
 void* leerArchivo(char* path,char* mapa, int* tamArchivo);
 int crearDirectorio(char* path,char* mapa);
@@ -279,7 +279,7 @@ void atenderConexion(void* arg)
 				pthread_mutex_lock(&mutex);
 				recibirTodo(socket,path,50);
 
-				resultado = getAtr(path,parametro->elMapa,&tamanio);
+				resultado = getAtr(path,parametro->elMapa,&tamanio,socket);
 				log_info(logger,"Para el PATH: '%s' se esta mandando DIR: %d  TAMANIO: %d",path,resultado,tamanio);
 
 				enviarHeader(socket,resultado);
@@ -426,7 +426,7 @@ void leerEstructurasAdministrativas(FILE* archivo)
 	rewind(archivo);
 }
 
-int getAtr(char* path,char* mapa,int* tamanio)
+int getAtr(char* path,char* mapa,int* tamanio,int socket)
 {
 	char* nombreArchivo;
 	char* copiaPath = malloc(50);
@@ -442,6 +442,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 		{
 			*tamanio = 0;
 			free(copiaPath);
+			enviarHeader(socket,0);
 			return 1;
 		}
 		else
@@ -470,6 +471,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 					*tamanio = 0;
 					free(nombreArchivo);
 					free(copiaPath);
+					enviarHeader(socket,0);
 					return -1;
 				}
 				else
@@ -484,6 +486,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 
 			free(nombreRecuperado);
 			free(copiaPath);
+			enviarHeader(socket,estructuraAdministrativa.tablaArchivos[offset].fecha);
 			if(estructuraAdministrativa.tablaArchivos[offset].estado == '\1')
 				return 0;
 			else
@@ -492,6 +495,7 @@ int getAtr(char* path,char* mapa,int* tamanio)
 	}
 	*tamanio = 0;
 	free(copiaPath);
+	enviarHeader(socket,0);
 	return -1;
 }
 
