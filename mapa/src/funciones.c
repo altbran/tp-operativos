@@ -104,7 +104,7 @@ void cargarRecursos() {
 	pokemones = list_create();
 	DIR *dir;
 	struct dirent *ent;
-	if ((dir = opendir(concat(2, ruta, "Pokenests/"))) != NULL) {
+	if ((dir = opendir(concat(2, ruta, "PokeNests/"))) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
 			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
@@ -112,15 +112,23 @@ void cargarRecursos() {
 			} else {
 				t_metadataPokenest * pokenest = malloc(sizeof(t_metadataPokenest));
 				char ** tokens;
-				t_config * config = config_create(concat(4, ruta, "Pokenests/", ent->d_name, "/metadata"));
+				t_config * config = config_create(concat(4, ruta, "PokeNests/", ent->d_name, "/metadata"));
 				pokenest->identificador = *(config_get_string_value(config, "Identificador"));
 				strcpy(pokenest->tipo, config_get_string_value(config, "Tipo"));
 				tokens = str_split(config_get_string_value(config, "Posicion"), ';');
-				pokenest->posicionX = atoi(*tokens);
-				pokenest->posicionY = atoi(*(tokens + 1));
+				int x = atoi(*tokens);
+				int y = atoi(*(tokens + 1));
+				if (x == 0) {
+					x++;
+				}
+				if (y == 0) {
+					y++;
+				}
+				pokenest->posicionX = x;
+				pokenest->posicionY = y;
 				int * cantidad = malloc(sizeof(int));
 				strcpy(pokenest->nombre, ent->d_name);
-				*cantidad = contadorDePokemon(concat(4, ruta, "Pokenests/", ent->d_name, "/"));
+				*cantidad = contadorDePokemon(concat(4, ruta, "PokeNests/", ent->d_name, "/"));
 				pokenest->cantidad = *cantidad;
 				int i;
 				for (i = 1; i <= *cantidad; i++) {
@@ -180,7 +188,9 @@ int contadorDePokemon(char * directorio) {
 
 	dirp = opendir(directorio); /* There should be error handling after this */
 	while ((entry = readdir(dirp)) != NULL) {
-		if (entry->d_type == DT_REG) { /* If the entry is a regular file */
+		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
+			// do nothing (straight logic)
+		} else {
 			file_count++;
 		}
 	}
@@ -212,7 +222,7 @@ void desconectadoOFinalizado(int socketEntrenador) {
 		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
 		eliminarEntrenador(finalizado->identificador);
-		log_info(logger, "desconectado o finalizado el socket: %d",socketEntrenador);
+		log_info(logger, "desconectado o finalizado el socket: %d", socketEntrenador);
 		close(socketEntrenador);
 		free(finalizado);
 		dibujar(nombreMapa);
@@ -220,7 +230,7 @@ void desconectadoOFinalizado(int socketEntrenador) {
 	//int valor;
 	//sem_getvalue(&binarioDeLaMuerte,&valor);
 	//if(valor == 0){
-		//sem_post(&binarioDeLaMuerte);
+	//sem_post(&binarioDeLaMuerte);
 	//}
 }
 
@@ -230,9 +240,9 @@ void elMuertoDelDeadlock(int socketEntrenador) {
 		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
 		t_metadataPokenest * pokenest = devolverPokenest(&finalizado->identificadorPokenest);
 		int i;
-		for(i=0;i<queue_size(pokenest->colaPokenest);i++){
+		for (i = 0; i < queue_size(pokenest->colaPokenest); i++) {
 			int * socketDeCola = (int *) queue_pop(pokenest->colaPokenest);
-			if(*socketDeCola != socketEntrenador){
+			if (*socketDeCola != socketEntrenador) {
 				queue_push(pokenest->colaPokenest, (void *) socketDeCola);
 			}
 		}
@@ -253,7 +263,8 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 			pokemon->socketEntrenador = -1;
 			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
 			sumarPokemon(pokemon->identificadorPokemon);
-			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,devolverIndicePokenest(pokemon->identificadorPokemon));
+			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,
+					devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;
 			sumarDisponibles(devolverIndicePokenest(pokemon->identificadorPokemon));
 			sem_post(pokenest->disponiblesPokenest);
