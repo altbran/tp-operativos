@@ -6,35 +6,38 @@ int main(int argc, char** argv) {
 	char* rutaMetadata = string_new();
 	rutaDirBill = string_new();
 	char* ruta = string_new();
+	char* miNombre = string_new();
 	rutaMedallas = string_new();
 
 	if (argc != 3) {
 
 		string_append(&rutaMetadata,
-				"/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Colo/metadata.txt");
-		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt/Entrenadores/Colo/Dir' 'de' 'Bill");
-		rutaMontaje = "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt";
+				"/home/utnso/tp-2016-2c-A-cara-de-rope/dexCliente/Debug/mnt/Entrenadores/Ash/metadata");
+		string_append(&rutaDirBill, "/home/utnso/tp-2016-2c-A-cara-de-rope/dexCliente/Debug/mnt/Entrenadores/Ash/Dir' 'de' 'Bill");
+		rutaMontaje = "/home/utnso/tp-2016-2c-A-cara-de-rope/dexCliente/Debug/mnt";
+		miNombre = "Ash";
 		//	log_error(logger,"Numero de parametros incorrectos");
 		//	return 1;
 
 	} else {
 		rutaMontaje = argv[2];
+		miNombre = argv[1];
 		string_append(&rutaMetadata, rutaMontaje);
 		string_append(&rutaMetadata, "/Entrenadores/");
 		string_append(&rutaMetadata, argv[1]);
 		string_append(&ruta, rutaMetadata);
 
-		string_append(&rutaMetadata, "/metadata.txt");
+		string_append(&rutaMetadata, "/metadata");
 		string_append(&rutaDirBill, ruta);
 		string_append(&rutaDirBill, "/Dir' 'de' 'Bill");
 
 	}
-	string_append(&rutaMedallas, rutaDirBill);
+	string_append(&rutaMedallas, ruta);
 	string_append(&rutaMedallas, "/medallas/");
 
 	//creo el config y el log
 	char* nombreLog = string_new();
-	string_append(&nombreLog, argv[1]);
+	string_append(&nombreLog, miNombre);
 	string_append(&nombreLog, ".log");
 	t_config* metaDataEntrenador = config_create(rutaMetadata);
 	logger = log_create(nombreLog, "ENTRENADOR", 0, LOG_LEVEL_INFO);
@@ -320,7 +323,7 @@ int main(int argc, char** argv) {
 
 			log_info(logger, "metadata del pokemon: %s", rutaPokemon);
 			//leo el nivel del pokemon
-			pokemon->nivel = config_get_int_value(metadataPokemon, "nivel");
+			pokemon->nivel = config_get_int_value(metadataPokemon, "Nivel");
 
 			//agrego el pkm a la lista de pokemones atrapados
 			list_add(pokemonesAtrapados, (void*) pokemon);

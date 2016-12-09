@@ -19,7 +19,7 @@ void senialQuitarVida(){
 void moverEntrenador(t_metadataPokenest pokenest){
 
 	if(ubicacionEntrenador.coordenadasX == pokenest.posicionX){
-	moverEntrenadorcoordY(pokenest);;
+	moverEntrenadorcoordY(pokenest);
 	}
 	else {
 		if(ubicacionEntrenador.coordenadasY == pokenest.posicionY){
@@ -128,7 +128,7 @@ char* armarRutaPokemon(char* nombreMapa, char* nombrePokenest, char* nro){
 	string_append(&path, "/Mapas/");
 	string_append(&path,nombreMapa);
 
-	string_append(&path,"/Pokenests/");
+	string_append(&path,"/PokeNests/");
 	string_append(&path,nombrePokenest);
 	string_append(&path,"/");
 	string_append(&path,nombrePokenest);
