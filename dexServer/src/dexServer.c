@@ -105,6 +105,7 @@ int main(void) {
 	fd_set bolsaAuxiliar;
 	parametrosHilo *parametro = malloc(sizeof(parametrosHilo));
 
+	log_info(logger,"\n");
 	log_info(logger, "PUERTO_POKEDEX_SERVIDOR = %d",PUERTO_POKEDEX_SERVIDOR);
 	log_info(logger, "IP_POKEDEX_SERVIDOR = %s",IP_POKEDEX_SERVIDOR);
 
@@ -682,6 +683,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 	int offset = 0xFFFF;
 	int j;
 	int contadorGlobal = 0;
+	int ancla;
 	void* archivoLeido;
 
 	strcpy(copiaPath,path);
@@ -744,7 +746,8 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 				}
 				else
 				{
-					for(j = 0;j < tamanioTotalEnBytes % BLOCK_SIZE;j++)			//me quedo con los bytes restantes
+					ancla = contadorGlobal;
+					for(j = 0;j < tamanioTotalEnBytes - ancla;j++)			//me quedo con los bytes restantes
 					{
 						nombreArchivo[contadorGlobal] = mapa[posicionDelMapa];
 						posicionDelMapa++;
@@ -757,6 +760,7 @@ void* leerArchivo(char* path,char* mapa, int* tamArchivo)
 					//aca no hay drama si el bloque es 0xFFFFFFF, porque sale del bucle
 			}
 
+			log_warning(logger,"ARCHIVO ENVIADO: %s     %d bytes",path,tamanioTotalEnBytes);
 			archivoLeido = malloc(tamanioTotalEnBytes);
 			memcpy(archivoLeido,nombreArchivo,tamanioTotalEnBytes);  //use el char* para obtener los datos, y se lo pase a un void* para que no tenga formato
 			*tamArchivo = tamanioTotalEnBytes;
@@ -1336,7 +1340,6 @@ bool comprobarPathValido(char* path)
 
 			if(i == 2048) //si llego al final es porque no encontró nada
 			{
-				log_error(logger,"COMP PATH VALID --- No se ha encontrado la ruta especificada. Path: '%s'",path);
 				free(copiaPath);
 				free(viejoNombre);
 				return false;
@@ -1635,6 +1638,11 @@ int aperturaArchivo(char* path,int socket)
 
 		if(aperturado[offset] != 0)   //si el archivo ya esta abierto, sea por quien sea, devuelve ERROR
 		{
+			if(aperturado[offset] == socket)
+			{
+				free(copiaPath);
+				return 0;	//no hay problema en abrir dos veces el mismo archivo
+			}
 			free(copiaPath);
 			return -1;
 		}
