@@ -35,12 +35,25 @@ int main(int argc, char** argv) {
 	string_append(&rutaMedallas, ruta);
 	string_append(&rutaMedallas, "/medallas/");
 
+
 	//creo el config y el log
 	char* nombreLog = string_new();
 	string_append(&nombreLog, miNombre);
 	string_append(&nombreLog, ".log");
 	t_config* metaDataEntrenador = config_create(rutaMetadata);
 	logger = log_create(nombreLog, "ENTRENADOR", 0, LOG_LEVEL_INFO);
+
+	//todo empieza tu vieja en tanga
+	char * laMedallita = string_new();
+	string_append(&laMedallita,rutaMedallas);
+	string_append(&laMedallita,"medalla-Azul.jpg");
+	FILE * fotito = fopen(laMedallita,"rb");
+	int pt;
+	fseek(fotito,0,SEEK_END);
+	pt = ftell(fotito);
+	log_error(logger,"tu vieja en tanga %d: ",pt);
+	fclose(fotito);
+	//termina tu vieja en tanga
 
 	//leo del config mis datos y lo destruyo
 	cargarDatos(metaDataEntrenador);
