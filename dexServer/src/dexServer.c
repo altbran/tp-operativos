@@ -182,8 +182,8 @@ int main(void) {
 							break;
 
 						case IDPOKEDEXCLIENTE:
-							FD_SET(socketNuevo,&bolsaDeSockets);
 
+							FD_SET(socketNuevo, &bolsaDeSockets);
 							log_info(logger, "Nuevo dexCliente conectado, socket= %d", socketNuevo);
 
 							pthread_attr_init(&attr);
@@ -202,12 +202,13 @@ int main(void) {
 							log_error(logger, "Error en el handshake. Conexion inesperada");
 							break;
 					}
-				} //-->if del listener
-				else
-				{
-					//log_info(logger,"Turno del socket: %d",i);
-					//atenderConexion(i, archivoMapeado);
-					;
+				}else{
+					if(!FD_ISSET(i,&bolsaDeSockets)){
+						log_info(logger,"socket %d", i);
+						close(i);
+						break;
+					}
+					FD_CLR(i,&bolsaDeSockets);
 				}
 			}
 		} //for del select
