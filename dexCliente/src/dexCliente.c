@@ -130,7 +130,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
 
 	printf("\nREAD:  %s\n",path);
-	printf("Bytes recibidos: %d.    Offset: %d.   Size: %d\n",cantidadBytesARecibir,offset,size);
+	printf("Bytes recibidos: %d.    Offset: %d.   ",cantidadBytesARecibir,offset);
 
 	if(cantidadBytesARecibir == -1)
 	{
@@ -140,13 +140,12 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	{
 		cadenaARecibir = malloc(cantidadBytesARecibir);
 
-		printf("\n......va a recibir cosas\n");
-
 		if(!recibirTodo(S_POKEDEX_CLIENTE, cadenaARecibir, cantidadBytesARecibir))
 		{
-			printf(" - - - - - acaba de recibir cosas, deberia entrar al memcpy\n");
-			memcpy(buf,(cadenaARecibir + offset), size);
-			printf(" - - - - si no pasa por aca, es porque hay un error\n");
+			if((cantidadBytesARecibir - offset) >= size)
+				memcpy(buf,(cadenaARecibir + offset), size);
+			else
+				memcpy(buf,(cadenaARecibir + offset), (cantidadBytesARecibir - offset));
 		}
 
 		free(cadenaARecibir);
@@ -366,7 +365,7 @@ static struct fuse_operations ejemplo_oper = {
 		.rename = f_rename,
 		.unlink = f_unlink,
 		.mkdir = f_crearCarpeta,
-		.open = f_open,
+		//.open = f_open,
 		.rmdir = f_removerDirectorio,
 		.release = f_close,
 		.mknod = f_crearArchivo,
