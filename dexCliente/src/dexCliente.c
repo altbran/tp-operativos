@@ -160,9 +160,13 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 {
 	pthread_mutex_lock(&mutex);
 
-	usleep(15);
+	usleep(1000);
 
 	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
+
+	int caca = recibirHeader(S_POKEDEX_CLIENTE);
+
+	printf("La caca aaaaaaaaaaaaaaaaa");
 
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	enviarHeader(S_POKEDEX_CLIENTE,offset);
@@ -171,7 +175,7 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 	send(S_POKEDEX_CLIENTE, buffer, size, 0);
 
 	printf("WRITE:  %s\n",path);
-	printf("Size: %d\n",size);
+	printf("Size del buffer: %d\n",size);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 

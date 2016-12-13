@@ -313,6 +313,7 @@ void atenderConexion(void* arg)
 
 			case escribirEnFichero:
 				pthread_mutex_lock(&mutex);     //todo
+				enviarHeader(socket,5);
 				recibirTodo(socket,path,50);
 				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
