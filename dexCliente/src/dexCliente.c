@@ -130,7 +130,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset, struct
 	cantidadBytesARecibir = recibirHeader(S_POKEDEX_CLIENTE);
 
 	printf("\nREAD:  %s\n",path);
-	printf("Bytes recibidos: %d.    Offset: %d.   ",cantidadBytesARecibir,offset);
+	printf("Bytes recibidos: %d.    Offset: %d.   \n",cantidadBytesARecibir,offset);
 
 	if(cantidadBytesARecibir == -1)
 	{
@@ -160,6 +160,8 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 {
 	pthread_mutex_lock(&mutex);
 
+	usleep(15);
+
 	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
 
 	enviarPath(path, S_POKEDEX_CLIENTE);
@@ -175,16 +177,17 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 
 	pthread_mutex_unlock(&mutex);
 
+	printf("-----------------------------------paso el mutex\n");
+
 	switch(res)
 	{
-		case 0:
+		case 1:
 			return size;
-		case -1:
-			return -1;
 		case -2:
 			return EFBIG;
+		default:
+			return -1;
 	}
-	return 0; //asi no rompe las bolas
 }
 
 static int f_crearCarpeta(const char *path, mode_t modo) {

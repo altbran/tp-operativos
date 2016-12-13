@@ -312,7 +312,7 @@ void atenderConexion(void* arg)
 				break;
 
 			case escribirEnFichero:
-				pthread_mutex_lock(&mutex);
+				pthread_mutex_lock(&mutex);     //todo
 				recibirTodo(socket,path,50);
 				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
@@ -1584,7 +1584,7 @@ int escribirArchivo(char* path, char* fichero, int off, int tam, char* mapa, int
 			guardarEstructuraEn(mapa);
 			log_info(logger,"Archivo correctamente guardado. Path: %s",path);
 			free(copiaPath);
-			return 0;
+			return 1;
 		}
 	}
 	free(copiaPath);
