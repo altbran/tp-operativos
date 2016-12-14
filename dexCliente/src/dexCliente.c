@@ -32,6 +32,7 @@ static int f_getattr(const char *path, struct stat *stbuf) {
 	int fecha;
 
 	enviarHeader(S_POKEDEX_CLIENTE, privilegiosArchivo);
+
 	enviarPath(path, S_POKEDEX_CLIENTE);
 
 	fecha = recibirHeader(S_POKEDEX_CLIENTE);
@@ -160,22 +161,16 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 {
 	pthread_mutex_lock(&mutex);
 
-	usleep(1000);
-
 	enviarHeader(S_POKEDEX_CLIENTE, escribirEnFichero);
-
-	int caca = recibirHeader(S_POKEDEX_CLIENTE);
-
-	printf("La caca aaaaaaaaaaaaaaaaa");
 
 	enviarPath(path, S_POKEDEX_CLIENTE);
 	enviarHeader(S_POKEDEX_CLIENTE,offset);
 	enviarHeader(S_POKEDEX_CLIENTE,size);
 
-	send(S_POKEDEX_CLIENTE, buffer, size, 0);
+	send(S_POKEDEX_CLIENTE, buffer,size, 0);
 
 	printf("WRITE:  %s\n",path);
-	printf("Size del buffer: %d\n",size);
+	printf("Size del buffer: %d                Offset %d\n",size,offset);
 
 	int res = recibirHeader(S_POKEDEX_CLIENTE);
 
@@ -190,7 +185,7 @@ static int f_write(const char *path, const void *buffer, size_t size,off_t offse
 		case -2:
 			return EFBIG;
 		default:
-			return -1;
+			return 0;
 	}
 }
 
@@ -395,6 +390,7 @@ int main(int argc, char *argv[])
 	if (responderHandshake(S_POKEDEX_CLIENTE, IDPOKEDEXCLIENTE, IDPOKEDEXSERVER))
 		printf("Error, id no esperado\n");
 
+	pthread_mutex_init(&mutex, NULL);
 	return fuse_main(argc, argv, &ejemplo_oper);
 }
 
