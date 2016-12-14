@@ -41,7 +41,7 @@ void detectarDeadlock() {
 			inicializarAlgoritmoVector();
 			inicalizarEntrenadoresEnDeadlock();
 
-
+			entrenadoresEnDeadlockLista = list_create();
 
 			if (configuracion->batalla == 1)
 				batallaActivada = true;
@@ -246,6 +246,8 @@ void algoritmo() {
 
 			} else {
 				hayDeadlock = true;
+				t_datosEntrenador * entrenador = (t_datosEntrenador*) (list_get(Entrenadores, i));
+				list_add(entrenadoresEnDeadlockLista, entrenador);
 			}
 			marcar = true;
 		} else {
@@ -264,7 +266,7 @@ void resolverDeadlock() {
 		int indiceDeEntrenadorPerdedor = 0;
 		int h = 1;
 		t_pokemon* pokemonPerdedorAnterior = pokemonPerdedor;
-		while (h < cantidadDeEntrenadoresEnDeadlock) {
+		while (h < list_size(entrenadoresEnDeadlockLista)) {
 			pokemonPerdedor = batallaPokemon(pokemonPerdedor, list_get(mejoresPokemones, h), indiceDeEntrenadorPerdedor, h);
 			if (pokemonPerdedor != pokemonPerdedorAnterior) {
 				pokemonPerdedorAnterior = pokemonPerdedor;
@@ -274,8 +276,8 @@ void resolverDeadlock() {
 		}
 		char * str[100];
 		char * str2[2];
-		indiceDeEntrenadorPerdedor = traerIndiceEntrenadorPerdedor(indiceDeEntrenadorPerdedor);
-		t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
+		//indiceDeEntrenadorPerdedor = traerIndiceEntrenadorPerdedor(indiceDeEntrenadorPerdedor);
+		t_datosEntrenador* entrenador = (t_datosEntrenador*) (list_get(entrenadoresEnDeadlockLista, indiceDeEntrenadorPerdedor));
 		str2[0] = entrenador->nombre + '0';
 		strcat(str, &pokemonPerdedor->species);
 		strcat(str, " del entrenador ");
@@ -298,15 +300,13 @@ void resolverDeadlock() {
 
 int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor) {
 	int i = 0;
-	int j = 0;
 
 	//aviso a los que ganaron
-	while (i < cantidadDeEntrenadoresEnDeadlock - 1) {
-		if (entrenadoresEnDeadlock[j] == 0 && j != indiceDeEntrenadorPerdedor) {
-			notificarResultadoBatalla(j, true);
+	while (i < list_size(entrenadoresEnDeadlockLista) - 1) {
+		if (i != indiceDeEntrenadorPerdedor) {
+			notificarResultadoBatalla(i, true);
 			i++;
 		}
-		j++;
 	}
 	//borro al entrenador que pierde
 	t_datosEntrenador * perdedor = (t_datosEntrenador*) (list_get(Entrenadores, indiceDeEntrenadorPerdedor));
