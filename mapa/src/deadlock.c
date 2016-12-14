@@ -9,8 +9,10 @@
 
 void detectarDeadlock() {
 
-	logers = log_create("Pruebas.log", "deadlock", 0, log_level_from_string("INFO"));
-	logDeadlock = log_create("Deadlock.log", "deadlock", 0, log_level_from_string("INFO"));
+	char* nombreLogDeadlock = string_new();
+	string_append(&nombreLogDeadlock, nombreMapa);
+	string_append(&nombreLogDeadlock, "Deadlock.log");
+	logDeadlock = log_create(nombreLogDeadlock, "deadlock", 0, log_level_from_string("INFO"));
 
 	pthread_mutex_init(&miMutex, NULL);
 
@@ -20,7 +22,7 @@ void detectarDeadlock() {
 	cantidadDePokemones = list_size(Pokenests);
 	cargarDisponiblesVector();
 
-	log_info(logers, "Empezó");
+
 	fabrica = create_pkmn_factory();
 
 	while (1) {
@@ -39,7 +41,7 @@ void detectarDeadlock() {
 			inicializarAlgoritmoVector();
 			inicalizarEntrenadoresEnDeadlock();
 
-			log_info(logers, "Entró");
+
 
 			if (configuracion->batalla == 1)
 				batallaActivada = true;
@@ -290,7 +292,7 @@ void resolverDeadlock() {
 		list_destroy_and_destroy_elements(mejoresPokemones, free);
 		//destroy_pkmn_factory(fabrica);
 	} else {
-		resolverDeadlockAMiManera();
+		//resolverDeadlockAMiManera();
 	}
 }
 

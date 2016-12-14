@@ -3,9 +3,14 @@
 int main(int argc, char **argv) {
 
 	//Creo log para el mapa
-
-	logger = log_create("Mapa.log", "MAPA", 0, log_level_from_string("INFO"));
-	logPlanificador = log_create("Planificador.log", "MAPA", 0, log_level_from_string("INFO"));
+	char* nombreLogMapa = string_new();
+	char* nombreLogPlanificador = string_new();
+	string_append(&nombreLogMapa, argv[1]);
+	string_append(&nombreLogPlanificador, argv[1]);
+	string_append(&nombreLogPlanificador, "Planificador.log");
+	string_append(&nombreLogMapa, "Mapa.log");
+	logger = log_create(nombreLogMapa, "MAPA", 0, log_level_from_string("INFO"));
+	logPlanificador = log_create(nombreLogPlanificador, "MAPA", 0, log_level_from_string("INFO"));
 
 
 	//busco las configuraciones
