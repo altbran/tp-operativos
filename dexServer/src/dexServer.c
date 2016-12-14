@@ -95,6 +95,7 @@ int main(void) {
 	FILE* archivo;
 	pthread_attr_t attr;
 	pthread_t thread;
+	pthread_mutex_init(&mutex,NULL);
 
 	int i;
 	int tamanioTotalFS;
@@ -313,13 +314,12 @@ void atenderConexion(void* arg)
 
 			case escribirEnFichero:
 				pthread_mutex_lock(&mutex);     //todo
-				enviarHeader(socket,5);
 				recibirTodo(socket,path,50);
 				resultado = recibirHeader(socket);    //uso 'resultado', para recibir el offset
 				tamanio = recibirHeader(socket);
 
 				void* ficheroEnviado = malloc(tamanio);
-				recv(socket,ficheroEnviado,tamanio,0);
+				recv(socket,ficheroEnviado,tamanio,MSG_WAITALL);
 
 				resultado = escribirArchivo(path,ficheroEnviado,resultado,tamanio,parametro->elMapa,socket);
 				enviarHeader(socket,resultado);
@@ -571,7 +571,7 @@ int truncar(char* path,int tamanio,char* mapa,int socket)
 		}
 
 		crearArchivo(path,mapa);
-		aperturaArchivo(path,1);
+		//aperturaArchivo(path,1);
 		escribirArchivo(path,archivoTruncado,0,tamanio,mapa,1);
 		cerradoArchivo(path,1);
 
