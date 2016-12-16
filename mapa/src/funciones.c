@@ -219,8 +219,8 @@ void desconectadoOFinalizado(int socketEntrenador) {
 	int indiceEntrenador = devolverIndiceEntrenador(socketEntrenador);
 	if (indiceEntrenador != -1) {
 		t_datosEntrenador * finalizado = list_remove(Entrenadores, indiceEntrenador);
-		liberarRecursosEntrenador(indiceEntrenador);
 		reasignarPokemonesDeEntrenadorADisponibles(socketEntrenador);
+		liberarRecursosEntrenador(indiceEntrenador);
 		eliminarEntrenador(finalizado->identificador);
 		log_info(logger, "desconectado o finalizado el socket: %d", socketEntrenador);
 		close(socketEntrenador);
@@ -263,10 +263,10 @@ void reasignarPokemonesDeEntrenadorADisponibles(int socketEntrenador) {
 			pokemon->socketEntrenador = -1;
 			t_metadataPokenest * pokenest = devolverPokenest(&pokemon->identificadorPokemon);
 			sumarPokemon(pokemon->identificadorPokemon);
-			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,
-					devolverIndicePokenest(pokemon->identificadorPokemon));
+			int * pokemonesDisponibles = (int *) list_get(listaRecursosDisponibles,	devolverIndicePokenest(pokemon->identificadorPokemon));
 			*pokemonesDisponibles = *pokemonesDisponibles + 1;
 			sumarDisponibles(devolverIndicePokenest(pokemon->identificadorPokemon));
+			log_info(logger,"se libero el pokemon %c del entrenador: %d",pokemon->identificadorPokemon,socketEntrenador);
 			sem_post(pokenest->disponiblesPokenest);
 		}
 	}

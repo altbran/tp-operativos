@@ -2,36 +2,34 @@
 
 int main(int argc, char **argv) {
 
-	//Creo log para el mapa
-	char* nombreLogMapa = string_new();
-	char* nombreLogPlanificador = string_new();
-	string_append(&nombreLogMapa, argv[1]);
-	string_append(&nombreLogPlanificador, argv[1]);
-	string_append(&nombreLogPlanificador, "Planificador.log");
-	string_append(&nombreLogMapa, "Mapa.log");
-	logger = log_create(nombreLogMapa, "MAPA", 0, log_level_from_string("INFO"));
-	logPlanificador = log_create(nombreLogPlanificador, "MAPA", 0, log_level_from_string("INFO"));
-
-
 	//busco las configuraciones
 	if (argc != 3) {
-		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/mimnt", "/Mapas/", "Paleta", "/");
+		ruta = concat(4, "/home/utnso/tp-2016-2c-A-cara-de-rope/dexCliente/Debug/mnt", "/Mapas/", "Home", "/");
 		nombreMapa = malloc(sizeof(argv[1]));
-		nombreMapa = "Paleta";
+		nombreMapa = "Home";
 	} else {
 		ruta = concat(4, argv[2], "/Mapas/", argv[1], "/");
 		nombreMapa = malloc(sizeof(argv[1]));
 		nombreMapa = argv[1];
 	}
 
+	//Creo log para el mapa
+	char* nombreLogMapa = string_new();
+	char* nombreLogPlanificador = string_new();
+	string_append(&nombreLogMapa, nombreMapa);
+	string_append(&nombreLogPlanificador, nombreMapa);
+	string_append(&nombreLogPlanificador, "Planificador.log");
+	string_append(&nombreLogMapa, "Mapa.log");
+	logger = log_create(nombreLogMapa, "MAPA", 0, log_level_from_string("INFO"));
+	logPlanificador = log_create(nombreLogPlanificador, "MAPA", 0, log_level_from_string("INFO"));
+
 	//inicializo semaforos
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&mutexDeadlock, NULL);
-	pthread_mutex_lock(&miMutex);
-	sem_init(&binarioDeLaMuerte,0, 1);
+	pthread_mutex_init(&miMutex, NULL);
+	sem_init(&binarioDeLaMuerte, 0, 1);
 	sem_init(&contadorEntrenadoresListos, 0, 0);
 	sem_init(&semaforoMuerto, 0, 0);
-
 
 	//inicio colas y listas
 	listos = queue_create();
@@ -44,11 +42,10 @@ int main(int argc, char **argv) {
 
 	//inicializo hilos
 	iniciarPlanificador();
-	pthread_create(&deadlock,NULL,(void*)detectarDeadlock,NULL);
+	pthread_create(&deadlock, NULL, (void*) detectarDeadlock, NULL);
 
 	//reconocer señales SIGUSR2
 	signal(SIGUSR2, receptorSIG);
-
 
 	//creo socket servidor
 	if (crearSocket(&servidorMapa)) {
@@ -83,11 +80,10 @@ int main(int argc, char **argv) {
 	while (1) {
 		bolsaAuxiliar = bolsaDeSockets;
 		int err;
-		repeat_select:
-		if ((err = select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL)) < 0) {
-			if (errno == EINTR){
+		repeat_select: if ((err = select(fdmax + 1, &bolsaAuxiliar, NULL, NULL, NULL)) < 0) {
+			if (errno == EINTR) {
 				goto repeat_select;
-			}else{
+			} else {
 				perror("select");
 				return 1;
 			}
@@ -131,7 +127,7 @@ int main(int argc, char **argv) {
 							free(entrenador);
 							break;
 						} else {
-							if(ultimoPerdedor == entrenador->nombre){
+							if (ultimoPerdedor == entrenador->nombre) {
 								sem_wait(&semaforoMuerto);
 							}
 							list_add(Entrenadores, (void *) entrenador);
@@ -152,13 +148,13 @@ int main(int argc, char **argv) {
 						break;
 					}
 
-				}else{
-					if(!FD_ISSET(i,&bolsaDeSockets)){
-						log_info(logger,"Consola socket %d desconectada", i);
+				} else {
+					if (!FD_ISSET(i, &bolsaDeSockets)) {
+						log_info(logger, "Consola socket %d desconectada", i);
 						close(i);
 						break;
 					}
-					FD_CLR(i,&bolsaDeSockets);
+					FD_CLR(i, &bolsaDeSockets);
 				}
 			}
 		}

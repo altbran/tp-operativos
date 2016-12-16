@@ -20,6 +20,7 @@ int** asignadosMatrizClonada;
 int* recursosVector;
 int* disponiblesVector;
 int* algoritmoVector;
+int* vectorAuxiliar;
 int* entrenadoresEnDeadlock;
 int cantidadDeEntrenadoresEnDeadlock;
 int cantidadDeEntrenadores;
@@ -32,7 +33,8 @@ t_pokemon* pokemonA;
 t_pokemon* pokemonB;
 t_pokemon* pokemonC;
 t_pokemon* pokemonD;
-
+t_list * entrenadoresEnDeadlockLista;
+t_list * entrenadoresClonada;
 t_list * mejoresPokemones;
 
 void detectarDeadlock();
@@ -62,5 +64,6 @@ int traerIndiceEntrenadorPerdedor(int indice);
 void cargarMatrices();
 void cargarDisponiblesVector();
 int notificarGanadoresEntrenadores(int indiceDeEntrenadorPerdedor);
+void copiarEntrenadores();
 
 #endif /* DEADLOCK_H_ */

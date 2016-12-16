@@ -99,8 +99,7 @@ void hiloPokenest(void * parametros) {
 						pokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
 						restarPokemon(pokenest->identificador);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
-								devolverIndicePokenest(pokenest->identificador));
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						int * elTurno = malloc(sizeof(int));
 						*elTurno = *socketEntrenador;
 						queue_push(listos, (void *) elTurno);
@@ -116,8 +115,7 @@ void hiloPokenest(void * parametros) {
 						Mipokemon->socketEntrenador = *socketEntrenador;
 						restarRecursoDisponible(devolverIndicePokenest(pokenest->identificador));
 						restarPokemon(pokenest->identificador);
-						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),
-								devolverIndicePokenest(pokenest->identificador));
+						sumarAsignadosMatriz(devolverIndiceEntrenador(*socketEntrenador),devolverIndicePokenest(pokenest->identificador));
 						dibujar(nombreMapa);
 						//devuelvo todos sus recursos
 						desconectadoOFinalizado(*socketEntrenador);
@@ -180,7 +178,6 @@ int entrenadorMasCercano(int * movimientos) {
 				queue_push(listos, (void *) sockete);
 			}
 		}
-		log_info(logPlanificador, "la distancia es: %d", entrenadorADevolver->distanciaAPokenest);
 		*movimientos = entrenadorADevolver->distanciaAPokenest;
 		return entrenadorADevolver->socket;
 	}
@@ -252,7 +249,6 @@ void jugada(int miTurno, int * quedoBloqueado, int * i, int total) {
 			}
 			free(posX);
 			free(posY);
-			log_info(logPlanificador, "mueve");
 			sleep(configuracion->retardo/1000);
 			break;
 

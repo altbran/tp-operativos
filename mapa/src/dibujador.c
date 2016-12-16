@@ -27,6 +27,7 @@ void eliminarEntrenador(char identificador){
 }
 
 void crearItems(){
+
 	items = list_create();
 	int rows, cols;
 	int q, p;
