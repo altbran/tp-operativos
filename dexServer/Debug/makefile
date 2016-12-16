@@ -23,26 +23,28 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: dexCliente
+all: dexServer
 
 dependents:
 	-cd /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug && $(MAKE) clean all
+	-cd /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Debug && $(MAKE) clean all
 
 # Tool invocations
-dexCliente: $(OBJS) $(USER_OBJS) /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so
+dexServer: $(OBJS) $(USER_OBJS) /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so /home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Debug/mapa
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug" -o "dexCliente" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug" -L../commons -o "dexServer" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) dexCliente
+	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) dexServer
 	-@echo ' '
 
 .PHONY: all clean dependents
 .SECONDARY:
 /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so:
+/home/utnso/tp-2016-2c-A-cara-de-rope/mapa/Debug/mapa:
 
 -include ../makefile.targets

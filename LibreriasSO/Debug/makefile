@@ -23,26 +23,22 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: dexCliente
-
-dependents:
-	-cd /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug && $(MAKE) clean all
+all: libLibreriasSO.so
 
 # Tool invocations
-dexCliente: $(OBJS) $(USER_OBJS) /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so
+libLibreriasSO.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug" -o "dexCliente" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -shared -o "libLibreriasSO.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) dexCliente
+	-$(RM) $(OBJS)$(C_DEPS)$(LIBRARIES) libLibreriasSO.so
 	-@echo ' '
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so:
 
 -include ../makefile.targets

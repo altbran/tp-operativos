@@ -23,22 +23,22 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: dexCliente
+all: mapa
 
 dependents:
 	-cd /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug && $(MAKE) clean all
 
 # Tool invocations
-dexCliente: $(OBJS) $(USER_OBJS) /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so
+mapa: $(OBJS) $(USER_OBJS) /home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug/libLibreriasSO.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug" -o "dexCliente" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2016-2c-A-cara-de-rope/LibreriasSO/Debug" -o "mapa" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) dexCliente
+	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) mapa
 	-@echo ' '
 
 .PHONY: all clean dependents
